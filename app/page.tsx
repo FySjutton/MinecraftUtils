@@ -9,7 +9,7 @@ export default function HomePage() {
 
             <main className="flex-1 max-w-7xl mx-auto p-8 space-y-12">
                 <section className="text-center">
-                    <h1 className="text-5xl font-bold">Minecraft Generators</h1>
+                    <h1 className="text-5xl font-bold">Tools for Minecraft</h1>
                     <p className="mt-4 text-muted-foreground">
                         Generate Minecraft items, effects, and NBT data easily!
                     </p>
@@ -31,6 +31,62 @@ export default function HomePage() {
                         description="Generate custom NBT data"
                         href="/tools/nbt"
                     />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+                    <ToolCard
+                        title="NBT Generator"
+                        description="Generate custom NBT data"
+                        href="/tools/nbt"
+                    />
+
                 </section>
             </main>
 
