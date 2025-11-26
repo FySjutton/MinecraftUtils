@@ -172,3 +172,37 @@
     @apply bg-background text-foreground;
     }
 }
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply antialiased bg-background text-foreground scroll-smooth;
+    }
+
+    ::selection {
+        @apply bg-primary text-background;
+    }
+
+    ::-webkit-scrollbar {
+        @apply w-2 h-2;
+    }
+
+    ::-webkit-scrollbar-track {
+        @apply bg-muted;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        @apply rounded-full bg-muted-foreground;
+    }
+
+    input:-webkit-autofill,
+    textarea:-webkit-autofill,
+    select:-webkit-autofill {
+        -webkit-box-shadow: 0 0 0 1000px hsl(var(--background)) inset !important;
+        box-shadow: 0 0 0 1000px hsl(var(--background)) inset !important;
+        -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    }
+}

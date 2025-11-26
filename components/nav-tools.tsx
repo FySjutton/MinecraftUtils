@@ -17,11 +17,11 @@ import {
     SidebarMenuAction,
 } from "@/components/ui/sidebar"
 
-export function NavWorkspaces({
-                                  workspaces,
+export function NavTools({
+                                  tools,
                                   activeCategory,
                               }: {
-    workspaces: {
+    tools: {
         name: string
         emoji: React.ReactNode
         href?: string,
@@ -35,23 +35,23 @@ export function NavWorkspaces({
 }) {
     return (
         <SidebarGroup>
-            <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
+            <SidebarGroupLabel>Tools</SidebarGroupLabel>
             <SidebarGroupContent>
                 <SidebarMenu>
-                    {workspaces.map((workspace) => {
-                        const isActive = workspace.name === activeCategory
+                    {tools.map((tool) => {
+                        const isActive = tool.name === activeCategory
 
                         return (
-                            <Collapsible key={workspace.name} defaultOpen={isActive}>
+                            <Collapsible key={tool.name} defaultOpen={isActive}>
                                 <SidebarMenuItem>
                                     <SidebarMenuButton asChild>
-                                        <a href={workspace.href} className="flex items-center gap-2">
-                                            <span>{workspace.emoji}</span>
-                                            <span>{workspace.name}</span>
+                                        <a href={tool.href} className="flex items-center gap-2">
+                                            <span>{tool.emoji}</span>
+                                            <span>{tool.name}</span>
                                         </a>
                                     </SidebarMenuButton>
 
-                                    {workspace.pages.length > 0 && (
+                                    {tool.pages.length > 0 && (
                                         <CollapsibleTrigger asChild>
                                             <SidebarMenuAction
                                                 className="bg-sidebar-accent text-sidebar-accent-foreground left-2 data-[state=open]:rotate-90"
@@ -63,9 +63,9 @@ export function NavWorkspaces({
                                     )}
 
                                     <CollapsibleContent>
-                                        {workspace.pages.length > 0 && (
+                                        {tool.pages.length > 0 && (
                                             <SidebarMenuSub>
-                                                {workspace.pages.map((page) => (
+                                                {tool.pages.map((page) => (
                                                     <SidebarMenuSubItem key={page.name}>
                                                         <SidebarMenuSubButton asChild>
                                                             <a

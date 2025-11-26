@@ -5,7 +5,7 @@ import {
     AudioWaveform,
     Blocks,
     Calendar,
-    Command, GalleryVerticalEnd,
+    Command, Hammer,
     Home,
     Inbox,
     MessageCircleQuestion,
@@ -17,7 +17,7 @@ import {
 
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
-import { NavWorkspaces } from "@/components/nav-workspaces"
+import { NavTools } from "@/components/nav-tools"
 import {
   Sidebar,
   SidebarContent,
@@ -150,7 +150,7 @@ const data = {
       emoji: "✅",
     },
   ],
-  workspaces: [
+  tools: [
     {
       name: "Calculators",
       emoji: "🏠",
@@ -272,11 +272,11 @@ export function AppSidebar({
                         <SidebarMenuButton size="lg" asChild>
                             <a href="#">
                                 <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                                    <GalleryVerticalEnd className="size-4" />
+                                    <Hammer className="size-4" />
                                 </div>
                                 <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="font-medium">Documentation</span>
-                                    <span className="">v1.0.0</span>
+                                    <span className="font-medium">Tools for Minecraft</span>
+                                    <span className="">Useful tools for minecraft</span>
                                 </div>
                             </a>
                         </SidebarMenuButton>
@@ -286,7 +286,7 @@ export function AppSidebar({
             </SidebarHeader>
 
             <SidebarContent>
-                <NavWorkspaces workspaces={data.workspaces} activeCategory={activeCategory} />
+                <NavTools tools={data.tools} activeCategory={activeCategory} />
                 <NavSecondary items={data.navSecondary} className="mt-auto" />
             </SidebarContent>
 
