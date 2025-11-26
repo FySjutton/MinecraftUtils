@@ -14,68 +14,81 @@ import {
     SidebarMenuSub,
     SidebarMenuSubButton,
     SidebarMenuSubItem,
+    SidebarMenuAction,
 } from "@/components/ui/sidebar"
-import {SidebarMenuAction} from "@/ui/sidebar";
 
 export function NavWorkspaces({
                                   workspaces,
+                                  activeCategory,
                               }: {
     workspaces: {
         name: string
         emoji: React.ReactNode
-        href?: string
+        href?: string,
         pages: {
             name: string
             emoji: React.ReactNode
             href?: string
         }[]
     }[]
+    activeCategory?: string
 }) {
     return (
         <SidebarGroup>
             <SidebarGroupLabel>Workspaces</SidebarGroupLabel>
             <SidebarGroupContent>
                 <SidebarMenu>
-                    {workspaces.map((workspace) => (
-                        <Collapsible key={workspace.name}>
-                            <SidebarMenuItem>
-                                <SidebarMenuButton asChild>
-                                    <a href={workspace.href} className="flex items-center gap-2">
-                                        <span>{workspace.emoji}</span>
-                                        <span>{workspace.name}</span>
-                                    </a>
-                                </SidebarMenuButton>
+                    {workspaces.map((workspace) => {
+                        const isActive = workspace.name === activeCategory
 
-                                {workspace.pages.length > 0 && (
-                                    <CollapsibleTrigger asChild>
-                                        <SidebarMenuAction
-                                            className="bg-sidebar-accent text-sidebar-accent-foreground left-2 data-[state=open]:rotate-90"
-                                            showOnHover
-                                        >
-                                            <ChevronRight />
-                                        </SidebarMenuAction>
-                                    </CollapsibleTrigger>
-                                )}
+                        return (
+                            <Collapsible key={workspace.name} defaultOpen={isActive}>
+                                <SidebarMenuItem>
+                                    <SidebarMenuButton asChild>
+                                        <a href={workspace.href} className="flex items-center gap-2">
+                                            <span>{workspace.emoji}</span>
+                                            <span>{workspace.name}</span>
+                                        </a>
+                                    </SidebarMenuButton>
 
-                                <CollapsibleContent>
                                     {workspace.pages.length > 0 && (
-                                        <SidebarMenuSub>
-                                            {workspace.pages.map((page) => (
-                                                <SidebarMenuSubItem key={page.name}>
-                                                    <SidebarMenuSubButton asChild>
-                                                        <a href={page.href} className="flex items-center gap-2">
-                                                            <span>{page.emoji}</span>
-                                                            <span>{page.name}</span>
-                                                        </a>
-                                                    </SidebarMenuSubButton>
-                                                </SidebarMenuSubItem>
-                                            ))}
-                                        </SidebarMenuSub>
+                                        <CollapsibleTrigger asChild>
+                                            <SidebarMenuAction
+                                                className="bg-sidebar-accent text-sidebar-accent-foreground left-2 data-[state=open]:rotate-90"
+                                                showOnHover
+                                            >
+                                                <ChevronRight />
+                                            </SidebarMenuAction>
+                                        </CollapsibleTrigger>
                                     )}
-                                </CollapsibleContent>
-                            </SidebarMenuItem>
-                        </Collapsible>
-                    ))}
+
+                                    <CollapsibleContent>
+                                        {workspace.pages.length > 0 && (
+                                            <SidebarMenuSub>
+                                                {workspace.pages.map((page) => (
+                                                    <SidebarMenuSubItem key={page.name}>
+                                                        <SidebarMenuSubButton asChild>
+                                                            <a
+                                                                href={page.href}
+                                                                className={`flex items-center gap-2 ${
+                                                                    isActive && page.href === undefined
+                                                                        ? "font-medium text-sidebar-accent"
+                                                                        : ""
+                                                                }`}
+                                                            >
+                                                                <span>{page.emoji}</span>
+                                                                <span>{page.name}</span>
+                                                            </a>
+                                                        </SidebarMenuSubButton>
+                                                    </SidebarMenuSubItem>
+                                                ))}
+                                            </SidebarMenuSub>
+                                        )}
+                                    </CollapsibleContent>
+                                </SidebarMenuItem>
+                            </Collapsible>
+                        )
+                    })}
                 </SidebarMenu>
             </SidebarGroupContent>
         </SidebarGroup>
