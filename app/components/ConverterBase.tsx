@@ -5,6 +5,7 @@ import {
     ResizablePanel,
     ResizableHandle,
 } from "@/components/ui/resizable"
+import React from "react";
 
 export default function ConverterBase({
                                           inputTypeSlot,
@@ -20,47 +21,39 @@ export default function ConverterBase({
     return (
         <div className="w-[90%] mx-auto h-[500px] rounded-xl overflow-hidden">
             <ResizablePanelGroup direction="vertical" className="h-full">
-
-                {/* TOP ROW */}
                 <ResizablePanel defaultSize={25}>
                     <ResizablePanelGroup direction="horizontal">
                         <ResizablePanel defaultSize={50}>
-                            <div className="h-full border bg-muted/30 p-2">
+                            <div className="h-full border bg-muted/30 p-2 flex items-center justify-center">
                                 {inputTypeSlot}
                             </div>
                         </ResizablePanel>
-
-                        <ResizableHandle />
-
+                        <ResizableHandle/>
                         <ResizablePanel defaultSize={50}>
-                            <div className="h-full border bg-muted/30 p-2">
+                            <div className="h-full border bg-muted/30 p-2 flex items-center justify-center">
                                 {outputTypeSlot}
                             </div>
                         </ResizablePanel>
                     </ResizablePanelGroup>
                 </ResizablePanel>
 
-                <ResizableHandle />
+                <ResizableHandle/>
 
-                {/* BOTTOM ROW */}
                 <ResizablePanel defaultSize={75}>
                     <ResizablePanelGroup direction="horizontal">
                         <ResizablePanel defaultSize={50}>
-                            <div className="h-full border bg-muted/30 p-2">
+                            <div className="h-full border bg-muted/30 p-2 flex items-center justify-center">
                                 {inputValueSlot}
                             </div>
                         </ResizablePanel>
-
-                        <ResizableHandle />
-
+                        <ResizableHandle/>
                         <ResizablePanel defaultSize={50}>
-                            <div className="h-full border bg-muted/30 p-2">
+                            <div className="h-full border bg-muted/30 p-2 flex items-center justify-center">
                                 {outputValueSlot}
                             </div>
                         </ResizablePanel>
                     </ResizablePanelGroup>
                 </ResizablePanel>
-
             </ResizablePanelGroup>
         </div>
     )

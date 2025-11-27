@@ -1,1 +1,1 @@
-Tools4Minecraft is a website with tools for minecraft users. This website is currently in progress, and has not been released to the public yet.
+MinecraftUtils is a website with tools for minecraft users. This website is currently in progress, and has not been released to the public yet.

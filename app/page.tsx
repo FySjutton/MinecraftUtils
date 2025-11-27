@@ -11,9 +11,9 @@ export const metadata: Metadata = {
     openGraph: {
         title: "Tools for Minecraft",
         description: "Tools for Minecraft has useful tools for minecraft users.",
-        url: "https://tools4minecraft.com",
+        url: "https://minecraftutils.com",
         type: "website",
-        siteName: "Tools4Minecraft",
+        siteName: "MinecraftUtils",
         locale: "en_US",
     },
     twitter: {

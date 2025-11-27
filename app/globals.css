@@ -206,3 +206,14 @@
         -webkit-text-fill-color: hsl(var(--foreground)) !important;
     }
 }
+
+@font-face {
+    font-family: 'Minecraft';
+    src: url('/fonts/minecraft.woff') format('woff');
+    font-weight: normal;
+    font-style: normal;
+}
+
+.font-minecraft {
+    font-family: 'Minecraft', monospace;
+}
