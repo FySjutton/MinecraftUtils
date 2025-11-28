@@ -3,14 +3,15 @@
 import * as React from "react"
 import Image from "next/image"
 
-type ImageSliderProps = {
+type ExperienceBarProps = {
     xp: number
-    xpChangeAction: (newXp: number) => void
+    lastSource: "slider" | "input" | null
+    onSliderAction: (total: number, level: number, progress: number) => void
 }
 
-export default function ImageSlider({ xp, xpChangeAction }: ImageSliderProps) {
-    const [value, setValue] = React.useState(50) // % bar
-    const [level, setLevel] = React.useState(1)
+export default function ExperienceBar({ xp, lastSource, onSliderAction }: ExperienceBarProps) {
+    const [value, setValue] = React.useState(0) // % bar
+    const [level, setLevel] = React.useState(0)
 
     const xpToLevel = (exp: number) => {
         if (exp >= 1508) {
@@ -51,34 +52,38 @@ export default function ImageSlider({ xp, xpChangeAction }: ImageSliderProps) {
     const [isEditing, setIsEditing] = React.useState(false)
 
     React.useEffect(() => {
-        if (!isEditing) {
+        if (!isEditing && lastSource !== "slider") {
             const ui = xpToUI(xp)
             setLevel(ui.level)
+            setValue(ui.percent * 100)
         }
-    }, [xp, isEditing, xpToUI])
+    }, [xp, lastSource, isEditing, xpToUI])
+
 
     const handleSlider = (v: number) => {
-        const clamped = Math.min(v, 99.999) // never reach 100%
+        const clamped = Math.min(v, 99.999)
         setValue(clamped)
         const newXp = uiToXp(level, clamped / 100)
-        xpChangeAction(newXp)
+        onSliderAction(newXp, level, clamped)
     }
 
     const handleInputChange = (val: string) => {
         setIsEditing(true)
         const num = Number(val || 0)
         setLevel(num)
+
+        const newXp = uiToXp(num, value / 100)
+        onSliderAction(newXp, num, value)
     }
 
     const handleInputBlur = () => {
         setIsEditing(false)
         const newXp = uiToXp(level, value / 100)
-        xpChangeAction(newXp)
+        onSliderAction(newXp, level, value)
     }
 
     return (
-        <div className="relative w-[90%] select-none overflow-visible font-minecraft mx-auto flex flex-col items-center">
-
+        <div className="relative select-none overflow-visible font-minecraft mx-auto flex flex-col items-center">
             <input
                 type="text"
                 value={level}
@@ -86,7 +91,7 @@ export default function ImageSlider({ xp, xpChangeAction }: ImageSliderProps) {
                 onFocus={() => setIsEditing(true)}
                 onBlur={handleInputBlur}
                 onChange={(e) => handleInputChange(e.target.value)}
-                className="font-minecraft text-center text-[#80ff20] bg-transparent border-none outline-none pointer-events-auto"
+                className="font-minecraft text-center text-[clamp(12px,4vw,40px)] text-[#80ff20] bg-transparent border-none outline-none pointer-events-auto"
                 style={{
                     width: `${String(level).length || 1}ch`,
                     minWidth: "2ch",
