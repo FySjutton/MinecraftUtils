@@ -8,7 +8,8 @@ import React from "react";
 import DashboardLayout from "@/app/components/DashboardLayout";
 import Footer from "./components/SiteFooter";
 import dynamic from "next/dynamic";
-const DiscordBanner = dynamic(() => import('@/app/components/DiscordBanner'), {
+import InProgressBanner from "@/app/components/banners/InProgressBanner";
+const DiscordBanner = dynamic(() => import('@/app/components/banners/DiscordBanner'), {
     ssr: false,
 });
 
@@ -24,6 +25,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <AppSidebar />
                 <main className="flex-1 flex flex-col overflow-auto">
                     <DashboardLayout>
+                        <InProgressBanner />
                         <DiscordBanner />
                         {children}
                     </DashboardLayout>

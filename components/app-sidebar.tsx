@@ -1,15 +1,11 @@
-"use client"
+'use client'
 
 import * as React from "react"
-import {usePathname} from "next/navigation"
-import {
-    Calculator,
-    Hammer,
-    Home, Microwave, Orbit, ReplaceAll, Square,
-} from "lucide-react"
+import { usePathname } from "next/navigation"
+import Link from "next/link"
 
-import {NavMain} from "@/components/nav-main"
-import {NavTools} from "@/components/nav-tools"
+import { NavMain } from "@/components/nav-main"
+import { NavTools } from "@/components/nav-tools"
 import {
     Sidebar,
     SidebarContent,
@@ -19,25 +15,9 @@ import {
     SidebarMenuItem,
     SidebarRail,
 } from "@/components/ui/sidebar"
-import Link from "next/link";
 
-const data = {
-    navMain: [{title: "Home", url: "/", icon: Home}],
-    tools: [
-        {
-            name: "Calculators",
-            icon: <Calculator />,
-            url: "/calculators",
-            defaultOpen: true,
-            pages: [
-                {name: "Unit Calculator", url: "units", emoji: <ReplaceAll />},
-                {name: "XP to Level Calculator", url: "experience", emoji: <Orbit />},
-                {name: "Furnace Calculator", url: "furnace", emoji: <Microwave />},
-                {name: "Nether Calculator", url: "nether_cords", emoji: <Square />},
-            ],
-        },
-    ],
-}
+import { navMain, tools, externals } from "@/app/AppStructure"
+import { Hammer } from "lucide-react"
 
 export function AppSidebar() {
     const pathname = usePathname()
@@ -45,7 +25,7 @@ export function AppSidebar() {
     let activeCategory: string = ""
     let activePage: string = ""
 
-    for (const tool of data.tools) {
+    for (const tool of tools) {
         if (pathname.startsWith(tool.url)) {
             activeCategory = tool.name
 
@@ -77,17 +57,22 @@ export function AppSidebar() {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
-                <NavMain items={data.navMain} activeCategory={activeCategory}/>
+                <NavMain items={navMain} activeCategory={activeCategory}/>
             </SidebarHeader>
 
             <SidebarContent>
                 <NavTools
-                    tools={data.tools}
+                    tools={tools}
                     activeCategory={activeCategory}
                     activePage={activePage}
                 />
+                <NavTools
+                    tools={externals}
+                    activeCategory={activeCategory}
+                    activePage={activePage}
+                    title="External Tools"
+                />
             </SidebarContent>
-
             <SidebarRail/>
         </Sidebar>
     )

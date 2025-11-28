@@ -7,6 +7,7 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
+import React, {JSX} from "react";
 
 export function NavMain({
                             items,
@@ -15,10 +16,18 @@ export function NavMain({
     items: {
         title: string
         url: string
-        icon: LucideIcon
+        icon: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string
     }[]
     activeCategory?: string
 }) {
+    const renderIcon = (icon: any) => {
+        if (!icon) return null
+        if (typeof icon === "string") return <span>{icon}</span>
+        if (React.isValidElement(icon)) return icon
+        if (typeof icon === "function") return React.createElement(icon, { className: "size-4" })
+        return null
+    }
+    
     return (
         <SidebarMenu>
             {items.map((item) => {
@@ -32,7 +41,7 @@ export function NavMain({
                                     isActive ? "font-bold text-sidebar-accent" : "font-normal"
                                 }`}
                             >
-                                <item.icon />
+                                {renderIcon(item.icon)}
                                 <span>{item.title}</span>
                             </Link>
                         </SidebarMenuButton>

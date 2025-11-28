@@ -1,9 +1,9 @@
-import {ChevronRight} from "lucide-react"
+import { ChevronRight, ExternalLink } from "lucide-react";
 import {
     Collapsible,
     CollapsibleContent,
     CollapsibleTrigger,
-} from "@/components/ui/collapsible"
+} from "@/components/ui/collapsible";
 import {
     SidebarGroup,
     SidebarGroupContent,
@@ -15,24 +15,32 @@ import {
     SidebarMenuSubButton,
     SidebarMenuSubItem,
     SidebarMenuAction,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
 import React, {JSX} from "react";
 import Link from "next/link";
+import {Badge} from "@/components/ui/badge";
 
 export function NavTools({
                              tools,
                              activeCategory,
                              activePage,
+                             title = "Tools",
                          }: {
     tools: {
-        name: string
-        icon: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string
-        url: string,
-        defaultOpen?: boolean,
-        pages: { name: string; emoji: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string; url: string }[]
-    }[]
-    activeCategory?: string
-    activePage?: string
+        name: string;
+        icon: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string;
+        url: string;
+        defaultOpen?: boolean;
+        external?: boolean;
+        pages: {
+            name: string;
+            emoji: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string;
+            url: string;
+        }[];
+    }[];
+    activeCategory?: string;
+    activePage?: string;
+    title?: string;
 }) {
     const [openCategories, setOpenCategories] = React.useState<Record<string, boolean>>(
         () =>
@@ -43,30 +51,23 @@ export function NavTools({
                 }),
                 {}
             )
-    )
+    );
 
     const toggleCategory = (cat: string) => {
-        setOpenCategories((prev) => ({...prev, [cat]: !prev[cat]}))
-    }
-
-    const renderIcon = (icon: any) => {
-        if (!icon) return null
-        if (typeof icon === "string") return <span>{icon}</span>
-        if (React.isValidElement(icon)) return icon
-        if (typeof icon === "function") return React.createElement(icon, { className: "size-4" })
-        return null
-    }
+        setOpenCategories((prev) => ({ ...prev, [cat]: !prev[cat] }));
+    };
 
     return (
         <SidebarGroup>
-            <SidebarGroupLabel>Tools</SidebarGroupLabel>
+            <SidebarGroupLabel>{title}</SidebarGroupLabel>
             <SidebarGroupContent>
                 <SidebarMenu>
                     {tools.map((tool) => {
-                        const categoryHasActivePage = tool.pages.some((p) => p.url === activePage)
-                        const isCategoryBold = activeCategory === tool.name && !categoryHasActivePage
+                        const isCategoryBold =
+                            activeCategory === tool.name &&
+                            !tool.pages.some((p) => p.url === activePage);
 
-                        const isOpen = openCategories[tool.name] ?? false
+                        const isOpen = openCategories[tool.name] ?? false;
 
                         return (
                             <SidebarMenuItem key={tool.name}>
@@ -74,15 +75,17 @@ export function NavTools({
                                     <div className="flex items-center">
                                         <SidebarMenuButton asChild isActive={isCategoryBold}>
                                             <Link
-                                                href={tool.url}
-                                                className="flex items-center gap-2 flex-1"
-                                                onClick={() => setOpenCategories((prev) => ({
-                                                    ...prev,
-                                                    [tool.name]: true
-                                                }))}
+                                                href={tool.external ? "#" : tool.url}
+                                                className={`flex items-center gap-2 flex-1 ${tool.external ? "cursor-default" : ""}`}
+                                                onClick={() => {
+                                                        setOpenCategories((prev) => ({ ...prev, [tool.name]: true }));
+                                                }}
                                             >
-                                                {renderIcon(tool.icon)}
+                                                {typeof tool.icon === "function"
+                                                    ? React.createElement(tool.icon, { className: "size-4" })
+                                                    : tool.icon}
                                                 <span className={isCategoryBold ? "font-bold" : "font-normal"}>{tool.name}</span>
+                                                {tool.external && <Badge variant="secondary">External</Badge>}
                                             </Link>
                                         </SidebarMenuButton>
 
@@ -92,7 +95,7 @@ export function NavTools({
                                                     className="data-[state=open]:rotate-90"
                                                     showOnHover
                                                 >
-                                                    <ChevronRight/>
+                                                    <ChevronRight />
                                                 </SidebarMenuAction>
                                             </CollapsibleTrigger>
                                         )}
@@ -102,32 +105,49 @@ export function NavTools({
                                         <CollapsibleContent>
                                             <SidebarMenuSub>
                                                 {tool.pages.map((page) => {
-                                                    const isPageActive = activePage === page.url
+                                                    const isPageActive = activePage === page.url;
+                                                    const url = tool.external ? page.url : `${tool.url}/${page.url}`;
+
+                                                    const content = (
+                                                        <>
+                                                            {typeof page.emoji === "function"
+                                                                ? React.createElement(page.emoji, { className: "size-4" })
+                                                                : page.emoji}
+                                                            <span>{page.name}</span>
+                                                        </>
+                                                    );
+
                                                     return (
                                                         <SidebarMenuSubItem key={page.url}>
                                                             <SidebarMenuSubButton asChild isActive={isPageActive}>
-                                                                <Link
-                                                                    href={`${tool.url}/${page.url}`}
-                                                                    className={`flex items-center gap-2 ${
-                                                                        isPageActive ? "font-bold text-sidebar-accent" : "font-normal"
-                                                                    }`}
-                                                                >
-                                                                    {renderIcon(page.emoji)}
-                                                                    <span>{page.name}</span>
-                                                                </Link>
+                                                                {tool.external ? (
+                                                                    <a
+                                                                        href={url}
+                                                                        target="_blank"
+                                                                        rel="noopener noreferrer"
+                                                                        className="flex items-center gap-2 flex-1"
+                                                                    >
+                                                                        {content}
+                                                                        <ExternalLink className="w-4 h-4" />
+                                                                    </a>
+                                                                ) : (
+                                                                    <Link href={url} className="flex items-center gap-2 flex-1">
+                                                                        {content}
+                                                                    </Link>
+                                                                )}
                                                             </SidebarMenuSubButton>
                                                         </SidebarMenuSubItem>
-                                                    )
+                                                    );
                                                 })}
                                             </SidebarMenuSub>
                                         </CollapsibleContent>
                                     )}
                                 </Collapsible>
                             </SidebarMenuItem>
-                        )
+                        );
                     })}
                 </SidebarMenu>
             </SidebarGroupContent>
         </SidebarGroup>
-    )
+    );
 }
