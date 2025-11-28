@@ -15,10 +15,10 @@ export default function Page() {
     const [lastSource, setLastSource] = useState<"slider" | "input" | null>(null)
 
     return (
-        <div className="w-[80%] mx-auto">
+        <div className="w-[100%] lg:w-[80%] md:w-[90%] mx-auto">
             <Card>
                 <CardHeader>
-                    <CardTitle>Experient Levels to Experience Points</CardTitle>
+                    <CardTitle>Experience Levels to Experience Points</CardTitle>
                     <CardDescription>
                         Drag the interactive experience bar to change the progress, and click the level number to edit
                         it.
