@@ -5,7 +5,7 @@ import {usePathname} from "next/navigation"
 import {
     Calculator,
     Hammer,
-    Home, Microwave, ReplaceAll, Square,
+    Home, Microwave, Orbit, ReplaceAll, Square,
 } from "lucide-react"
 
 import {NavMain} from "@/components/nav-main"
@@ -31,9 +31,9 @@ const data = {
             defaultOpen: true,
             pages: [
                 {name: "Unit Calculator", url: "units", emoji: <ReplaceAll />},
-                {name: "XP to Level Calculator", url: "experience", emoji: <ReplaceAll />},
+                {name: "XP to Level Calculator", url: "experience", emoji: <Orbit />},
                 {name: "Furnace Calculator", url: "furnace", emoji: <Microwave />},
-                {name: "Nether Calculator", url: "nether", emoji: <Square />},
+                {name: "Nether Calculator", url: "nether_cords", emoji: <Square />},
             ],
         },
     ],
