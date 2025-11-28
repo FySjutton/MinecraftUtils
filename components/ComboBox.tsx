@@ -15,14 +15,24 @@ import {
 } from "@/components/ui/command"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 
-export function Combobox({ options }: { options: { value: string; label: string }[] }) {
+type ComboboxProps = {
+    options: { value: string; label: string }[]
+    value: string
+    onChangeAction: (val: string) => void
+}
+
+export function Combobox({ options, value, onChangeAction }: ComboboxProps) {
     const [open, setOpen] = React.useState(false)
-    const [value, setValue] = React.useState("")
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
-                <Button variant="outline" role="combobox" aria-expanded={open} className="w-[200px] justify-between">
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-[200px] justify-between"
+                >
                     {value ? options.find((o) => o.value === value)?.label : "Select option..."}
                     <ChevronsUpDown className="opacity-50" />
                 </Button>
@@ -38,13 +48,16 @@ export function Combobox({ options }: { options: { value: string; label: string 
                                     key={option.value}
                                     value={option.value}
                                     onSelect={(currentValue) => {
-                                        setValue(currentValue === value ? "" : currentValue)
+                                        onChangeAction(currentValue === value ? "" : currentValue)
                                         setOpen(false)
                                     }}
                                 >
                                     {option.label}
                                     <Check
-                                        className={cn("ml-auto", value === option.value ? "opacity-100" : "opacity-0")}
+                                        className={cn(
+                                            "ml-auto",
+                                            value === option.value ? "opacity-100" : "opacity-0"
+                                        )}
                                     />
                                 </CommandItem>
                             ))}
