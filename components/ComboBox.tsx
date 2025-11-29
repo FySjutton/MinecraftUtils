@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import * as React from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
@@ -13,15 +13,33 @@ import {
     CommandItem,
     CommandList,
 } from "@/components/ui/command"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 
-type ComboboxProps = {
-    options: { value: string; label: string }[]
-    value: string
-    onChangeAction: (val: string) => void
+export interface ComboBoxItem {
+    label: string
 }
 
-export function Combobox({ options, value, onChangeAction }: ComboboxProps) {
+interface ComboBoxProps {
+    items: ComboBoxItem[]
+    value: string
+    onChange: (value: string) => void
+    placeholder: string
+    placeholderSearch: string
+    width?: string
+}
+
+export function ComboBox({
+                             items,
+                             value,
+                             onChange,
+                             placeholder,
+                             placeholderSearch,
+                             width = "200px",
+                         }: ComboBoxProps) {
     const [open, setOpen] = React.useState(false)
 
     return (
@@ -31,32 +49,34 @@ export function Combobox({ options, value, onChangeAction }: ComboboxProps) {
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    className="w-[200px] justify-between"
+                    style={{ width }}
+                    className="justify-between"
                 >
-                    {value ? options.find((o) => o.value === value)?.label : "Select option..."}
+                    {value || placeholder}
                     <ChevronsUpDown className="opacity-50" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[200px] p-0">
+
+            <PopoverContent style={{ width }} className="p-0">
                 <Command>
-                    <CommandInput placeholder="Search..." className="h-9" />
+                    <CommandInput placeholder={placeholderSearch} className="h-9" />
                     <CommandList>
-                        <CommandEmpty>No option found.</CommandEmpty>
+                        <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup>
-                            {options.map((option) => (
+                            {items.map((item) => (
                                 <CommandItem
-                                    key={option.value}
-                                    value={option.value}
-                                    onSelect={(currentValue) => {
-                                        onChangeAction(currentValue === value ? "" : currentValue)
+                                    key={item.label}
+                                    value={item.label}
+                                    onSelect={() => {
+                                        onChange(item.label)
                                         setOpen(false)
                                     }}
                                 >
-                                    {option.label}
+                                    {item.label}
                                     <Check
                                         className={cn(
                                             "ml-auto",
-                                            value === option.value ? "opacity-100" : "opacity-0"
+                                            value === item.label ? "opacity-100" : "opacity-0"
                                         )}
                                     />
                                 </CommandItem>

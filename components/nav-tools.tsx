@@ -16,28 +16,13 @@ import {
     SidebarMenuSubItem,
     SidebarMenuAction,
 } from "@/components/ui/sidebar";
-import React, {JSX} from "react";
+import React from "react";
 import Link from "next/link";
 import {Badge} from "@/components/ui/badge";
+import {renderIcon, ToolCategory} from "@/app/AppStructure";
 
-export function NavTools({
-                             tools,
-                             activeCategory,
-                             activePage,
-                             title = "Tools",
-                         }: {
-    tools: {
-        name: string;
-        icon: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string;
-        url: string;
-        defaultOpen?: boolean;
-        external?: boolean;
-        pages: {
-            name: string;
-            emoji: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string;
-            url: string;
-        }[];
-    }[];
+export function NavTools({tools, activeCategory, activePage, title}: {
+    tools: ToolCategory[];
     activeCategory?: string;
     activePage?: string;
     title?: string;
@@ -81,9 +66,7 @@ export function NavTools({
                                                         setOpenCategories((prev) => ({ ...prev, [tool.name]: true }));
                                                 }}
                                             >
-                                                {typeof tool.icon === "function"
-                                                    ? React.createElement(tool.icon, { className: "size-4" })
-                                                    : tool.icon}
+                                                {renderIcon(tool.icon)}
                                                 <span className={isCategoryBold ? "font-bold" : "font-normal"}>{tool.name}</span>
                                                 {tool.external && <Badge variant="secondary">External</Badge>}
                                             </Link>
@@ -121,7 +104,7 @@ export function NavTools({
                                                                     rel={tool.external ? "noopener noreferrer" : undefined}
                                                                     className="flex items-center gap-2 flex-1 whitespace-normal leading-snug"
                                                                 >
-                                                                    <span className="flex items-center shrink-0 size-4">{typeof page.emoji === "function" ? React.createElement(page.emoji) : page.emoji}</span>
+                                                                    <span className="flex items-center shrink-0 size-4">{renderIcon(page.icon)}</span>
                                                                     <span className="flex-1">{page.name}</span>
                                                                     {tool.external && (
                                                                         <ExternalLink className="w-4 h-4 shrink-0 ml-auto" />

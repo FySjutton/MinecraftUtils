@@ -1,39 +1,25 @@
 "use client"
 
-import { type LucideIcon } from "lucide-react"
 import Link from "next/link"
 import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import React, {JSX} from "react";
+import React from "react";
+import {PageItem, renderIcon} from "@/app/AppStructure";
 
-export function NavMain({
-                            items,
-                            activeCategory,
-                        }: {
-    items: {
-        title: string
-        url: string
-        icon: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string
-    }[]
+export function NavMain({items, activeCategory}: {
+    items: PageItem[]
     activeCategory?: string
 }) {
-    const renderIcon = (icon: any) => {
-        if (!icon) return null
-        if (typeof icon === "string") return <span>{icon}</span>
-        if (React.isValidElement(icon)) return icon
-        if (typeof icon === "function") return React.createElement(icon, { className: "size-4" })
-        return null
-    }
     
     return (
         <SidebarMenu>
             {items.map((item) => {
                 const isActive = activeCategory === item.url.replace("/", "")
                 return (
-                    <SidebarMenuItem key={item.title}>
+                    <SidebarMenuItem key={item.name}>
                         <SidebarMenuButton asChild isActive={isActive}>
                             <Link
                                 href={item.url}
@@ -42,7 +28,7 @@ export function NavMain({
                                 }`}
                             >
                                 {renderIcon(item.icon)}
-                                <span>{item.title}</span>
+                                <span>{item.name}</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
