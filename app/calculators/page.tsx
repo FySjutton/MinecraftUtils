@@ -1,6 +1,6 @@
 "use client"
 
-import ToolCard from "@/app/components/ToolCard"
+import ToolCard from "@/components/ToolCard"
 
 export default function Calculators() {
     return (

@@ -5,11 +5,11 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import "./globals.css";
 import React from "react";
-import DashboardLayout from "@/app/components/DashboardLayout";
-import Footer from "./components/SiteFooter";
+import DashboardLayout from "@/components/DashboardLayout";
+import Footer from "@/components/SiteFooter";
 import dynamic from "next/dynamic";
-import InProgressBanner from "@/app/components/banners/InProgressBanner";
-const DiscordBanner = dynamic(() => import('@/app/components/banners/DiscordBanner'), {
+import InProgressBanner from "@/components/banners/InProgressBanner";
+const DiscordBanner = dynamic(() => import('@/components/banners/DiscordBanner'), {
     ssr: false,
 });
 

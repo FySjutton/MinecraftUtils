@@ -4,8 +4,8 @@ import React from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import GithubIcon from "@/app/components/icons/GithubIcon";
-import DiscordIcon from "@/app/components/icons/DiscordIcon";
+import GithubIcon from "@/components/icons/GithubIcon";
+import DiscordIcon from "@/components/icons/DiscordIcon";
 import {homepage_featured, renderIcon} from "@/app/AppStructure";
 
 export default function HomePage() {

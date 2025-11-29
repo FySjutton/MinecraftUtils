@@ -2,7 +2,7 @@
 
 import React from "react"
 import Image from "next/image"
-import { ComboBox } from "@/app/components/ComboBox"
+import { ComboBox } from "@/components/ComboBox"
 
 import {
     Card,

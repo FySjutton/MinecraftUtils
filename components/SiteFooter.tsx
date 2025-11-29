@@ -1,6 +1,5 @@
-import Link from "next/link";
-import GithubIcon from "@/app/components/icons/GithubIcon";
-import DiscordIcon from "@/app/components/icons/DiscordIcon";
+import GithubIcon from "@/components/icons/GithubIcon";
+import DiscordIcon from "@/components/icons/DiscordIcon";
 import {Button} from "@/components/ui/button";
 
 export default function SiteFooter() {
