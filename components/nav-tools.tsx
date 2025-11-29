@@ -108,33 +108,25 @@ export function NavTools({
                                                     const isPageActive = activePage === page.url;
                                                     const url = tool.external ? page.url : `${tool.url}/${page.url}`;
 
-                                                    const content = (
-                                                        <>
-                                                            {typeof page.emoji === "function"
-                                                                ? React.createElement(page.emoji, { className: "size-4" })
-                                                                : page.emoji}
-                                                            <span>{page.name}</span>
-                                                        </>
-                                                    );
-
                                                     return (
                                                         <SidebarMenuSubItem key={page.url}>
-                                                            <SidebarMenuSubButton asChild isActive={isPageActive}>
-                                                                {tool.external ? (
-                                                                    <a
-                                                                        href={url}
-                                                                        target="_blank"
-                                                                        rel="noopener noreferrer"
-                                                                        className="flex items-center gap-2 flex-1"
-                                                                    >
-                                                                        {content}
-                                                                        <ExternalLink className="w-4 h-4" />
-                                                                    </a>
-                                                                ) : (
-                                                                    <Link href={url} className="flex items-center gap-2 flex-1">
-                                                                        {content}
-                                                                    </Link>
-                                                                )}
+                                                            <SidebarMenuSubButton
+                                                                asChild
+                                                                isActive={isPageActive}
+                                                                className="!h-auto py-1"
+                                                            >
+                                                                <Link
+                                                                    href={url}
+                                                                    target={tool.external ? "_blank" : undefined}
+                                                                    rel={tool.external ? "noopener noreferrer" : undefined}
+                                                                    className="flex items-center gap-2 flex-1 whitespace-normal leading-snug"
+                                                                >
+                                                                    <span className="flex items-center shrink-0 size-4">{typeof page.emoji === "function" ? React.createElement(page.emoji) : page.emoji}</span>
+                                                                    <span className="flex-1">{page.name}</span>
+                                                                    {tool.external && (
+                                                                        <ExternalLink className="w-4 h-4 shrink-0 ml-auto" />
+                                                                    )}
+                                                                </Link>
                                                             </SidebarMenuSubButton>
                                                         </SidebarMenuSubItem>
                                                     );
