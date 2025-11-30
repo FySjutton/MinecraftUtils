@@ -10,12 +10,6 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang="en" className="dark">
-        <head>
-            <link rel="icon" href="/icon.ico" />
-            <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
-            <title>aaa</title>
-        </head>
-
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
             <AppLayout>{children}</AppLayout>
         </body>
@@ -38,7 +32,6 @@ export const metadata: Metadata = {
         locale: "en-US",
     }
 };
-
 
 export const viewport: Viewport = {
     themeColor: "#1F2937",
