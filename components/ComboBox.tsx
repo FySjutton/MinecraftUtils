@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -18,13 +17,10 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-
-export interface ComboBoxItem {
-    label: string
-}
+import {IconCheck, IconSelector} from "@tabler/icons-react";
 
 interface ComboBoxProps {
-    items: ComboBoxItem[]
+    items: string[]
     value: string
     onChange: (value: string) => void
     placeholder: string
@@ -50,10 +46,10 @@ export function ComboBox({
                     role="combobox"
                     aria-expanded={open}
                     style={{ width }}
-                    className="justify-between"
+                    className="justify-between w-full"
                 >
                     {value || placeholder}
-                    <ChevronsUpDown className="opacity-50" />
+                    <IconSelector className="opacity-50" />
                 </Button>
             </PopoverTrigger>
 
@@ -65,18 +61,18 @@ export function ComboBox({
                         <CommandGroup>
                             {items.map((item) => (
                                 <CommandItem
-                                    key={item.label}
-                                    value={item.label}
+                                    key={item}
+                                    value={item}
                                     onSelect={() => {
-                                        onChange(item.label)
+                                        onChange(item)
                                         setOpen(false)
                                     }}
                                 >
-                                    {item.label}
-                                    <Check
+                                    {item}
+                                    <IconCheck
                                         className={cn(
                                             "ml-auto",
-                                            value === item.label ? "opacity-100" : "opacity-0"
+                                            value === item ? "opacity-100" : "opacity-0"
                                         )}
                                     />
                                 </CommandItem>

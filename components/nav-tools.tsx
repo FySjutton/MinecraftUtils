@@ -1,4 +1,3 @@
-import { ChevronRight, ExternalLink } from "lucide-react";
 import {
     Collapsible,
     CollapsibleContent,
@@ -20,6 +19,7 @@ import React from "react";
 import Link from "next/link";
 import {Badge} from "@/components/ui/badge";
 import {renderIcon, ToolCategory} from "@/app/AppStructure";
+import {IconChevronRight, IconExternalLink} from "@tabler/icons-react";
 
 export function NavTools({tools, activeCategory, activePage, title}: {
     tools: ToolCategory[];
@@ -78,7 +78,7 @@ export function NavTools({tools, activeCategory, activePage, title}: {
                                                     className="data-[state=open]:rotate-90"
                                                     showOnHover
                                                 >
-                                                    <ChevronRight />
+                                                    <IconChevronRight />
                                                 </SidebarMenuAction>
                                             </CollapsibleTrigger>
                                         )}
@@ -107,7 +107,7 @@ export function NavTools({tools, activeCategory, activePage, title}: {
                                                                     <span className="flex items-center shrink-0 size-4">{renderIcon(page.icon)}</span>
                                                                     <span className="flex-1">{page.name}</span>
                                                                     {tool.external && (
-                                                                        <ExternalLink className="w-4 h-4 shrink-0 ml-auto" />
+                                                                        <IconExternalLink className="w-4 h-4 shrink-0 ml-auto" />
                                                                     )}
                                                                 </Link>
                                                             </SidebarMenuSubButton>

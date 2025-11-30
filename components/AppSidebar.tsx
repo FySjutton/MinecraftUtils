@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/sidebar"
 
 import { navMain, tools, externals } from "@/app/AppStructure"
-import { Hammer } from "lucide-react"
+import {IconHammer} from "@tabler/icons-react";
 
 export function AppSidebar() {
     const pathname = usePathname()
@@ -47,10 +47,10 @@ export function AppSidebar() {
                             <Link href="/">
                                 <div
                                     className="bg-sidebar-accent text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                                    <Hammer className="size-4"/>
+                                    <IconHammer className="size-4"/>
                                 </div>
                                 <div className="flex flex-col gap-0.5 leading-none">
-                                    <span className="font-medium">Tools for Minecraft</span>
+                                    <span className="font-medium">MinecraftUtils</span>
                                     <span>Useful tools for minecraft</span>
                                 </div>
                             </Link>
@@ -65,12 +65,13 @@ export function AppSidebar() {
                     tools={tools}
                     activeCategory={activeCategory}
                     activePage={activePage}
+                    title="Utilities"
                 />
                 <NavTools
                     tools={externals}
                     activeCategory={activeCategory}
                     activePage={activePage}
-                    title="External Tools"
+                    title="External Utilities"
                 />
             </SidebarContent>
             <SidebarRail/>

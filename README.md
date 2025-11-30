@@ -17,7 +17,7 @@ If you want to support the project or chat with the team, join our Discord:
 - React v19.2.0
 - Tailwind CSS v4
 - TypeScript v5
-- Lucide Icons v0.554.0
+- Tabler Icons v3.35.0
 - ESLint v9
 
 Some components are also based on premade shadcn components, with some edits made.
@@ -56,6 +56,6 @@ Each utility gets its own folder under the correct category in `/app`. All compo
 
 For more reference, look at the other utilities already added, or ask for help in the discord server.
 
-Make sure to always use the same theme, the same base-components when possible, and some nice looking Lucide icons!
+Make sure to always use the same theme, the same base-components when possible, and some nice looking Tabler icons!
 
 **Thanks for contributing!**

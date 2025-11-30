@@ -3,7 +3,7 @@
 import * as React from "react"
 import Image from "next/image"
 import {Button} from "@/components/ui/button";
-import {ArrowBigLeft, ArrowBigRight} from "lucide-react";
+import {IconArrowBigLeftLine, IconArrowBigRightLine} from "@tabler/icons-react";
 
 type ExperienceBarProps = {
     xp: number
@@ -94,7 +94,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
                         setDecreaseBtnDisabled(true)
                     }
                     handleInputChange((level - 1).toString())
-                }}><ArrowBigLeft /></Button>
+                }}><IconArrowBigLeftLine /></Button>
                 <input
                     type="text"
                     value={level}
@@ -119,7 +119,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
                         setDecreaseBtnDisabled(false)
                     }
                     handleInputChange((level + 1).toString())
-                }}><ArrowBigRight /></Button>
+                }}><IconArrowBigRightLine /></Button>
             </div>
 
             <div className="relative w-full">

@@ -72,7 +72,7 @@ export default function Page() {
     ]
 
 
-    const labels = inventories.map(i => ({ label: i.label }))
+    const labels = inventories.map(i => ( i.label ))
     const [selectedLabel, setSelectedLabel] = React.useState("Player Inventory")
 
     const [api, setApi] = React.useState<CarouselApi>()
