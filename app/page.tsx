@@ -1,11 +1,10 @@
-"use client"
-
 import React from "react"
-import { Button } from "@/components/ui/button"
+import {Button} from "@/components/ui/button"
 import GithubIcon from "@/components/icons/GithubIcon";
 import DiscordIcon from "@/components/icons/DiscordIcon";
 import FeaturedUtils from "@/components/FeaturedUtils";
 import {featuredHomePage} from "@/app/AppStructure";
+import {Metadata} from "next";
 
 export default function HomePage() {
     return (
@@ -13,23 +12,24 @@ export default function HomePage() {
             <div className="text-center space-y-4">
                 <h1 className="text-4xl md:text-5xl font-bold">Minecraft Tools & Utilities</h1>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                    Explore a collection of calculators, generators, and other utilities and references for making your Minecraft gameplay easier.
+                    Explore a collection of calculators, generators, and other utilities and references for making your
+                    Minecraft gameplay easier.
                 </p>
                 <div className="flex justify-center gap-4 mt-4">
                     <a href="https://discord.gg/tqn38v6w7k" target="_blank" rel="noopener noreferrer">
                         <Button variant="outline" size="sm">
-                            <DiscordIcon /> Discord Server
+                            <DiscordIcon/> Discord Server
                         </Button>
                     </a>
                     <a href="https://github.com/FySjutton/MinecraftUtils" target="_blank" rel="noopener noreferrer">
                         <Button variant="outline" size="sm">
-                            <GithubIcon /> Open Source
+                            <GithubIcon/> Open Source
                         </Button>
                     </a>
                 </div>
             </div>
 
-            <FeaturedUtils title="Featured Utilities" description="These are just some of our tools! For all tools, please see the sidebar." utilities={featuredHomePage} />
+            <FeaturedUtils title="Featured Utilities" description="These are just some of our tools! For all tools, please see the sidebar." utilities={featuredHomePage}/>
         </div>
     )
 }

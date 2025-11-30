@@ -9,7 +9,7 @@ import {
     IconBubbleTea2, IconBuildingFactory2,
     IconBuildingLighthouse,
     IconCalculator,
-    IconCircleDottedLetterI,
+    IconCircleNumber0,
     IconCode,
     IconH1,
     IconHanger2,
@@ -85,7 +85,7 @@ export const tools: ToolCategory[] = [
         url: "/references",
         defaultOpen: true,
         pages: [
-            { name: "Inventory Slots", url: "inventory_slots", icon: <IconCircleDottedLetterI />, description: "Visual guide to inventory slot positions." },
+            { name: "Inventory Slots", url: "inventory_slots", icon: <IconCircleNumber0 />, description: "Visual guide to inventory slot positions." },
         ],
     },
 ]

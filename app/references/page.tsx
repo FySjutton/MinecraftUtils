@@ -1,11 +1,10 @@
-"use client"
-
 import {Button} from "@/components/ui/button";
 import DiscordIcon from "@/components/icons/DiscordIcon";
 import GithubIcon from "@/components/icons/GithubIcon";
 import FeaturedUtils from "@/components/FeaturedUtils";
 import React from "react";
 import {featuredReferences} from "@/app/AppStructure";
+import {Metadata} from "next";
 
 export default function Page() {
     return (
@@ -33,3 +32,8 @@ export default function Page() {
         </div>
     )
 }
+
+export const metadata: Metadata = {
+    title: "References - MinecraftUtils",
+    description: "A collection of helpful references, images, texts and guides."
+};

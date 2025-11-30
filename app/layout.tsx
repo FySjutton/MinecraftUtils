@@ -1,17 +1,8 @@
-"use client";
-
 import { Geist, Geist_Mono } from "next/font/google";
-import { AppSidebar } from "@/components/AppSidebar";
-import { SidebarProvider } from "@/components/ui/sidebar";
 import "./globals.css";
 import React from "react";
-import DashboardLayout from "@/components/DashboardLayout";
-import Footer from "@/components/SiteFooter";
-import dynamic from "next/dynamic";
-import InProgressBanner from "@/components/banners/InProgressBanner";
-const DiscordBanner = dynamic(() => import('@/components/banners/DiscordBanner'), {
-    ssr: false,
-});
+import {Metadata, Viewport} from "next";
+import AppLayout from "@/components/AppLayout";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
@@ -19,21 +10,36 @@ const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"]
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
         <html lang="en" className="dark">
+        <head>
+            <link rel="icon" href="/icon.ico" />
+            <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+            <title>aaa</title>
+        </head>
+
         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-        <SidebarProvider>
-            <div className="flex h-screen w-full">
-                <AppSidebar />
-                <main className="flex-1 flex flex-col overflow-auto">
-                    <DashboardLayout>
-                        <InProgressBanner />
-                        <DiscordBanner />
-                        {children}
-                    </DashboardLayout>
-                    <Footer></Footer>
-                </main>
-            </div>
-        </SidebarProvider>
+            <AppLayout>{children}</AppLayout>
         </body>
         </html>
     );
 }
+
+export const metadata: Metadata = {
+    title: "Minecraft Utils",
+    description: "Useful utilities for Minecraft",
+    icons: {
+        icon: "/icon.ico",
+        shortcut: "/favicon-32x32.png",
+        apple: "/apple-touch-icon.png",
+    },
+    openGraph: {
+        title: "Minecraft Utils",
+        description: "Useful utilities for Minecraft",
+        type: "website",
+        locale: "en-US",
+    }
+};
+
+
+export const viewport: Viewport = {
+    themeColor: "#1F2937",
+};
