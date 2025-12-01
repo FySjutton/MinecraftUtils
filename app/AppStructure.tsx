@@ -109,7 +109,6 @@ export const externals: ToolCategory[] = [
             { name: "Custom Potions", url: "https://minecraft.tools/en/potion.php", icon: <IconBubbleTea2 />, description: "Create potion recipes." },
             { name: "Beacon Color", url: "https://minecraft.tools/en/beacon-color.php", icon: <IconBuildingLighthouse />, description: "Visualize beacon beam colors." },
             { name: "Coordinate Calculator", url: "https://minecraft.tools/en/coordinate-calculator.php", icon: <IconMapPins />, description: "Calculate positions and distances." },
-            { name: "Stack Calculator", url: "https://rapidtoolset.com/en/tool/minecraft-stack-calculator", icon: <IconStack3 />, description: "Compute stack counts efficiently." },
         ],
     },
     {
