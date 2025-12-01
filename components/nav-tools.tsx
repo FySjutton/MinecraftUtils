@@ -49,7 +49,7 @@ export function NavTools({tools, activeCategory, activePage, title}: {
                 <SidebarMenu>
                     {tools.map((tool) => {
                         const isCategoryBold =
-                            activeCategory === tool.name &&
+                            activeCategory === tool.name && !tool.external &&
                             !tool.pages.some((p) => p.url === activePage);
 
                         const isOpen = openCategories[tool.name] ?? false;

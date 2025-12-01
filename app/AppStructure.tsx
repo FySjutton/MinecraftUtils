@@ -54,10 +54,15 @@ export const renderIcon = (icon: React.ReactNode | ((props: React.SVGProps<SVGSV
     return null
 }
 
-function findPage(categories: ToolCategory[], pageName: string): PageItem {
+function getPage(categories: ToolCategory[], pageName: string): PageItem {
     for (const category of categories) {
         const page = category.pages.find(p => p.name === pageName)
-        if (page) return page
+        if (page) {
+            return {
+                ...page,
+                url: `${category.url}/${page.url}`
+            }
+        }
     }
     throw new Error(`Page "${pageName}" not found in any category`)
 }
@@ -141,19 +146,19 @@ export const externals: ToolCategory[] = [
 ]
 
 export const featuredHomePage: PageItem[] = [
-    findPage(tools, "Unit Calculator"),
-    findPage(tools, "XP to Level Calculator"),
-    findPage(tools, "Nether Calculator"),
-    findPage(tools, "Inventory Slots")
+    getPage(tools, "Unit Calculator"),
+    getPage(tools, "XP to Level Calculator"),
+    getPage(tools, "Nether Calculator"),
+    getPage(tools, "Inventory Slots")
 ]
 
 export const featuredCalculators: PageItem[] = [
-    findPage(tools, "Unit Calculator"),
-    findPage(tools, "XP to Level Calculator"),
-    findPage(tools, "Nether Calculator")
+    getPage(tools, "Unit Calculator"),
+    getPage(tools, "XP to Level Calculator"),
+    getPage(tools, "Nether Calculator")
 ]
 
 export const featuredReferences: PageItem[] = [
-    findPage(tools, "Inventory Slots"),
+    getPage(tools, "Inventory Slots"),
 ]
 

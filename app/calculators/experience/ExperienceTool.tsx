@@ -4,7 +4,7 @@ import {useState} from "react";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import ImageSlider from "@/app/calculators/experience/ImageSlider";
-import {Input} from "@/components/ui/input";
+import {InputField} from "@/components/InputField";
 
 export default function ExperienceTool() {
     // Set initial xp to 9 for a nice look, equals 1 level and about 22% progress.
@@ -47,17 +47,15 @@ export default function ExperienceTool() {
                     <CardDescription className="text-center pt-10 pb-5">Experience bar: {level} levels, {progress}% progress, total experience:</CardDescription>
 
                     <div className="relative w-[100%] lg:w-[30%] md:w-[60%] mx-auto">
-                        <Input
+                        <InputField
+                            variant="number"
                             className=" pr-12"
                             type="text"
                             value={xp === null ? "" : Math.floor(xp)}
                             maxLength={11}
                             onChange={(e) => {
-                                const raw = e.target.value
-                                if (!/^\d*$/.test(raw)) return
-
                                 setLastSource("input")
-                                setXp(raw === "" ? 0 : Number(raw))
+                                setXp(e === "" ? 0 : Number(e))
                             }}
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">
