@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
 export const metadata: Metadata = {
     title: "Minecraft Utils",
-    description: "Useful utilities for Minecraft",
+    description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
     icons: {
         icon: "/icon.ico",
         shortcut: "/favicon-32x32.png",
@@ -27,12 +27,12 @@ export const metadata: Metadata = {
     },
     openGraph: {
         title: "Minecraft Utils",
-        description: "Useful utilities for Minecraft",
+        description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
         type: "website",
         locale: "en-US",
     }
 };
 
 export const viewport: Viewport = {
-    themeColor: "#1F2937",
+    themeColor: "#1cffca",
 };

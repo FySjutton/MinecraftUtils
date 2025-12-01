@@ -9,5 +9,5 @@ export default function Page() {
 
 export const metadata: Metadata = {
     title: "Inventory Slots - MinecraftUtils",
-    description: "View the index of each slot in all different inventories."
+    description: "Browse slot index layouts for every Minecraft inventory type."
 };

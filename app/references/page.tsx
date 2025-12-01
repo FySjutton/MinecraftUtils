@@ -35,5 +35,5 @@ export default function Page() {
 
 export const metadata: Metadata = {
     title: "References - MinecraftUtils",
-    description: "A collection of helpful references, images, texts and guides."
+    description: "Helpful Minecraft references, images, slot index charts, and guides for quick and easy lookup."
 };

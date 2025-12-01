@@ -9,5 +9,5 @@ export default function Page() {
 
 export const metadata: Metadata = {
     title: "Nether Coordinates - MinecraftUtils",
-    description: "Calculate coordinates between nether and the overworld."
+    description: "Calculate corresponding coordinates between the Nether and Overworld in Minecraft."
 };

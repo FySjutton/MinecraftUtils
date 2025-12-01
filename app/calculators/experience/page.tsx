@@ -9,5 +9,5 @@ export default function Page() {
 
 export const metadata: Metadata = {
     title: "Experience Converter - MinecraftUtils",
-    description: "Convert experience levels to experience points through an interactive experience bar."
+    description: "Convert Minecraft experience levels to experience points with an interactive experience bar."
 };

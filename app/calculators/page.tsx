@@ -35,5 +35,5 @@ export default function Page() {
 
 export const metadata: Metadata = {
     title: "Calculators - MinecraftUtils",
-    description: "Multiple calculators for calculating minecraft-related things."
+    description: "Multiple calculators for Minecraft-related calculations and utilities."
 };
