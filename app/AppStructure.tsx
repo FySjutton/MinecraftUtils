@@ -16,7 +16,7 @@ import {
     IconHome,
     IconLibraryPhoto,
     IconMap,
-    IconMapPins,
+    IconMapPins, IconPalette,
     IconPaw,
     IconRocket,
     IconSettings,
@@ -81,7 +81,7 @@ export const tools: ToolCategory[] = [
         pages: [
             { name: "Unit Calculator", url: "units", icon: <IconTransform />, description: "Convert units and measurements quickly." },
             { name: "XP to Level Calculator", url: "experience", icon: <IconBlob />, description: "Calculate how much XP each level is through an interactive experience bar." },
-            { name: "Nether Calculator", url: "nether_cords", icon: <IconWorld />, description: "Convert coordinates between Overworld and Nether." },
+            { name: "Nether Calculator", url: "nether-cords", icon: <IconWorld />, description: "Convert coordinates between Overworld and Nether." },
         ],
     },
     {
@@ -90,7 +90,8 @@ export const tools: ToolCategory[] = [
         url: "/references",
         defaultOpen: true,
         pages: [
-            { name: "Inventory Slots", url: "inventory_slots", icon: <IconCircleNumber0 />, description: "Visual guide to inventory slot positions." },
+            { name: "Inventory Slots", url: "inventory-slots", icon: <IconCircleNumber0 />, description: "Visual guide to inventory slot positions." },
+            { name: "Color Codes", url: "color-codes", icon: <IconPalette />, description: "A list of all formatting codes in Minecraft." },
         ],
     },
 ]
@@ -148,7 +149,8 @@ export const featuredHomePage: PageItem[] = [
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
     getPage(tools, "Nether Calculator"),
-    getPage(tools, "Inventory Slots")
+    getPage(tools, "Inventory Slots"),
+    getPage(tools, "Color Codes")
 ]
 
 export const featuredCalculators: PageItem[] = [
@@ -159,5 +161,6 @@ export const featuredCalculators: PageItem[] = [
 
 export const featuredReferences: PageItem[] = [
     getPage(tools, "Inventory Slots"),
+    getPage(tools, "Color Codes"),
 ]
 

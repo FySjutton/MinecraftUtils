@@ -1,4 +1,4 @@
-import InventorySlotsTool from "@/app/references/inventory_slots/InventorySlotsTool";
+import InventorySlotsTool from "@/app/references/inventory-slots/InventorySlotsTool";
 import {Metadata} from "next";
 
 export default function Page() {

@@ -1,4 +1,4 @@
-import NetherCordTool from "@/app/calculators/nether_cords/NetherCordTool";
+import NetherCordTool from "@/app/calculators/nether-cords/NetherCordTool";
 import {Metadata} from "next";
 
 export default function Page() {

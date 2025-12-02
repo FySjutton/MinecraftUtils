@@ -26,7 +26,7 @@ function toTitleCase(str: string) {
 
 export default function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    const segments = pathname.split("/").filter(Boolean).map((value) => toTitleCase(value.replaceAll("_", " ")));
+    const segments = pathname.split("/").filter(Boolean).map((value) => toTitleCase(value.replaceAll(/[-_]/g, " ")));
 
     return (
         <SidebarProvider>
@@ -34,7 +34,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                 <AppSidebar />
                 <main className="flex-1 flex flex-col overflow-auto">
                     <SidebarInset>
-                        <header className="bg-background sticky top-0 flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                        <header className="bg-background sticky top-0 z-10 flex h-16 shrink-0 items-center gap-2 border-b px-4">
                             <SidebarTrigger className="-ml-1" />
                             <Separator orientation="vertical" className="mr-2 h-4" />
                             <Breadcrumb>
@@ -60,7 +60,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                 </BreadcrumbList>
                             </Breadcrumb>
                         </header>
-                        <div className="flex flex-1 flex-col gap-4 p-4">
+                        <div className="flex flex-1 flex-col gap-4 p-4 relative z-0">
                             <InProgressBanner />
                             <DiscordBanner />
                             {children}
