@@ -89,3 +89,15 @@
 .Collapsible__container[open] >.Collapsible__title {
   list-style-type: disclosure-open;
 }
+
+.obfuscation-overlay {
+    position: absolute;
+    pointer-events: none;
+    user-select: none;
+    opacity: 0.7;
+    color: inherit;
+    font: inherit;
+    white-space: pre;
+    z-index: 10;
+    transform: translate(1px, 1px);
+}
