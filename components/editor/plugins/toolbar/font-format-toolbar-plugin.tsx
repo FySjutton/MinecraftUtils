@@ -13,7 +13,7 @@ const FORMATS = [
     { format: "italic", icon: ItalicIcon, label: "Italic" },
     { format: "underline", icon: UnderlineIcon, label: "Underline" },
     { format: "strikethrough", icon: StrikethroughIcon, label: "Strikethrough" },
-    { format: "obfuscated", icon: Wand2Icon, label: "Obfuscate" },
+    { format: "highlight", icon: Wand2Icon, label: "Obfuscated" }
 ] as const
 
 export function FontFormatToolbarPlugin() {
@@ -24,16 +24,7 @@ export function FontFormatToolbarPlugin() {
         if ($isRangeSelection(selection) || $isTableSelection(selection)) {
             const formats: string[] = []
             FORMATS.forEach(({ format }) => {
-                if (format === "obfuscated") {
-                    selection.getNodes().forEach((node) => {
-                        if ($isTextNode(node)) {
-                            const dom = activeEditor.getElementByKey(node.getKey())
-                            if (dom?.classList.contains("obfuscate")) {
-                                formats.push("obfuscated")
-                            }
-                        }
-                    })
-                } else if ($isRangeSelection(selection) && selection.hasFormat(format as TextFormatType)) {
+                if ($isRangeSelection(selection) && selection.hasFormat(format as TextFormatType)) {
                     formats.push(format)
                 }
             })
@@ -60,19 +51,7 @@ export function FontFormatToolbarPlugin() {
                     value={format}
                     aria-label={label}
                     onClick={() => {
-                        if (format === "obfuscated") {
-                            const selection = $getSelection()
-                            if ($isRangeSelection(selection)) {
-                                selection.getNodes().forEach((node) => {
-                                    if ($isTextNode(node)) {
-                                        const dom = activeEditor.getElementByKey(node.getKey())
-                                        if (dom) dom.classList.toggle("obfuscate")
-                                    }
-                                })
-                            }
-                        } else {
-                            activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, format as TextFormatType)
-                        }
+                        activeEditor.dispatchCommand(FORMAT_TEXT_COMMAND, format as TextFormatType)
                     }}
                 >
                     <Icon className="size-4" />

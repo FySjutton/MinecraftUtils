@@ -1,86 +1,35 @@
-"use client"
+import { TextNode } from "lexical";
 
-import {
-    DecoratorNode,
-    LexicalNode,
-    SerializedLexicalNode,
-    Spread,
-    NodeKey,
-    DOMExportOutput,
-} from "lexical"
-import * as React from "react"
-
-export type SerializedObfuscatedTextNode = Spread<
-    {
-        text: string
-    },
-    SerializedLexicalNode
->
-
-export class ObfuscatedTextNode extends DecoratorNode<JSX.Element> {
-    __text: string
-
-    static getType() {
-        return "obfuscated-text"
+export class ObfuscatedTextNode extends TextNode {
+    static getType(): string {
+        return "text";
     }
 
-    static clone(node: ObfuscatedTextNode) {
-        return new ObfuscatedTextNode(node.__text, node.__key)
+    static clone(node: ObfuscatedTextNode): ObfuscatedTextNode {
+        return new ObfuscatedTextNode(node.__text, node.__key);
     }
 
-    constructor(text: string, key?: NodeKey) {
-        super(key)
-        this.__text = text
-    }
-
-    createDOM(): HTMLElement {
-        const span = document.createElement("span")
-        span.classList.add("obfuscate-wrapper")
-        return span
-    }
-
-    updateDOM(): false {
-        return false
-    }
-
-    static importJSON(json: SerializedObfuscatedTextNode): ObfuscatedTextNode {
-        return new ObfuscatedTextNode(json.text)
-    }
-
-    exportJSON(): SerializedObfuscatedTextNode {
-        return {
-            type: "obfuscated-text",
-            version: 1,
-            text: this.__text,
+    createDOM(config) {
+        const dom = super.createDOM(config);
+        if (this.hasFormat("highlight")) {
+            dom.removeAttribute("style");
+            dom.classList.add("obfuscated-text");
         }
+        return dom;
     }
 
-    exportDOM(): DOMExportOutput {
-        const element = document.createElement("span")
-        element.textContent = this.__text
-        return { element }
+    updateDOM(prevNode, dom) {
+        const didChange = super.updateDOM(prevNode, dom);
+        const has = this.hasFormat && this.hasFormat("highlight");
+        const had = prevNode && typeof prevNode.hasFormat === "function" && prevNode.hasFormat("highlight");
+
+        if (has && !had) {
+            dom.classList.add("obfuscated-text");
+            dom.removeAttribute("style");
+        } else if (!has && had) {
+            dom.classList.remove("obfuscated-text");
+        }
+
+        return didChange;
     }
-
-    getTextContent(): string {
-        return this.__text
-    }
-
-    decorate() {
-        return (
-            <span className="obfuscated-text">
-        {this.__text}
-                <span className="obfuscated-overlay">{this.__text}</span>
-      </span>
-        )
-    }
-}
-
-export function $createObfuscatedTextNode(text: string) {
-    return new ObfuscatedTextNode(text)
-}
-
-export function $isObfuscatedTextNode(
-    node: LexicalNode | null | undefined
-): node is ObfuscatedTextNode {
-    return node instanceof ObfuscatedTextNode
 }

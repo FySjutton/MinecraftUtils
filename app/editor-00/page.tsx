@@ -28,14 +28,15 @@ import {CounterCharacterPlugin} from "@/components/editor/plugins/actions/counte
 import {MaxLengthPlugin} from "@/components/editor/plugins/actions/max-length-plugin";
 import {CharacterLimitPlugin} from "@lexical/react/LexicalCharacterLimitPlugin";
 import {ContextMenuPlugin} from "@/components/editor/plugins/context-menu-plugin";
-import {ObfuscationPlugin} from "@/components/editor/plugins/obfuscated-plugin";
+import {RemoveHighlightStylePlugin} from "@/components/editor/plugins/obfuscation-plugin";
+import {ObfuscatedTextNode} from "@/components/editor/nodes/obfuscated-node";
 
 const maxLength = 100
 
 const editorConfig: InitialConfigType = {
     namespace: "Editor",
     theme: editorTheme,
-    nodes: [HeadingNode, ParagraphNode, TextNode, QuoteNode, OverflowNode],
+    nodes: [HeadingNode, ParagraphNode, ObfuscatedTextNode, QuoteNode, OverflowNode],
     onError: (error: Error) => {
         console.error(error)
     },
@@ -99,7 +100,6 @@ export function Plugins() {
                 {/* rest of the plugins */}
                 <HistoryPlugin />
                 <ContextMenuPlugin />
-                <ObfuscationPlugin />
             </div>
             <ActionsPlugin>
                 <div className="clear-both flex items-center justify-between gap-2 overflow-auto border-t p-1">
