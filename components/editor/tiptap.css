@@ -1,0 +1,40 @@
+/* tiptap.css */
+.tiptap p {
+    @apply my-4 first:mt-0 last:mb-0 text-base leading-relaxed;
+}
+
+.tiptap h1 {
+    @apply text-3xl font-bold mt-8 mb-4 first:mt-0 last:mb-0;
+}
+
+.tiptap h2 {
+    @apply text-2xl font-semibold mt-6 mb-3;
+}
+
+.tiptap strong {
+    @apply font-bold;
+}
+
+.tiptap em {
+    @apply italic;
+}
+
+.tiptap u {
+    @apply underline;
+}
+
+.tiptap s {
+    @apply line-through;
+}
+
+.tiptap ul {
+    @apply list-disc ml-6 my-4;
+}
+
+.tiptap ol {
+    @apply list-decimal ml-6 my-4;
+}
+
+.tiptap a {
+    @apply text-blue-600 underline;
+}
