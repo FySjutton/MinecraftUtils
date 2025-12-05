@@ -32,8 +32,8 @@ export default function UnitsTool() {
     const remainingItems = totalItems % 64
 
     return (
-        <div className="flex gap-6 p-6">
-            <Card className="w-1/2">
+        <div className="flex flex-col md:flex-row gap-6 p-6">
+            <Card className="w-full md:w-1/2">
                 <CardHeader>
                     <CardTitle>Input</CardTitle>
                 </CardHeader>
@@ -56,7 +56,7 @@ export default function UnitsTool() {
                 </CardContent>
             </Card>
 
-            <Card className="w-1/2">
+            <Card className="w-full md:w-1/2">
                 <CardHeader>
                     <CardTitle>Output</CardTitle>
                 </CardHeader>
@@ -95,5 +95,6 @@ export default function UnitsTool() {
                 </CardContent>
             </Card>
         </div>
+
     )
 }

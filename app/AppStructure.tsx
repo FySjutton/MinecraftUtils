@@ -28,6 +28,7 @@ import {
     IconWand,
     IconWorld
 } from "@tabler/icons-react";
+import {Captions, SlidersVertical} from "lucide-react";
 
 export interface PageItem {
     name: string
@@ -82,6 +83,15 @@ export const tools: ToolCategory[] = [
             { name: "Unit Calculator", url: "units", icon: <IconTransform />, description: "Convert units and measurements quickly." },
             { name: "XP to Level Calculator", url: "experience", icon: <IconBlob />, description: "Calculate how much XP each level is through an interactive experience bar." },
             { name: "Nether Calculator", url: "nether-cords", icon: <IconWorld />, description: "Convert coordinates between Overworld and Nether." },
+        ],
+    },
+    {
+        name: "Generators",
+        icon: <SlidersVertical />,
+        url: "/generators",
+        defaultOpen: true,
+        pages: [
+            { name: "Motd Creator", url: "motd-creator", icon: <Captions />, description: "Generate server motds through an interactive editor." },
         ],
     },
     {
@@ -157,6 +167,10 @@ export const featuredCalculators: PageItem[] = [
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
     getPage(tools, "Nether Calculator")
+]
+
+export const featuredGenerators: PageItem[] = [
+    getPage(tools, "Motd Creator"),
 ]
 
 export const featuredReferences: PageItem[] = [

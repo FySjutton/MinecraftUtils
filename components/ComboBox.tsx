@@ -45,7 +45,7 @@ export function ComboBox({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    style={{ width }}
+                    style={{ maxWidth: width }}
                     className="justify-between w-full"
                 >
                     {value || placeholder}
