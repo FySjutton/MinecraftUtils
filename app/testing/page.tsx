@@ -1,8 +1,9 @@
 import React from "react";
-import MinimalToolbarEditor from "@/components/editor/tiptap";
+import Editor from "@/components/editor/Editor";
+import {Colors} from "@/lib/Colors";
 
 export default function Page() {
     return (
-        <MinimalToolbarEditor />
+        <Editor initialColor={Colors.WHITE} />
     )
 }

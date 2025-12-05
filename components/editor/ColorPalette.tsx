@@ -1,18 +1,13 @@
 'use client'
 
 import {Button} from '@/components/ui/button'
-import {useToolbar} from '@/components/toolbars/toolbar-provider'
+import {useToolbar} from '@/components/editor/toolbar-provider'
 import {useEditorState} from '@tiptap/react'
 import React, {useState, useRef, useEffect} from 'react'
+import {ColorList} from "@/lib/Colors";
+import {Palette} from "lucide-react";
 
-const COLORS = [
-    "#000000", "#0000AA", "#00AA00", "#00AAAA",
-    "#AA0000", "#AA00AA", "#FFAA00", "#AAAAAA",
-    "#555555", "#5555FF", "#55FF55", "#55FFFF",
-    "#FF5555", "#FF55FF", "#FFFF55", "#FFFFFF"
-];
-
-export const ColorPickerButton = () => {
+export default function ColorPickerButton({ initialColor }: { initialColor: string }) {
     const {editor} = useToolbar()
     const [open, setOpen] = useState(false)
     const ref = useRef<HTMLDivElement>(null)
@@ -22,7 +17,12 @@ export const ColorPickerButton = () => {
         selector: ctx => ({color: ctx.editor.getAttributes('textStyle').color}),
     })
 
-    // Close dropdown on click outside
+    useEffect(() => {
+        if (editor && initialColor) {
+            editor.chain().focus().setColor(initialColor).run()
+        }
+    }, [editor, initialColor])
+
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
             if (ref.current && !ref.current.contains(event.target as Node)) {
@@ -37,26 +37,27 @@ export const ColorPickerButton = () => {
 
     return (
         <div className="relative inline-block" ref={ref}>
-            {/* Main toolbar button */}
             <Button
                 size="sm"
                 variant={state?.color ? 'secondary' : 'outline'}
                 onClick={() => setOpen(prev => !prev)}
             >
-                Color
+                <span className="rounded-full w-3 h-3 mr-1"
+                      style={{ backgroundColor: state?.color }}
+                />
+                <Palette />
             </Button>
 
-            {/* Dropdown card */}
             {open && (
                 <div
                     className="absolute z-50 mt-1 p-2 bg-background border rounded shadow-lg grid grid-cols-4 gap-2"
                     style={{
-                        minWidth: 'auto',          // don't stretch
-                        width: 'max-content',      // fit content
-                        maxWidth: '90vw',          // responsive for small screens
+                        minWidth: 'auto',
+                        width: 'max-content',
+                        maxWidth: '90vw',
                     }}
                 >
-                    {COLORS.map(c => {
+                    {ColorList.map(c => {
                         const isActive = state?.color === c
                         return (
                             <Button

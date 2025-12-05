@@ -25,7 +25,7 @@ export const metadata: Metadata = {
     title: "Minecraft Utils",
     description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
     icons: {
-        icon: "/icon.ico",
+        icon: "/favicon.ico",
         shortcut: "/favicon-32x32.png",
         apple: "/apple-touch-icon.png",
     },

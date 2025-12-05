@@ -2,14 +2,15 @@
 
 import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
-import { useToolbar } from '@/components/toolbars/toolbar-provider'
-import { UndoIcon, RedoIcon } from 'lucide-react'
+import { useToolbar } from '@/components/editor/toolbar-provider'
 import { useEditorState } from '@tiptap/react'
-import {ColorPickerButton} from "@/components/toolbars/ColorPalette";
+import ColorPickerButton from "@/components/editor/ColorPalette";
+import React from "react";
+import { Bold, Italic, Underline, UndoIcon, RedoIcon, Strikethrough } from 'lucide-react';
+import {IconCurrencyIranianRial} from "@tabler/icons-react";
 
-export const FormattingToolbar = () => {
+export default function FormattingToolbar({ initialColor }: { initialColor: string }) {
     const { editor } = useToolbar()
-
     const state = useEditorState({
         editor,
         selector: ({ editor }) => ({
@@ -17,6 +18,7 @@ export const FormattingToolbar = () => {
             isItalic: editor.isActive('italic'),
             isUnderline: editor.isActive('underline'),
             isStrike: editor.isActive('strike'),
+            isObfuscated: editor.isActive('obfuscated'),
             canUndo: editor.can().undo(),
             canRedo: editor.can().redo(),
         }),
@@ -51,33 +53,40 @@ export const FormattingToolbar = () => {
                     size="sm"
                     onClick={() => editor.chain().focus().toggleBold().run()}
                 >
-                    B
+                    <Bold />
                 </Button>
                 <Button
                     variant={state?.isItalic ? 'secondary' : 'outline'}
                     size="sm"
                     onClick={() => editor.chain().focus().toggleItalic().run()}
                 >
-                    I
+                    <Italic />
                 </Button>
                 <Button
                     variant={state?.isUnderline ? 'secondary' : 'outline'}
                     size="sm"
                     onClick={() => editor.chain().focus().toggleUnderline().run()}
                 >
-                    U
+                    <Underline />
                 </Button>
                 <Button
                     variant={state?.isStrike ? 'secondary' : 'outline'}
                     size="sm"
                     onClick={() => editor.chain().focus().toggleStrike().run()}
                 >
-                    S
+                    <Strikethrough />
+                </Button>
+                <Button
+                    variant={state?.isObfuscated ? 'secondary' : 'outline'}
+                    size="sm"
+                    onClick={() => editor.chain().focus().toggleObfuscated().run()}
+                >
+                    <IconCurrencyIranianRial />
                 </Button>
             </ButtonGroup>
 
             <ButtonGroup>
-                <ColorPickerButton />
+                <ColorPickerButton initialColor={initialColor} />
             </ButtonGroup>
         </div>
     )
