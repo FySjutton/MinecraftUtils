@@ -19,6 +19,9 @@ import "@/components/editor/editor.css"
 import {useEffect, useRef, useState} from "react";
 import {jsonToMinecraftText} from "@/lib/MinecraftText";
 import {Colors} from "@/lib/Colors";
+import {PasteColorFilter} from "@/components/editor/PasteColorFilter";
+import {MaxLines} from "@/components/editor/MaxLines";
+import {Upload} from "lucide-react";
 
 export default function MotdEditor() {
     const editor = useEditor({
@@ -28,7 +31,14 @@ export default function MotdEditor() {
             Text,
             TextStyle,
             Color,
+
+            PasteColorFilter.configure({
+                initialColor: Colors.GRAY,
+            }),
+            MaxLines.configure({ max: 2 }),
+
             History,
+
             Bold,
             Italic,
             Underline,
@@ -77,7 +87,8 @@ export default function MotdEditor() {
                     ]
                 }
             ]
-        },        immediatelyRender: false
+        },
+        immediatelyRender: false
     })
 
     const [mcText, setMcText] = useState('');
@@ -118,12 +129,27 @@ export default function MotdEditor() {
         return () => window.removeEventListener('resize', updateScale)
     }, [])
 
+    // File preview
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [preview, setPreview] = useState<string | null>(null);
+
+    const handleClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const url = URL.createObjectURL(file);
+        setPreview(url);
+    };
 
     if (!editor) return null
 
     return (
         <div className="border w-full h-full relative rounded-md font-minecraft pb-3">
-            <div className="flex w-full items-center py-2 px-2 justify-between border-b sticky top-0 left-0 z-20">
+            <div className="relative flex overflow-x-auto overflow-y-hidden w-full items-center py-2 px-2 justify-between border-b sticky top-0 left-0 z-20">
                 <ToolbarProvider editor={editor}>
                     <div className="flex items-center gap-2">
                         <FormattingToolbar initialColor={Colors.GRAY}/>
@@ -136,11 +162,24 @@ export default function MotdEditor() {
                 <div className="origin-top-left w-fit" style={{ transform: `scale(${scale})` }}>
                     <div className="w-[307px] h-[34px] bg-black border-1 border-white flex">
                         {/* Left icon */}
-                        <div className="w-[32px] h-[32px] flex-shrink-0">
+                        <div className="w-[32px] h-[32px] relative flex-shrink-0 p-px cursor-pointer" onClick={handleClick}>
                             <img
-                                src="https://yt3.googleusercontent.com/ytc/AIdro_nRBawueDy4A2hLalZPoCWcyppX48dJhGWbKlqCn6S7s8w=s900-c-k-c0x00ffffff-no-rj"
+                                src={preview ?? "/assets/unknown_server.png"}
                                 alt="icon"
                                 className="w-full h-full object-cover"
+                            />
+
+                            <div className="absolute inset-0 flex justify-center items-center">
+                                <Upload strokeWidth={3} className="w-full h-full bg-opacity-90 bg-black opacity-0 hover:opacity-100"/>
+                            </div>
+
+                            {/* Hidden input (for uploading image) */}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
                             />
                         </div>
 
@@ -150,12 +189,12 @@ export default function MotdEditor() {
                             <div className="h-[10px] w-full flex items-center justify-between mt-0.5 overflow-hidden">
                                 {/* Left section */}
                                 <span className="text-white text-[9px] truncate">
-                                  Some text here
+                                  Minecraft Server
                                 </span>
 
                                 {/* Right section */}
                                 <div className="flex items-center gap-[2px]">
-                                    <span className="text-white text-[9px]">10/20</span>
+                                    <span className="text-white text-[9px]" style={{color: Colors.GRAY}}>17/20</span>
                                     <img
                                         src="/assets/ping_5.png"
                                         alt="icon"
