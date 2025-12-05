@@ -1,5 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "@/app/globals.css";
 import React from "react";
 import {Metadata, Viewport} from "next";
 import AppLayout from "@/components/AppLayout";

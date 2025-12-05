@@ -6,11 +6,11 @@ import {useEditorState} from '@tiptap/react'
 import React, {useState, useRef, useEffect} from 'react'
 
 const COLORS = [
-    '#958DF1', '#F98181', '#FBBC88', '#FAF594',
-    '#70CFF8', '#94FADB', '#B9F18D', '#F5A9F2',
-    '#FF9F1C', '#FF4040', '#FFD166', '#06D6A0',
-    '#118AB2', '#073B4C', '#EF476F', '#FFC43D',
-]
+    "#000000", "#0000AA", "#00AA00", "#00AAAA",
+    "#AA0000", "#AA00AA", "#FFAA00", "#AAAAAA",
+    "#555555", "#5555FF", "#55FF55", "#55FFFF",
+    "#FF5555", "#FF55FF", "#FFFF55", "#FFFFFF"
+];
 
 export const ColorPickerButton = () => {
     const {editor} = useToolbar()

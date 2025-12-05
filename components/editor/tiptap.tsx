@@ -13,7 +13,6 @@ import History from '@tiptap/extension-history'
 
 import { FormattingToolbar } from '@/components/toolbars/FormattingToolbar'
 import {Color, TextStyle} from "@tiptap/extension-text-style";
-import './tiptap.css'
 
 const extensions = [
     Document,
@@ -32,6 +31,11 @@ const extensions = [
 export const MinimalToolbarEditor = () => {
     const editor = useEditor({
         extensions,
+        editorProps: {
+            attributes: {
+                class: 'm-2 focus:outline-none',
+            },
+        },
         content: '<p>Hello world 🌍</p>',
         immediatelyRender: false
     })
@@ -52,11 +56,10 @@ export const MinimalToolbarEditor = () => {
             {/* Editor content */}
             <div
                 onClick={() => editor.chain().focus().run()}
-                className="cursor-text w-full h-full bg-background p-4"
+                className="cursor-text w-full h-full bg-background"
             >
                 <EditorContent
                     editor={editor}
-                    className="tiptap w-full h-full outline-none focus:outline-none"
                 />
             </div>
         </div>
