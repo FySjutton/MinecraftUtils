@@ -19,6 +19,7 @@
     "hooks": "@/hooks"
   },
   "registries": {
-    "@shadcn-editor": "https://shadcn-editor.vercel.app/r/{name}.json"
+    "@shadcn-editor": "https://shadcn-editor.vercel.app/r/{name}.json",
+    "@diceui": "https://diceui.com/r/{name}.json"
   }
 }
