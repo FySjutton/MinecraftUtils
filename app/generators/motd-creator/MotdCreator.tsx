@@ -1,21 +1,29 @@
 "use client"
 
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import MotdEditor from "@/app/generators/motd-creator/MotdEditor";
-import {Colors} from "@/lib/Colors";
+import {useState} from "react";
+import {InputField} from "@/components/InputField";
 
 export default function MotdCreator() {
+    const [output, setOutputAction] = useState('');
 
     return (
-        <div className="w-full h-full flex flex-col md:flex-row gap-6 p-6">
-            <Card className="w-full h-full">
-                <CardHeader>
-                    <CardTitle>Input</CardTitle>
-                </CardHeader>
-                <CardContent className="h-full">
-                    <MotdEditor />
-                </CardContent>
-            </Card>
-        </div>
+        <Card className="w-full">
+            <CardHeader>
+                <CardTitle>Motd Creator</CardTitle>
+                <CardDescription>Edit the server image directly and get a ready-to-paste content for your server motd.</CardDescription>
+            </CardHeader>
+            <CardContent className="h-full">
+                <MotdEditor output={output} setOutputAction={setOutputAction} />
+                <div className="mb-5" />
+                <InputField
+                    showCopy
+                    value={output}
+                    label="Ready to paste content for your server motd."
+                    readOnly
+                />
+            </CardContent>
+        </Card>
     )
 }

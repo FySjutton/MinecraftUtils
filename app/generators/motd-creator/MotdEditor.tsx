@@ -16,14 +16,14 @@ import { ToolbarProvider } from '@/components/editor/toolbar-provider'
 import {Obfuscated} from "@/components/editor/Obfuscated";
 
 import "@/components/editor/editor.css"
-import {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {jsonToMinecraftText} from "@/lib/MinecraftText";
 import {Colors} from "@/lib/Colors";
 import {PasteColorFilter} from "@/components/editor/PasteColorFilter";
 import {MaxLines} from "@/components/editor/MaxLines";
 import {Upload} from "lucide-react";
 
-export default function MotdEditor() {
+export default function MotdEditor({ output, setOutputAction }: { output: string, setOutputAction: React.Dispatch<React.SetStateAction<string>> }) {
     const editor = useEditor({
         extensions: [
             Document,
@@ -91,15 +91,13 @@ export default function MotdEditor() {
         immediatelyRender: false
     })
 
-    const [mcText, setMcText] = useState('');
-
     useEffect(() => {
         if (!editor) return;
 
         const updateListener = () => {
             const json = editor.getJSON();
-            const mc = jsonToMinecraftText(json);
-            setMcText(mc);
+            const mc = jsonToMinecraftText(json, "\\u00a7").replace(/\\n$/, '');
+            setOutputAction(mc);
         };
 
         editor.on('update', updateListener);
@@ -115,13 +113,15 @@ export default function MotdEditor() {
     // Automatic scaling for MOTD widget
     const containerRef = useRef<HTMLDivElement>(null)
     const [scale, setScale] = useState(1)
-    const DESIGN_WIDTH = 305
+    const [height, setHeight] = useState("1")
+    const DESIGN_WIDTH = 305;
 
     useEffect(() => {
         function updateScale() {
             if (containerRef.current) {
                 const containerWidth = containerRef.current.offsetWidth
                 setScale(containerWidth / DESIGN_WIDTH)
+                setHeight((32 * containerWidth / DESIGN_WIDTH + 100).toString())
             }
         }
         requestAnimationFrame(updateScale)
@@ -148,7 +148,7 @@ export default function MotdEditor() {
     if (!editor) return null
 
     return (
-        <div className="border w-full h-full relative rounded-md font-minecraft pb-3">
+        <div className="border w-full relative rounded-md font-minecraft pb-3" style={{ height: `${height}px` }}>
             <div className="relative flex overflow-x-auto overflow-y-hidden w-full items-center py-2 px-2 justify-between border-b sticky top-0 left-0 z-20">
                 <ToolbarProvider editor={editor}>
                     <div className="flex items-center gap-2">
