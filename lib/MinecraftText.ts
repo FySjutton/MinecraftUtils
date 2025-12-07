@@ -24,11 +24,17 @@ export function jsonToMinecraftText(
         const marks = content.marks || []
         let code = ''
 
+        type TextStyleMark = {
+            type: 'textStyle';
+            attrs: { color: string };
+        };
+
         const colorMark = marks.find(
-            (m) => m.type === 'textStyle' && m.attrs?.color,
-        )
+            (m): m is TextStyleMark => m.type === 'textStyle' && !!m.attrs?.color
+        );
+
         if (colorMark) {
-            code += getMinecraftColorCode(colorMark.attrs.color, prefix)
+            code += getMinecraftColorCode(colorMark.attrs.color, prefix);
         }
 
         marks.forEach((m) => {

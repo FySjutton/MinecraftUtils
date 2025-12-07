@@ -4,11 +4,9 @@ import * as React from "react"
 import powerData from "./daylight_detector.json"
 import { ComboBox } from "@/components/ComboBox"
 import {InputField} from "@/components/InputField";
-import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
-import {Button} from "@/components/ui/button";
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 
 type Weather = "Clear" | "Rain" | "Thunder"
-type Power = keyof typeof powerData.Clear
 
 interface DaylightDetectorProps {
     tick: number
@@ -20,27 +18,26 @@ export function DaylightDetector({ tick }: DaylightDetectorProps) {
 
     React.useEffect(() => {
         const weatherData = powerData[weather]
-        let power = 0;
 
-            (Object.keys(weatherData).sort((a, b) => Number(b) - Number(a)) as Power[]).forEach(hour => {
-                const ranges: number[][] = weatherData[hour]
+        for (const hour of Object.keys(weatherData) as Array<keyof typeof weatherData>) {
+            const ranges = weatherData[hour]!
 
-                for (const [start, end] of ranges) {
-                    if (start <= end) {
-                        if (tick >= start && tick <= end) {
-                            power = Number(hour)
-                            break
-                        }
-                    } else {
-                        if (tick >= start || tick <= end) {
-                            power = Number(hour)
-                            break
-                        }
+            for (const [start, end] of ranges) {
+                if (start <= end) {
+                    if (tick >= start && tick <= end) {
+                        setCurrentPower(Number(hour))
+                        return
+                    }
+                } else {
+                    if (tick >= start || tick <= end) {
+                        setCurrentPower(Number(hour))
+                        return
                     }
                 }
-            })
+            }
+        }
 
-        setCurrentPower(power)
+        setCurrentPower(0)
     }, [tick, weather])
 
     return (
