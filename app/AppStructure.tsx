@@ -28,7 +28,7 @@ import {
     IconWand,
     IconWorld
 } from "@tabler/icons-react";
-import {Captions, SlidersVertical} from "lucide-react";
+import {Captions, SlidersVertical, Sun} from "lucide-react";
 
 export interface PageItem {
     name: string
@@ -100,6 +100,7 @@ export const tools: ToolCategory[] = [
         url: "/references",
         defaultOpen: true,
         pages: [
+            { name: "Daylight Cycle", url: "daylight-cycle", icon: <Sun />, description: "Interactive daylight cycle viewer, with video, daylight detector output, and time converter." },
             { name: "Inventory Slots", url: "inventory-slots", icon: <IconCircleNumber0 />, description: "Visual guide to inventory slot positions." },
             { name: "Color Codes", url: "color-codes", icon: <IconPalette />, description: "A list of all formatting codes in Minecraft." },
         ],
@@ -140,7 +141,6 @@ export const externals: ToolCategory[] = [
             { name: "Datapack Generators", url: "https://misode.github.io/generators/", icon: <IconBackpack />, description: "Create custom datapacks." },
             { name: "Firework Creator", url: "https://mcutils.com/firework-creator", icon: <IconRocket />, description: "Generate fireworks commands." },
             { name: "Shield Editor", url: "https://minecraft.tools/en/shield.php", icon: <IconShield />, description: "Design custom shield patterns." },
-            { name: "Motd Editor", url: "https://minecraft.tools/en/motd.php", icon: <IconTextScan2 />, description: "Customize server messages." },
         ],
     },
     {
@@ -159,6 +159,8 @@ export const featuredHomePage: PageItem[] = [
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
     getPage(tools, "Nether Calculator"),
+    getPage(tools, "Daylight Cycle"),
+    getPage(tools, "Motd Creator"),
     getPage(tools, "Inventory Slots"),
     getPage(tools, "Color Codes")
 ]
@@ -174,6 +176,7 @@ export const featuredGenerators: PageItem[] = [
 ]
 
 export const featuredReferences: PageItem[] = [
+    getPage(tools, "Daylight Cycle"),
     getPage(tools, "Inventory Slots"),
     getPage(tools, "Color Codes"),
 ]

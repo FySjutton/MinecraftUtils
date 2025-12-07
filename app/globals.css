@@ -217,3 +217,15 @@
 .font-minecraft {
     font-family: 'Minecraft', monospace;
 }
+
+@utility scrollbar-none {
+    scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+    }
+}
+
+input[type="time"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
