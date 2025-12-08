@@ -2,11 +2,9 @@
 
 import * as React from "react"
 import {AppSidebar} from "@/components/AppSidebar";
-import InProgressBanner from "@/components/banners/InProgressBanner";
 import Footer from "@/components/SiteFooter";
 import {SidebarInset, SidebarProvider, SidebarTrigger} from "@/components/ui/sidebar";
 import {ReactNode} from "react";
-import DiscordBanner from "@/components/banners/DiscordBanner";
 import {Separator} from "@/components/ui/separator";
 import {
     Breadcrumb,
@@ -17,6 +15,7 @@ import {
     BreadcrumbSeparator
 } from "@/components/ui/breadcrumb";
 import {usePathname} from "next/navigation";
+import RandomBanner from "@/components/banners/RandomBanner";
 
 function toTitleCase(str: string) {
     return str.toLowerCase().split(' ').map((word: string) => {
@@ -61,8 +60,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                             </Breadcrumb>
                         </header>
                         <div className="flex flex-1 flex-col gap-4 p-4 relative z-0">
-                            <InProgressBanner />
-                            <DiscordBanner />
+                            <RandomBanner />
                             {children}
                         </div>
                     </SidebarInset>

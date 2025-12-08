@@ -21,7 +21,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     );
 }
 
+const domain = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : "http://localhost:3000";
+
 export const metadata: Metadata = {
+    metadataBase: new URL(domain),
     title: "Minecraft Utils",
     description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
     icons: {
