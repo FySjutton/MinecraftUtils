@@ -34,8 +34,23 @@ export const metadata: Metadata = {
         description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
         type: "website",
         locale: "en-US",
-    }
+        images: [
+            {
+                url: "/og-banner.png",
+                width: 1200,
+                height: 630,
+                alt: "Minecraft Utils",
+            }
+        ],
+    },
+    twitter: {
+        card: "summary_large_image",
+        title: "Minecraft Utils",
+        description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
+        images: ["/og-banner.png"],
+    },
 };
+
 
 export const viewport: Viewport = {
     themeColor: "#1cffca",
