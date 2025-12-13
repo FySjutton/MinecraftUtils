@@ -17,11 +17,11 @@ import {Obfuscated} from "@/components/editor/Obfuscated";
 
 import "@/components/editor/editor.css"
 import React, {useEffect, useRef, useState} from "react";
-import {jsonToMinecraftText} from "@/lib/MinecraftText";
 import {Colors} from "@/lib/Colors";
 import {PasteColorFilter} from "@/components/editor/PasteColorFilter";
 import {MaxLines} from "@/components/editor/MaxLines";
 import {Upload} from "lucide-react";
+import {parseHtmlToString} from "@/lib/ParseHtmlToString";
 
 export default function MotdEditor({ output, setOutputAction }: { output: string, setOutputAction: React.Dispatch<React.SetStateAction<string>> }) {
     const editor = useEditor({
@@ -96,7 +96,7 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
 
         const updateListener = () => {
             const json = editor.getJSON();
-            const mc = jsonToMinecraftText(json, "\\u00a7").replace(/\\n$/, '');
+            const mc = parseHtmlToString(json, "\\u00a7").replace(/\\n$/, '');
             setOutputAction(mc);
         };
 

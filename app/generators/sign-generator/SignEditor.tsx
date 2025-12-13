@@ -16,14 +16,15 @@ import { ToolbarProvider } from '@/components/editor/toolbar-provider'
 import {Obfuscated} from "@/components/editor/Obfuscated";
 
 import "@/components/editor/editor.css"
-import React, {useEffect, useRef, useState} from "react";
-import {jsonToMinecraftText} from "@/lib/MinecraftText";
+import React, {useEffect} from "react";
 import {Colors} from "@/lib/Colors";
 import {PasteColorFilter} from "@/components/editor/PasteColorFilter";
 import {MaxLines} from "@/components/editor/MaxLines";
-import {Upload} from "lucide-react";
+import {MinecraftText} from "@/lib/MinecraftText";
+import {parseHtmlToString} from "@/lib/ParseHtmlToString";
+import {parseStringToCharLines} from "@/lib/ParseStringToCharLines";
 
-export default function SignEditor({ output, setOutputAction }: { output: string, setOutputAction: React.Dispatch<React.SetStateAction<string>> }) {
+export default function SignEditor({ output, setOutputAction }: { output: MinecraftText[][], setOutputAction: React.Dispatch<React.SetStateAction<MinecraftText[][]>> }) {
     const editor = useEditor({
         extensions: [
             Document,
@@ -35,7 +36,7 @@ export default function SignEditor({ output, setOutputAction }: { output: string
             PasteColorFilter.configure({
                 initialColor: Colors.GRAY,
             }),
-            MaxLines.configure({ max: 4 }),
+            MaxLines.configure({ maxLines: 4 }),
 
             History,
 
@@ -73,7 +74,7 @@ export default function SignEditor({ output, setOutputAction }: { output: string
                     content: [
                         {
                             type: 'text',
-                            text: 'Click here and type to edit!',
+                            text: 'WWWWWWWWWWWWWWW',
                             marks: [
                                 {
                                     type: 'textStyle',
@@ -93,8 +94,10 @@ export default function SignEditor({ output, setOutputAction }: { output: string
 
         const updateListener = () => {
             const json = editor.getJSON();
-            const mc = jsonToMinecraftText(json, "\\u00a7").replace(/\\n$/, '');
-            setOutputAction(mc);
+            const mc = parseHtmlToString(json, "§").replace(/\\n$/, '');
+            setOutputAction(parseStringToCharLines(mc))
+            // setOutputAction(mc);
+
         };
 
         editor.on('update', updateListener);
