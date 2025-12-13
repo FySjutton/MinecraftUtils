@@ -39,7 +39,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                             <Breadcrumb>
                                 <BreadcrumbList>
                                     {segments.map((segment, i) => {
-                                        const href = "/" + segments.slice(0, i + 1).join("/")
+                                        const href = "/" + segments.slice(0, i + 1).join("/").toLowerCase();
                                         const isLast = i === segments.length - 1
 
                                         return (
