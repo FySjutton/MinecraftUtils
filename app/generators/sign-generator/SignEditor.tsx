@@ -61,6 +61,15 @@ export default function SignEditor({ output, setOutputAction }: { output: Minecr
                 editor.chain().focus().setColor(Colors.GRAY).run()
             }
         },
+        onSelectionUpdate({ editor }) {
+            const { $from } = editor.state.selection
+            const marks = editor.state.storedMarks || $from.marks()
+
+            const hasColor = marks.some(mark => mark.type.name === 'textStyle' && mark.attrs.color)
+            if (!hasColor) {
+                editor.chain().focus().extendMarkRange('textStyle').setColor(Colors.GRAY).run()
+            }
+        },
         editorProps: {
             attributes: {
                 class: 'focus:outline-none ',

@@ -19,9 +19,10 @@ export const MaxLines = Extension.create({
             new Plugin({
                 key,
                 filterTransaction: (tr, state) => {
-                    let lineCount = 0
+                    const { maxLines, onLimit } = this.options
 
-                    state.doc.forEach((node) => {
+                    let lineCount = 0
+                    tr.doc.forEach((node) => {
                         if (node.type.name === 'paragraph') {
                             lineCount += node.textContent.split('\n').length
                         }

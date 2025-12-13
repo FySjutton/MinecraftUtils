@@ -107,22 +107,28 @@ export const PasteColorFilter = Extension.create<Options>({
 
                         if (html) {
                             event.preventDefault()
-                            const clean = sanitize(html)
+                            let clean = sanitize(html)
+
+                            // remove trailing <p><br></p> or empty lines
+                            clean = clean.replace(/(<p><br><\/p>|\s*[\r\n])+$/gi, '')
+
                             editor.commands.insertContent(clean)
                             return true
                         }
 
                         if (text) {
                             event.preventDefault()
+                            const trimmed = text.replace(/[\r\n]+$/g, '') // remove trailing newlines
+
                             // wrap plain text in a span with initial color
                             editor.commands.insertContent(
-                                `<span style="color: ${initial}">${text}</span>`
+                                `<span style="color: ${initial}">${trimmed}</span>`
                             )
                             return true
                         }
 
                         return false
-                    },
+                    }
                 },
             }),
         ]
