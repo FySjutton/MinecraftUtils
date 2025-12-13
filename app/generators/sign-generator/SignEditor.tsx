@@ -24,7 +24,12 @@ import {MinecraftText} from "@/lib/MinecraftText";
 import {parseHtmlToString} from "@/lib/ParseHtmlToString";
 import {parseStringToCharLines} from "@/lib/ParseStringToCharLines";
 
-export default function SignEditor({ output, setOutputAction }: { output: MinecraftText[][], setOutputAction: React.Dispatch<React.SetStateAction<MinecraftText[][]>> }) {
+interface SignEditorProps {
+    output: MinecraftText[][]
+    setOutputAction: (lines: MinecraftText[][]) => void
+}
+
+export default function SignEditor({ output, setOutputAction }: SignEditorProps) {
     const editor = useEditor({
         extensions: [
             Document,
@@ -75,26 +80,43 @@ export default function SignEditor({ output, setOutputAction }: { output: Minecr
                 class: 'focus:outline-none ',
             },
         },
-        content: {
-            type: 'doc',
-            content: [
-                {
+        content: output.length
+            ? {
+                type: 'doc',
+                content: output.map(line => ({
                     type: 'paragraph',
-                    content: [
-                        {
-                            type: 'text',
-                            text: 'WWWWWWWWWWWWWWW',
-                            marks: [
-                                {
-                                    type: 'textStyle',
-                                    attrs: { color: '#AAAAAA' }
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ]
-        },
+                    content: line.map(ch => ({
+                        type: 'text',
+                        text: ch.char,
+                        marks: [
+                            {
+                                type: 'textStyle',
+                                attrs: { color: ch.color || Colors.GRAY }
+                            }
+                        ]
+                    }))
+                }))
+            }
+            : {
+                type: 'doc',
+                content: [
+                    {
+                        type: 'paragraph',
+                        content: [
+                            {
+                                type: 'text',
+                                text: 'WWWWWWWWWWWWWWW',
+                                marks: [
+                                    {
+                                        type: 'textStyle',
+                                        attrs: { color: Colors.GRAY }
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
         immediatelyRender: false
     })
 
