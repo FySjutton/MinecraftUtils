@@ -21,8 +21,7 @@ import {Colors} from "@/lib/Colors";
 import {PasteColorFilter} from "@/components/editor/PasteColorFilter";
 import {MaxLines} from "@/components/editor/MaxLines";
 import {MinecraftText} from "@/lib/MinecraftText";
-import {parseHtmlToString} from "@/lib/ParseHtmlToString";
-import {parseStringToCharLines} from "@/lib/ParseStringToCharLines";
+import {tiptapToMinecraftText} from "@/lib/converters/tiptapToMinecraftText";
 
 interface SignEditorProps {
     output: MinecraftText[][]
@@ -125,10 +124,8 @@ export default function SignEditor({ output, setOutputAction }: SignEditorProps)
 
         const updateListener = () => {
             const json = editor.getJSON();
-            const mc = parseHtmlToString(json, "§").replace(/\\n$/, '');
-            setOutputAction(parseStringToCharLines(mc))
-            // setOutputAction(mc);
 
+            setOutputAction(tiptapToMinecraftText(json, 4))
         };
 
         editor.on('update', updateListener);

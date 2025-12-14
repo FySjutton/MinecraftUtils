@@ -21,7 +21,8 @@ import {Colors} from "@/lib/Colors";
 import {PasteColorFilter} from "@/components/editor/PasteColorFilter";
 import {MaxLines} from "@/components/editor/MaxLines";
 import {Upload} from "lucide-react";
-import {parseHtmlToString} from "@/lib/ParseHtmlToString";
+import {tiptapToMinecraftText} from "@/lib/converters/tiptapToMinecraftText";
+import {minecraftTextToString} from "@/lib/converters/minecraftTextToString";
 
 export default function MotdEditor({ output, setOutputAction }: { output: string, setOutputAction: React.Dispatch<React.SetStateAction<string>> }) {
     const editor = useEditor({
@@ -96,8 +97,8 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
 
         const updateListener = () => {
             const json = editor.getJSON();
-            const mc = parseHtmlToString(json, "\\u00a7").replace(/\\n$/, '');
-            setOutputAction(mc);
+            const minecraftText = tiptapToMinecraftText(json, 3)
+            setOutputAction(minecraftTextToString(minecraftText, "\\u00a7"));
         };
 
         editor.on('update', updateListener);

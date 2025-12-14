@@ -1,17 +1,16 @@
-import {ColorMeta, Colors, MinecraftFormatting} from "@/lib/Colors";
-import {MinecraftText} from "@/lib/MinecraftText";
+import { ColorMeta, Colors, MinecraftFormatting } from '@/lib/Colors'
+import { MinecraftText } from '@/lib/MinecraftText'
 
 const FORMAT_CODE_TO_COLOR: Record<string, string> = {}
 
 for (const meta of ColorMeta) {
-    const code = meta.formatting.replace('§', '').toLowerCase()
-    FORMAT_CODE_TO_COLOR[code] = Colors[meta.key]
+    FORMAT_CODE_TO_COLOR[meta.formatting.replace('§', '').toLowerCase()] =
+        Colors[meta.key]
 }
 
-
-export function parseStringToCharLines(
+export function stringToMinecraftText(
     input: string,
-    maxLines = 4
+    maxLines = 4,
 ): MinecraftText[][] {
     const lines: MinecraftText[][] = [[]]
     let lineIndex = 0
@@ -26,7 +25,7 @@ export function parseStringToCharLines(
         obfuscated: false,
     }
 
-    const resetState = () => ({
+    const reset = () => ({
         ...state,
         color: Colors.GRAY,
         bold: false,
@@ -39,30 +38,22 @@ export function parseStringToCharLines(
     for (let i = 0; i < input.length; i++) {
         const ch = input[i]
 
-        if (ch === '\\' && input[i + 1] === 'n') {
+        if (ch === '\n') {
             if (lines.length < maxLines) {
                 lines.push([])
                 lineIndex++
             }
-            i++ // skip the 'n'
             continue
         }
 
-
-        // Formatting code
         if (ch === '§' && i + 1 < input.length) {
             const code = input[++i].toLowerCase()
 
-            // Color
             if (FORMAT_CODE_TO_COLOR[code]) {
-                state = {
-                    ...resetState(),
-                    color: FORMAT_CODE_TO_COLOR[code],
-                }
+                state = { ...reset(), color: FORMAT_CODE_TO_COLOR[code] }
                 continue
             }
 
-            // Formatting toggles
             switch (code) {
                 case MinecraftFormatting.BOLD:
                     state.bold = true
@@ -80,18 +71,14 @@ export function parseStringToCharLines(
                     state.obfuscated = true
                     break
                 case MinecraftFormatting.RESET:
-                    state = resetState()
+                    state = reset()
                     break
             }
 
             continue
         }
 
-        // Normal character
-        lines[lineIndex].push({
-            ...state,
-            char: ch,
-        })
+        lines[lineIndex].push({ ...state, char: ch })
     }
 
     return lines.slice(0, maxLines)
