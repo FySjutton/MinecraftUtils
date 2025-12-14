@@ -17,7 +17,6 @@ import {Obfuscated} from "@/components/editor/Obfuscated";
 
 import "@/components/editor/editor.css"
 import React, {useEffect} from "react";
-import {Colors} from "@/lib/Colors";
 import {PasteColorFilter} from "@/components/editor/PasteColorFilter";
 import {MaxLines} from "@/components/editor/MaxLines";
 import {MinecraftText} from "@/lib/MinecraftText";
@@ -37,9 +36,7 @@ export default function SignEditor({ output, setOutputAction }: SignEditorProps)
             TextStyle,
             Color,
 
-            PasteColorFilter.configure({
-                initialColor: Colors.GRAY,
-            }),
+            PasteColorFilter,
             MaxLines.configure({ maxLines: 4 }),
 
             History,
@@ -50,29 +47,9 @@ export default function SignEditor({ output, setOutputAction }: SignEditorProps)
             Strike,
             Obfuscated,
         ],
-        onCreate({ editor }) {
-            editor.chain().focus().setColor(Colors.GRAY).run()
-        },
         onUpdate({ editor }) {
-            const { ranges } = editor.state.selection
-
-            const hasColor = ranges.some(range => {
-                const marks = range.$from.marks()
-                return marks.some(mark => mark.type.name === 'textStyle' && mark.attrs.color)
-            })
-
-            if (!hasColor) {
-                editor.chain().focus().setColor(Colors.GRAY).run()
-            }
-        },
-        onSelectionUpdate({ editor }) {
-            const { $from } = editor.state.selection
-            const marks = editor.state.storedMarks || $from.marks()
-
-            const hasColor = marks.some(mark => mark.type.name === 'textStyle' && mark.attrs.color)
-            if (!hasColor) {
-                editor.chain().focus().extendMarkRange('textStyle').setColor(Colors.GRAY).run()
-            }
+            const json = editor.getJSON();
+            setOutputAction(tiptapToMinecraftText(json, 4));
         },
         editorProps: {
             attributes: {
@@ -87,12 +64,7 @@ export default function SignEditor({ output, setOutputAction }: SignEditorProps)
                     content: line.map(ch => ({
                         type: 'text',
                         text: ch.char,
-                        marks: [
-                            {
-                                type: 'textStyle',
-                                attrs: { color: ch.color || Colors.GRAY }
-                            }
-                        ]
+                        marks: ch.color ? [{ type: 'textStyle', attrs: { color: ch.color } }] : []
                     }))
                 }))
             }
@@ -105,12 +77,6 @@ export default function SignEditor({ output, setOutputAction }: SignEditorProps)
                             {
                                 type: 'text',
                                 text: 'WWWWWWWWWWWWWWW',
-                                marks: [
-                                    {
-                                        type: 'textStyle',
-                                        attrs: { color: Colors.GRAY }
-                                    }
-                                ]
                             }
                         ]
                     }
@@ -124,8 +90,7 @@ export default function SignEditor({ output, setOutputAction }: SignEditorProps)
 
         const updateListener = () => {
             const json = editor.getJSON();
-
-            setOutputAction(tiptapToMinecraftText(json, 4))
+            setOutputAction(tiptapToMinecraftText(json, 4));
         };
 
         editor.on('update', updateListener);
@@ -144,16 +109,24 @@ export default function SignEditor({ output, setOutputAction }: SignEditorProps)
             <div className="relative flex overflow-x-auto overflow-y-hidden w-full items-center py-2 px-2 justify-between border-b sticky top-0 left-0 z-20">
                 <ToolbarProvider editor={editor}>
                     <div className="flex items-center gap-2">
-                        <FormattingToolbar initialColor={Colors.GRAY}/>
+                        <FormattingToolbar />
                     </div>
                 </ToolbarProvider>
             </div>
 
-            <div className="m-2">
+            <div
+                className="h-25 pl-2"
+                style={{
+                    backgroundImage: "url('/assets/sign_types/oak.png')",
+                    backgroundSize: "auto 100%",
+                    backgroundRepeat: "repeat",
+                    backgroundPosition: "center",
+                }}
+            >
                 <EditorContent
                     editor={editor}
                     spellCheck={false}
-                    className="w-full h-full break-words whitespace-pre-wrap inline"
+                    className="w-full h-full break-words whitespace-pre-wrap text-black"
                 />
             </div>
         </div>

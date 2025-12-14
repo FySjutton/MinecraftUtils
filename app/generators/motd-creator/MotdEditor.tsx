@@ -165,7 +165,7 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
                         {/* Left icon */}
                         <div className="w-[32px] h-[32px] relative flex-shrink-0 p-px cursor-pointer" onClick={handleClick}>
                             <img
-                                src={preview ?? "/assets/unknown_server.png"}
+                                src={preview ?? "/assets/tool/motd/unknown_server.png"}
                                 alt="icon"
                                 className="w-full h-full object-cover"
                             />
@@ -197,7 +197,7 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
                                 <div className="flex items-center gap-[2px]">
                                     <span className="text-white text-[9px]" style={{color: Colors.GRAY}}>17/20</span>
                                     <img
-                                        src="/assets/ping_5.png"
+                                        src="/assets/tool/motd/ping_5.png"
                                         alt="icon"
                                         className="w-[10px] h-[10px] object-contain"
                                         style={{ imageRendering: 'pixelated' }}

@@ -165,7 +165,7 @@ export default function DaylightCycleTool() {
 
                 <img
                     ref={imageRef}
-                    src="/assets/daycycle/background.png"
+                    src="/assets/tool/daycycle/background.png"
                     alt="background"
                     className="absolute inset-0 top-[50%] left-[50%] translate-[-50%] w-full h-full object-contain z-0 border-2"
                 />
@@ -205,7 +205,7 @@ export default function DaylightCycleTool() {
                     <div className="flex flex-col sm:flex-row justify-center gap-4 w-full">
                         <video
                             ref={videoEastRef}
-                            src="/assets/daycycle/east.mp4"
+                            src="/assets/tool/daycycle/east.mp4"
                             muted
                             loop
                             preload="metadata"
@@ -213,7 +213,7 @@ export default function DaylightCycleTool() {
                         />
                         <video
                             ref={videoWestRef}
-                            src="/assets/daycycle/west.mp4"
+                            src="/assets/tool/daycycle/west.mp4"
                             muted
                             loop
                             preload="metadata"

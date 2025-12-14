@@ -1,6 +1,6 @@
 export interface MinecraftText {
     char: string
-    color: string
+    color: string | null
     bold: boolean
     italic: boolean
     underline: boolean

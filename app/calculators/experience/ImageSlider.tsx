@@ -124,7 +124,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
 
             <div className="relative w-full">
                 <Image
-                    src="/images/experience/empty.png"
+                    src="/assets/tool/experience/empty.png"
                     alt=""
                     width={0}
                     height={0}
@@ -134,7 +134,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
 
                 <div className="absolute left-0 top-0 h-full w-full overflow-hidden pointer-events-none">
                     <Image
-                        src="/images/experience/filled.png"
+                        src="/assets/tool/experience/filled.png"
                         alt=""
                         width={0}
                         height={0}
@@ -159,7 +159,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
 
                 <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none h-[120%] flex items-center justify-center" style={{ left: `${value}%` }}>
                     <Image
-                        src="/images/experience/dragger.png"
+                        src="/assets/tool/experience/dragger.png"
                         alt="thumb"
                         width={9}
                         height={9}

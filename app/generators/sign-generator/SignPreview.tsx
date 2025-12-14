@@ -7,10 +7,11 @@ import {MinecraftText} from '@/lib/MinecraftText'
 import {useEffect, useRef, useState} from 'react'
 import {DEFAULT_FONT_SIZE, drawMinecraftSignToCanvas} from '@/app/generators/sign-generator/canvasRenderer'
 import assert from 'node:assert'
+import {SignSide} from "@/app/generators/sign-generator/SignGenerator";
 
 interface MinecraftSignProps {
-    frontLines: MinecraftText[][]
-    backLines: MinecraftText[][]
+    front: SignSide
+    back: SignSide
     fontSize?: number
 }
 
@@ -21,7 +22,7 @@ function randomObfuscatedChar() {
     return OBFUSCATED_CHARS[Math.floor(Math.random() * OBFUSCATED_CHARS.length)]
 }
 
-export function MinecraftSign({ frontLines, backLines, fontSize = DEFAULT_FONT_SIZE }: MinecraftSignProps) {
+export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: MinecraftSignProps) {
     const gltf = useGLTF('/minecraft_sign.gltf')
     const model = gltf.scene
 
@@ -52,8 +53,18 @@ export function MinecraftSign({ frontLines, backLines, fontSize = DEFAULT_FONT_S
     const texturesRafRef = useRef<number | null>(null)
 
     useEffect(() => {
-        const frontC = drawMinecraftSignToCanvas(frontLines, fontSize)
-        const backC = drawMinecraftSignToCanvas(backLines, fontSize)
+        if (!front || !back) return
+
+        const frontWithFallback = front.lines.map(line =>
+            line.map(ch => ({ ...ch, color: ch.color ?? front.color }))
+        )
+
+        const backWithFallback = back.lines.map(line =>
+            line.map(ch => ({ ...ch, color: ch.color ?? back.color }))
+        )
+
+        const frontC = drawMinecraftSignToCanvas(frontWithFallback, fontSize)
+        const backC = drawMinecraftSignToCanvas(backWithFallback, fontSize)
 
         if (canvasesRafRef.current != null) cancelAnimationFrame(canvasesRafRef.current)
         canvasesRafRef.current = requestAnimationFrame(() => {
@@ -65,7 +76,8 @@ export function MinecraftSign({ frontLines, backLines, fontSize = DEFAULT_FONT_S
         return () => {
             if (canvasesRafRef.current != null) cancelAnimationFrame(canvasesRafRef.current)
         }
-    }, [frontLines, backLines, fontSize])
+    }, [front, back, fontSize])
+
 
     useEffect(() => {
         if (!frontCanvas || !backCanvas) return
@@ -101,13 +113,13 @@ export function MinecraftSign({ frontLines, backLines, fontSize = DEFAULT_FONT_S
     useFrame(() => {
         if (frontTextureRef.current) {
             let hasObf = false
-            outer_front: for (const line of frontLines) {
+            outer_front: for (const line of front.lines) {
                 for (const ch of line) {
                     if (ch.obfuscated) { hasObf = true; break outer_front }
                 }
             }
             if (hasObf) {
-                const updated = frontLines.map(line => line.map(ch => ch.obfuscated ? { ...ch, char: randomObfuscatedChar() } : ch))
+                const updated = front.lines.map(line => line.map(ch => ch.obfuscated ? { ...ch, char: randomObfuscatedChar() } : ch))
                 const canvas = drawMinecraftSignToCanvas(updated, fontSize)
                 frontTextureRef.current.image = canvas
                 frontTextureRef.current.needsUpdate = true
@@ -116,13 +128,13 @@ export function MinecraftSign({ frontLines, backLines, fontSize = DEFAULT_FONT_S
 
         if (backTextureRef.current) {
             let hasObf = false
-            outer_back: for (const line of backLines) {
+            outer_back: for (const line of back.lines) {
                 for (const ch of line) {
                     if (ch.obfuscated) { hasObf = true; break outer_back }
                 }
             }
             if (hasObf) {
-                const updated = backLines.map(line => line.map(ch => ch.obfuscated ? { ...ch, char: randomObfuscatedChar() } : ch))
+                const updated = back.lines.map(line => line.map(ch => ch.obfuscated ? { ...ch, char: randomObfuscatedChar() } : ch))
                 backTextureRef.current.image = drawMinecraftSignToCanvas(updated, fontSize)
                 backTextureRef.current.needsUpdate = true
             }
@@ -159,12 +171,12 @@ export function MinecraftSign({ frontLines, backLines, fontSize = DEFAULT_FONT_S
     )
 }
 
-export default function SignPreview({ linesFront, linesBack }: { linesFront: MinecraftText[][], linesBack: MinecraftText[][] }) {
+export default function SignPreview({ front, back }: { front: SignSide, back: SignSide }) {
     return (
         <div className="w-[300px] h-[300px] border rounded-md">
             <Canvas camera={{ position: [0, 0.4, 3], fov: 50 }}>
                 <ambientLight intensity={1.5} />
-                <MinecraftSign frontLines={linesFront} backLines={linesBack} />
+                <MinecraftSign front={front} back={back} />
                 <OrbitControls
                     target={[0, 0.3, 0]}
                     enablePan={false}

@@ -1,6 +1,5 @@
 import { JSONContent } from '@tiptap/core'
-import { Colors } from '@/lib/Colors'
-import { MinecraftText } from '@/lib/MinecraftText'
+import {MinecraftText} from "@/lib/MinecraftText";
 
 type TextFlags = Pick<
     MinecraftText,
@@ -15,20 +14,9 @@ const MARK_TO_FLAG: Record<string, keyof TextFlags> = {
     obfuscated: 'obfuscated',
 }
 
-function defaultState(): Omit<MinecraftText, 'char'> {
-    return {
-        color: Colors.GRAY,
-        bold: false,
-        italic: false,
-        underline: false,
-        strike: false,
-        obfuscated: false,
-    }
-}
-
 function rgbToHex(rgb: string): string {
     const match = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/)
-    if (!match) return Colors.GRAY
+    if (!match) return ''
     const [, r, g, b] = match.map(Number)
     return (
         '#' +
@@ -39,12 +27,26 @@ function rgbToHex(rgb: string): string {
     )
 }
 
+function defaultState(): Omit<MinecraftText, 'char'> {
+    return {
+        color: null, // allow null
+        bold: false,
+        italic: false,
+        underline: false,
+        strike: false,
+        obfuscated: false,
+    }
+}
+
 /**
  * TipTap JSON → MinecraftText[][]
+ * color can be null if no textStyle color is applied
+ * defaultColor is optional fallback but not forced
  */
 export function tiptapToMinecraftText(
     content: JSONContent,
-    maxLines = 4
+    maxLines = 4,
+    defaultColor?: string
 ): MinecraftText[][] {
     const lines: MinecraftText[][] = [[]]
     let lineIndex = 0
@@ -79,6 +81,7 @@ export function tiptapToMinecraftText(
                 lines[lineIndex].push({
                     char,
                     ...localState,
+                    color: localState.color ?? defaultColor ?? null,
                 })
             }
             return

@@ -131,7 +131,7 @@ export default function InventorySlotsTool() {
                                         <div className="flex items-center justify-center w-full min-h-[280px] md:min-h-[420px] lg:min-h-[520px] p-4">
                                             <div className="flex items-center justify-center max-w-full">
                                                 <Image
-                                                    src={`/images/inv_slots/${inv.value}.png`}
+                                                    src={`/assets/tool/inv_slots/${inv.value}.png`}
                                                     alt={inv.label}
                                                     width={900}
                                                     height={900}

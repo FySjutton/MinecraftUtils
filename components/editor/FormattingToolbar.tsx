@@ -4,12 +4,17 @@ import { Button } from '@/components/ui/button'
 import { ButtonGroup } from '@/components/ui/button-group'
 import { useToolbar } from '@/components/editor/toolbar-provider'
 import { useEditorState } from '@tiptap/react'
-import ColorPickerButton from "@/components/editor/ColorPalette";
-import React from "react";
-import { Bold, Italic, Underline, UndoIcon, RedoIcon, Strikethrough } from 'lucide-react';
-import {IconCurrencyIranianRial} from "@tabler/icons-react";
+import InlinePaletteButton from '@/components/editor/ColorPalette'
+import React from 'react'
+import { Bold, Italic, Underline, UndoIcon, RedoIcon, Strikethrough } from 'lucide-react'
+import { IconCurrencyIranianRial } from '@tabler/icons-react'
 
-export default function FormattingToolbar({ initialColor }: { initialColor: string }) {
+interface FormattingToolbarProps {
+    alwaysActiveColor?: boolean
+    initialColor?: string
+}
+
+export default function FormattingToolbar({ alwaysActiveColor = false, initialColor }: FormattingToolbarProps) {
     const { editor } = useToolbar()
     const state = useEditorState({
         editor,
@@ -86,7 +91,10 @@ export default function FormattingToolbar({ initialColor }: { initialColor: stri
             </ButtonGroup>
 
             <ButtonGroup>
-                <ColorPickerButton initialColor={initialColor} />
+                <InlinePaletteButton
+                    alwaysActive={alwaysActiveColor}
+                    initialColor={initialColor}
+                />
             </ButtonGroup>
         </div>
     )
