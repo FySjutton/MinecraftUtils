@@ -63,8 +63,8 @@ export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: Min
             line.map(ch => ({ ...ch, color: ch.color ?? back.color }))
         )
 
-        const frontC = drawMinecraftSignToCanvas(frontWithFallback, fontSize)
-        const backC = drawMinecraftSignToCanvas(backWithFallback, fontSize)
+        const frontC = drawMinecraftSignToCanvas(frontWithFallback, fontSize, front.glowing)
+        const backC = drawMinecraftSignToCanvas(backWithFallback, fontSize, back.glowing)
 
         if (canvasesRafRef.current != null) cancelAnimationFrame(canvasesRafRef.current)
         canvasesRafRef.current = requestAnimationFrame(() => {
