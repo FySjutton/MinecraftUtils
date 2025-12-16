@@ -1,4 +1,5 @@
 import { MinecraftText } from '@/lib/MinecraftText'
+import {DyeColors} from "@/lib/Colors";
 
 export const DEFAULT_FONT_SIZE = 36
 const PADDING = 8
@@ -8,7 +9,7 @@ export function drawMinecraftSignToCanvas(
     lines: MinecraftText[][],
     fontSize = DEFAULT_FONT_SIZE,
     glowing = false,
-    fallbackColor: string = '#FFFFFF'
+    fallbackColor: string = 'black'
 ): HTMLCanvasElement {
     const canvas = document.createElement('canvas')
     const ctx = canvas.getContext('2d')!
@@ -38,7 +39,7 @@ export function drawMinecraftSignToCanvas(
     canvas.width = canvasWidth
     canvas.height = canvasHeight
 
-    const startY = PADDING + lineHeight / 2
+    const startY = 4 + PADDING + lineHeight / 2
 
     for (let lineIndex = 0; lineIndex < linesCount; lineIndex++) {
         const line = lines[lineIndex] ?? []
@@ -59,23 +60,25 @@ export function drawMinecraftSignToCanvas(
             const fontStyle = ch.italic ? 'italic' : 'normal'
             ctx.font = `${fontStyle} ${fontWeight} ${fontSize}px Minecraft`
 
-            const renderHex = ch.color ?? fallbackColor
-            const fillColor = renderHex
-            const fillInt = parseInt(renderHex.replace('#', ''), 16)
+            const color: string = ch.color ?? fallbackColor
+            const fillColor = color.startsWith("#") ? color : DyeColors[color]
+            const fillInt = parseInt(fillColor.replace('#', ''), 16)
             const outlineColor = getOutlineColor(fillInt)
 
             if (glowing && outlineColor) {
-                const charWidth = ctx.measureText(ch.char).width
-                const centerX = x + charWidth / 2
-                const centerY = y
+                const offset = 4
 
-                // TODO: Doesn't work at all, unaligned, weird size. Glow ink sac effect.
-                ctx.save()
-                ctx.translate(centerX, centerY)
-                ctx.scale(1.5, 1.5)
                 ctx.fillStyle = outlineColor
-                ctx.fillText(ch.char, -charWidth / 2, 0)
-                ctx.restore()
+
+                ctx.fillText(ch.char, x - offset, y)
+                ctx.fillText(ch.char, x + offset, y)
+                ctx.fillText(ch.char, x, y - offset)
+                ctx.fillText(ch.char, x, y + offset)
+
+                ctx.fillText(ch.char, x - offset, y - offset)
+                ctx.fillText(ch.char, x + offset, y - offset)
+                ctx.fillText(ch.char, x - offset, y + offset)
+                ctx.fillText(ch.char, x + offset, y + offset)
 
                 ctx.fillStyle = fillColor
                 ctx.fillText(ch.char, x, y)
@@ -96,8 +99,7 @@ export function drawMinecraftSignToCanvas(
 }
 
 function getOutlineColor(fillInt: number): string {
-    const BLACK = 0x000000
-    if (fillInt === BLACK) return '#F0F0CC'
+    if (fillInt === 1908001) return '#F0F0CC'
     return intToRgbString(scaleRgbInt(fillInt, 0.4))
 }
 

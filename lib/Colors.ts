@@ -17,6 +17,25 @@ export const Colors = {
     WHITE: "#FFFFFF",
 } as const
 
+export const DyeColors: { [key: string]: string } = {
+    white: "#F9FFFE",
+    light_gray: "#9D9D97",
+    gray: "#474F52",
+    black: "#1D1D21",
+    brown: "#835432",
+    red: "#B02E26",
+    orange: "#F9801D",
+    yellow: "#FED83D",
+    lime: "#80C71F",
+    green: "#5E7C16",
+    cyan: "#169C9C",
+    light_blue: "#3AB3DA",
+    blue: "#3C44AA",
+    purple: "#8932B8",
+    magenta: "#C74EBD",
+    pink: "#F38BAA",
+};
+
 export const ColorList = Object.values(Colors) as readonly string[]
 
 export const ColorMeta = [

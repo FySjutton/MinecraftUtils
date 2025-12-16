@@ -76,7 +76,7 @@ export default function SignEditor({ output, setOutputAction }: SignEditorProps)
                         content: [
                             {
                                 type: 'text',
-                                text: 'WWWWWWWWWWWWWWW',
+                                text: 'Sample Text',
                             }
                         ]
                     }

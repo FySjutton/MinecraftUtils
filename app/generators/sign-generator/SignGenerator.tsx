@@ -12,8 +12,9 @@ import Image from "next/image";
 
 export interface SignSide {
     lines: MinecraftText[][]
-    color: string
-    glowing: boolean
+    color: string | null
+    glowing: boolean,
+    waxed: boolean
 }
 
 export interface SignData {
@@ -24,8 +25,8 @@ export interface SignData {
 export default function SignGenerator() {
     const [activeSide, setActiveSide] = useState<'front' | 'back'>('front')
     const [signData, setSignData] = useState<SignData>({
-        front: { lines: [], color: 'none', glowing: false },
-        back: { lines: [], color: 'none', glowing: false },
+        front: { lines: [], color: null, glowing: false, waxed: false },
+        back: { lines: [], color: null, glowing: false, waxed: false },
     })
 
     return (
@@ -60,9 +61,10 @@ export default function SignGenerator() {
                                     <div>
                                         <label>Sign Color</label>
                                         <ColorSelect
-                                            value={signData.front.color}
+                                            value={signData.front.color ?? "none"}
                                             onChange={color =>
-                                                setSignData(prev => ({ ...prev, front: { ...prev.front, color } }))
+
+                                                setSignData(prev => ({ ...prev, front: { ...prev.front, color: (color == "none" ? null : color) } }))
                                             }
                                         />
                                     </div>
@@ -95,6 +97,34 @@ export default function SignGenerator() {
                                             <span>{signData.front.glowing ? "Glowing" : "Normal"}</span>
                                         </Toggle>
                                     </div>
+                                    {/* Waxed switch */}
+                                    <div>
+                                        <label>Waxed</label>
+                                        <Toggle
+                                            aria-label="Waxed"
+                                            size="default"
+                                            variant="outline"
+                                            className="flex items-center gap-2"
+                                            pressed={signData.front.waxed ?? false}
+                                            onPressedChange={checked =>
+                                                setSignData(prev => ({
+                                                    ...prev,
+                                                    front: { ...prev.front, waxed: checked },
+                                                }))
+                                            }
+                                        >
+                                            <Image
+                                                src={signData.front.waxed
+                                                    ? "/assets/tool/sign/honey_comb.png"
+                                                    : "/assets/tool/sign/empty_honey_comb.png"}
+                                                alt="waxed icon"
+                                                width={16}
+                                                height={16}
+                                                className="w-5 h-5"
+                                            />
+                                            <span>{signData.front.waxed ? "Waxed" : "Normal"}</span>
+                                        </Toggle>
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -113,19 +143,82 @@ export default function SignGenerator() {
                                         setSignData(prev => ({ ...prev, back: { ...prev.back, lines } }))
                                     }
                                 />
-                                <label>Sign Color</label>
-                                <ColorSelect
-                                    value={signData.back.color}
-                                    onChange={color =>
-                                        setSignData(prev => ({ ...prev, back: { ...prev.back, color } }))
-                                    }
-                                />
+                                <div className="flex gap-4">
+                                    {/* Color select */}
+                                    <div>
+                                        <label>Sign Color</label>
+                                        <ColorSelect
+                                            value={signData.back.color ?? "none"}
+                                            onChange={color =>
+
+                                                setSignData(prev => ({ ...prev, back: { ...prev.back, color: (color == "none" ? null : color) } }))
+                                            }
+                                        />
+                                    </div>
+
+                                    {/* Glowing switch */}
+                                    <div>
+                                        <label>Glowing Text Color</label>
+                                        <Toggle
+                                            aria-label="Back Glowing"
+                                            size="default"
+                                            variant="outline"
+                                            className="flex items-center gap-2"
+                                            pressed={signData.back.glowing ?? false}
+                                            onPressedChange={checked =>
+                                                setSignData(prev => ({
+                                                    ...prev,
+                                                    back: { ...prev.back, glowing: checked },
+                                                }))
+                                            }
+                                        >
+                                            <Image
+                                                src={signData.back.glowing
+                                                    ? "/assets/tool/sign/glow_ink_sac.png"
+                                                    : "/assets/tool/sign/ink_sac.png"}
+                                                alt="glowing icon"
+                                                width={16}
+                                                height={16}
+                                                className="w-5 h-5"
+                                            />
+                                            <span>{signData.back.glowing ? "Glowing" : "Normal"}</span>
+                                        </Toggle>
+                                    </div>
+                                    {/* Waxed switch */}
+                                    <div>
+                                        <label>Waxed</label>
+                                        <Toggle
+                                            aria-label="Waxed"
+                                            size="default"
+                                            variant="outline"
+                                            className="flex items-center gap-2"
+                                            pressed={signData.back.waxed ?? false}
+                                            onPressedChange={checked =>
+                                                setSignData(prev => ({
+                                                    ...prev,
+                                                    back: { ...prev.back, waxed: checked },
+                                                }))
+                                            }
+                                        >
+                                            <Image
+                                                src={signData.back.waxed
+                                                    ? "/assets/tool/sign/honey_comb.png"
+                                                    : "/assets/tool/sign/empty_honey_comb.png"}
+                                                alt="waxed icon"
+                                                width={16}
+                                                height={16}
+                                                className="w-5 h-5"
+                                            />
+                                            <span>{signData.back.waxed ? "Waxed" : "Normal"}</span>
+                                        </Toggle>
+                                    </div>
+                                </div>
                             </CardContent>
                         </Card>
                     </TabsContent>
                 </Tabs>
 
-                <div className="mt-4">
+                <div className="w-full mt-4 h-[300px] border rounded-md">
                     <SignPreview front={signData.front} back={signData.back} />
                 </div>
             </CardContent>

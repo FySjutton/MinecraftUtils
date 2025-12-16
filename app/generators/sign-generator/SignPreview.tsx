@@ -149,8 +149,9 @@ export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: Min
     const backHeight = backCanvas.height * PIXEL_TO_WORLD
 
     const TOP_INSET_WORLD = signSize.y * 0.06
-    const signTopY = signCenter.y - signSize.y / 2 - 0.08
-    const planeCenterY = signTopY - TOP_INSET_WORLD - frontHeight / 2
+    const signTopY = signCenter.y - signSize.y / 2
+    const planeCenterY = signTopY - TOP_INSET_WORLD - (signSize.y * 0.33)
+
     const planeFrontZ = signCenter.z + 0.065
     const planeBackZ = signCenter.z - 0.065
 
@@ -173,19 +174,17 @@ export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: Min
 
 export default function SignPreview({ front, back }: { front: SignSide, back: SignSide }) {
     return (
-        <div className="w-[300px] h-[300px] border rounded-md">
-            <Canvas camera={{ position: [0, 0.4, 3], fov: 50 }}>
-                <ambientLight intensity={1.5} />
-                <MinecraftSign front={front} back={back} />
-                <OrbitControls
-                    target={[0, 0.3, 0]}
-                    enablePan={false}
-                    enableZoom
-                    minDistance={1}
-                    maxDistance={5}
-                    zoomSpeed={0.8}
-                />
-            </Canvas>
-        </div>
+        <Canvas camera={{ position: [0, 2, 3], fov: 50 }}>
+            <ambientLight intensity={1.5} />
+            <MinecraftSign front={front} back={back} />
+            <OrbitControls
+                target={[0, 0.45, 0]}
+                enablePan={false}
+                enableZoom
+                minDistance={1}
+                maxDistance={5}
+                zoomSpeed={0.8}
+            />
+        </Canvas>
     )
 }

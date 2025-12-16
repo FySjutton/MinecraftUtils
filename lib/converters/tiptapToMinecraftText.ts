@@ -38,11 +38,6 @@ function defaultState(): Omit<MinecraftText, 'char'> {
     }
 }
 
-/**
- * TipTap JSON → MinecraftText[][]
- * color can be null if no textStyle color is applied
- * defaultColor is optional fallback but not forced
- */
 export function tiptapToMinecraftText(
     content: JSONContent,
     maxLines = 4,
