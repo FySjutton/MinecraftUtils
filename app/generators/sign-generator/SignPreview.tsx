@@ -1,15 +1,17 @@
 'use client'
 
-import {Canvas, useFrame} from '@react-three/fiber'
-import {OrbitControls, useGLTF} from '@react-three/drei'
+import { Canvas, useFrame } from '@react-three/fiber'
+import { OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
-import {MinecraftText} from '@/lib/MinecraftText'
-import {useEffect, useRef, useState} from 'react'
-import {DEFAULT_FONT_SIZE, drawMinecraftSignToCanvas} from '@/app/generators/sign-generator/canvasRenderer'
+import { MinecraftText } from '@/lib/MinecraftText'
+import { useEffect, useRef, useState } from 'react'
+import { DEFAULT_FONT_SIZE, drawMinecraftSignToCanvas } from '@/app/generators/sign-generator/canvasRenderer'
 import assert from 'node:assert'
-import {SignSide} from "@/app/generators/sign-generator/SignGenerator";
+import { SignSide } from "@/app/generators/sign-generator/SignGenerator"
 
 interface MinecraftSignProps {
+    signMaterial: string
+    signType: 'sign' | 'hanging'
     front: SignSide
     back: SignSide
     fontSize?: number
@@ -22,16 +24,17 @@ function randomObfuscatedChar() {
     return OBFUSCATED_CHARS[Math.floor(Math.random() * OBFUSCATED_CHARS.length)]
 }
 
-export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: MinecraftSignProps) {
-    const gltf = useGLTF('/minecraft_sign.gltf')
-    const model = gltf.scene
+export function MinecraftSign({ signMaterial, signType, front, back, fontSize = DEFAULT_FONT_SIZE }: MinecraftSignProps) {
+    const gltfPath = signType === 'sign' ? '/sign.gltf' : '/hanging.gltf'
+    const gltf = useGLTF("/assets/tool/sign/models" + gltfPath)
+    const model = gltf.scene.clone(true)
 
     const bbox = new THREE.Box3().setFromObject(model)
     const center = new THREE.Vector3()
     bbox.getCenter(center)
     model.position.sub(center)
 
-    const signMesh = model.getObjectByName('sign')
+    const signMesh = model.getObjectByName('sign') as THREE.Mesh
     assert(signMesh, 'Sign mesh not found')
 
     const signSize = new THREE.Vector3()
@@ -52,13 +55,13 @@ export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: Min
     const canvasesRafRef = useRef<number | null>(null)
     const texturesRafRef = useRef<number | null>(null)
 
+    // --- Draw canvases for front/back text ---
     useEffect(() => {
         if (!front || !back) return
 
         const frontWithFallback = front.lines.map(line =>
             line.map(ch => ({ ...ch, color: ch.color ?? front.color }))
         )
-
         const backWithFallback = back.lines.map(line =>
             line.map(ch => ({ ...ch, color: ch.color ?? back.color }))
         )
@@ -78,7 +81,7 @@ export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: Min
         }
     }, [front, back, fontSize])
 
-
+    // --- Create Three.js textures from canvases ---
     useEffect(() => {
         if (!frontCanvas || !backCanvas) return
 
@@ -110,6 +113,7 @@ export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: Min
         }
     }, [frontCanvas, backCanvas])
 
+    // --- Obfuscated characters animation ---
     useFrame(() => {
         if (frontTextureRef.current) {
             let hasObf = false
@@ -141,6 +145,30 @@ export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: Min
         }
     })
 
+    useEffect(() => {
+        if (!signMesh) return
+
+        const texturePath = `/assets/tool/sign/textures/${signMaterial}/${signType === 'sign' ? 'sign_preview.png' : 'hanging_preview.png'}`
+        const loader = new THREE.TextureLoader()
+        loader.load(texturePath, (tex) => {
+            if (!signMesh.material) return
+
+            if (!Array.isArray(signMesh.material)) {
+                const mat = signMesh.material as THREE.MeshStandardMaterial
+                mat.map = tex
+                mat.needsUpdate = true
+            }
+            else {
+                signMesh.material.forEach((m) => {
+                    const mat = m as THREE.MeshStandardMaterial
+                    mat.map = tex
+                    mat.needsUpdate = true
+                })
+            }
+        })
+    }, [signMaterial, signType, signMesh])
+
+
     if (!frontTexture || !backTexture || !frontCanvas || !backCanvas) return <primitive object={model} />
 
     const frontWidth = frontCanvas.width * PIXEL_TO_WORLD
@@ -156,7 +184,7 @@ export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: Min
     const planeBackZ = signCenter.z - 0.065
 
     return (
-        <group>
+        <group key={`${signMaterial}-${signType}`}>
             <primitive object={model} />
 
             <mesh position={[signCenter.x, planeCenterY, planeFrontZ]}>
@@ -172,11 +200,11 @@ export function MinecraftSign({ front, back, fontSize = DEFAULT_FONT_SIZE }: Min
     )
 }
 
-export default function SignPreview({ front, back }: { front: SignSide, back: SignSide }) {
+export default function SignPreview({front, back, signMaterial, signType,}: { front: SignSide, back: SignSide, signMaterial: string, signType: 'sign' | 'hanging' }) {
     return (
         <Canvas camera={{ position: [0, 2, 3], fov: 50 }}>
             <ambientLight intensity={1.5} />
-            <MinecraftSign front={front} back={back} />
+            <MinecraftSign front={front} back={back} signMaterial={signMaterial} signType={signType} />
             <OrbitControls
                 target={[0, 0.45, 0]}
                 enablePan={false}

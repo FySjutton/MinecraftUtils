@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import ColorSelect from '@/components/ColorSelect'
 import {Toggle} from "@/components/ui/toggle";
 import Image from "next/image";
+import SignSelector, {SignState} from "@/app/generators/sign-generator/SignSelector";
 
 export interface SignSide {
     lines: MinecraftText[][]
@@ -28,6 +29,10 @@ export default function SignGenerator() {
         front: { lines: [], color: null, glowing: false, waxed: false },
         back: { lines: [], color: null, glowing: false, waxed: false },
     })
+    const [sign, setSign] = useState<SignState>({
+        signMaterial: "spruce",
+        signType: "sign",
+    })
 
     return (
         <Card className="w-full">
@@ -37,6 +42,16 @@ export default function SignGenerator() {
             </CardHeader>
 
             <CardContent className="h-full">
+                <div className="mb-5">
+                    <label>Sign Type</label>
+                    <SignSelector
+                        value={sign}
+                        onChange={(newSign) => {
+                            setSign(newSign)
+                        }}
+                    />
+                </div>
+
                 <Tabs value={activeSide} onValueChange={v => setActiveSide(v as 'front' | 'back')}>
                     <TabsList>
                         <TabsTrigger value="front">Front</TabsTrigger>
@@ -219,7 +234,7 @@ export default function SignGenerator() {
                 </Tabs>
 
                 <div className="w-full mt-4 h-[300px] border rounded-md">
-                    <SignPreview front={signData.front} back={signData.back} />
+                    <SignPreview front={signData.front} back={signData.back} signMaterial={sign.signMaterial} signType={sign.signType} />
                 </div>
             </CardContent>
         </Card>
