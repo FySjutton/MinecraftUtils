@@ -146,28 +146,35 @@ export function MinecraftSign({ signMaterial, signType, front, back, fontSize = 
     })
 
     useEffect(() => {
-        if (!signMesh) return
+        if (!model) return;
 
-        const texturePath = `/assets/tool/sign/textures/${signMaterial}/${signType === 'sign' ? 'sign_preview.png' : 'hanging_preview.png'}`
-        const loader = new THREE.TextureLoader()
-        loader.load(texturePath, (tex) => {
-            if (!signMesh.material) return
+        const texturePath = `/assets/tool/sign/textures/${signMaterial}/${signType === 'sign' ? 'sign.png' : 'hanging.png'}`;
+        new THREE.TextureLoader().load(texturePath, (tex) => {
+            tex.flipY = false;
+            tex.minFilter = THREE.NearestFilter;
+            tex.magFilter = THREE.NearestFilter;
+            tex.generateMipmaps = false;
+            tex.colorSpace = THREE.SRGBColorSpace;
 
-            if (!Array.isArray(signMesh.material)) {
-                const mat = signMesh.material as THREE.MeshStandardMaterial
-                mat.map = tex
-                mat.needsUpdate = true
-            }
-            else {
-                signMesh.material.forEach((m) => {
-                    const mat = m as THREE.MeshStandardMaterial
-                    mat.map = tex
-                    mat.needsUpdate = true
-                })
-            }
-        })
-    }, [signMaterial, signType, signMesh])
-
+            model.traverse((child) => {
+                if ((child as THREE.Mesh).isMesh) {
+                    const mesh = child as THREE.Mesh;
+                    const mat = mesh.material;
+                    if (Array.isArray(mat)) {
+                        mat.forEach((m) => {
+                            if (m instanceof THREE.MeshStandardMaterial) {
+                                m.map = tex;
+                                m.needsUpdate = true;
+                            }
+                        });
+                    } else if (mat instanceof THREE.MeshStandardMaterial) {
+                        mat.map = tex;
+                        mat.needsUpdate = true;
+                    }
+                }
+            });
+        });
+    }, [model, signMaterial, signType]);
 
     if (!frontTexture || !backTexture || !frontCanvas || !backCanvas) return <primitive object={model} />
 
