@@ -1,13 +1,12 @@
 import { MinecraftText } from '@/lib/MinecraftText'
 import {DyeColors} from "@/lib/Colors";
 
-export const DEFAULT_FONT_SIZE = 36
 const PADDING = 8
-const LINE_HEIGHT_MULT = 1.25
 
 export function drawMinecraftSignToCanvas(
     lines: MinecraftText[][],
-    fontSize = DEFAULT_FONT_SIZE,
+    fontSize: number,
+    lineHeightMult: number,
     glowing = false,
     fallbackColor: string = 'black'
 ): HTMLCanvasElement {
@@ -16,7 +15,7 @@ export function drawMinecraftSignToCanvas(
     if (!ctx) throw new Error('2D context not available')
 
     const linesCount = Math.max(1, lines.length)
-    const lineHeight = Math.round(fontSize * LINE_HEIGHT_MULT)
+    const lineHeight = Math.round(fontSize * lineHeightMult)
 
     ctx.textBaseline = 'middle'
     ctx.imageSmoothingEnabled = false

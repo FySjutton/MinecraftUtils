@@ -70,6 +70,7 @@ export default function SignGenerator() {
                                     setOutputAction={lines =>
                                         setSignData(prev => ({ ...prev, front: { ...prev.front, lines } }))
                                     }
+                                    signType={sign}
                                 />
                                 <div className="flex gap-4">
                                     {/* Color select */}
@@ -157,6 +158,7 @@ export default function SignGenerator() {
                                     setOutputAction={lines =>
                                         setSignData(prev => ({ ...prev, back: { ...prev.back, lines } }))
                                     }
+                                    signType={sign}
                                 />
                                 <div className="flex gap-4">
                                     {/* Color select */}

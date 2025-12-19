@@ -4,8 +4,8 @@ import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { MinecraftText } from '@/lib/MinecraftText'
-import { useEffect, useRef, useState } from 'react'
-import { DEFAULT_FONT_SIZE, drawMinecraftSignToCanvas } from '@/app/generators/sign-generator/canvasRenderer'
+import {useEffect, useMemo, useRef, useState} from 'react'
+import { drawMinecraftSignToCanvas } from '@/app/generators/sign-generator/canvasRenderer'
 import assert from 'node:assert'
 import { SignSide } from "@/app/generators/sign-generator/SignGenerator"
 
@@ -14,7 +14,6 @@ interface MinecraftSignProps {
     signType: 'sign' | 'hanging'
     front: SignSide
     back: SignSide
-    fontSize?: number
 }
 
 const OBFUSCATED_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
@@ -24,10 +23,13 @@ function randomObfuscatedChar() {
     return OBFUSCATED_CHARS[Math.floor(Math.random() * OBFUSCATED_CHARS.length)]
 }
 
-export function MinecraftSign({ signMaterial, signType, front, back, fontSize = DEFAULT_FONT_SIZE }: MinecraftSignProps) {
+export function MinecraftSign({ signMaterial, signType, front, back }: MinecraftSignProps) {
     const gltfPath = signType === 'sign' ? '/sign.gltf' : '/hanging.gltf'
     const gltf = useGLTF("/assets/tool/sign/models" + gltfPath)
     const model = gltf.scene.clone(true)
+
+    const fontSize = useMemo(() => (sign(signType) ? 36 : 32), [signType])
+    const lineHeightMulti = useMemo(() => (sign(signType) ? 1.25 : 1.14), [signType])
 
     const bbox = new THREE.Box3().setFromObject(model)
     const center = new THREE.Vector3()
@@ -66,8 +68,8 @@ export function MinecraftSign({ signMaterial, signType, front, back, fontSize = 
             line.map(ch => ({ ...ch, color: ch.color ?? back.color }))
         )
 
-        const frontC = drawMinecraftSignToCanvas(frontWithFallback, fontSize, front.glowing)
-        const backC = drawMinecraftSignToCanvas(backWithFallback, fontSize, back.glowing)
+        const frontC = drawMinecraftSignToCanvas(frontWithFallback, fontSize, lineHeightMulti, front.glowing)
+        const backC = drawMinecraftSignToCanvas(backWithFallback, fontSize, lineHeightMulti, back.glowing)
 
         if (canvasesRafRef.current != null) cancelAnimationFrame(canvasesRafRef.current)
         canvasesRafRef.current = requestAnimationFrame(() => {
@@ -124,7 +126,7 @@ export function MinecraftSign({ signMaterial, signType, front, back, fontSize = 
             }
             if (hasObf) {
                 const updated = front.lines.map(line => line.map(ch => ch.obfuscated ? { ...ch, char: randomObfuscatedChar() } : ch))
-                const canvas = drawMinecraftSignToCanvas(updated, fontSize)
+                const canvas = drawMinecraftSignToCanvas(updated, fontSize, lineHeightMulti)
                 frontTextureRef.current.image = canvas
                 frontTextureRef.current.needsUpdate = true
             }
@@ -139,7 +141,7 @@ export function MinecraftSign({ signMaterial, signType, front, back, fontSize = 
             }
             if (hasObf) {
                 const updated = back.lines.map(line => line.map(ch => ch.obfuscated ? { ...ch, char: randomObfuscatedChar() } : ch))
-                backTextureRef.current.image = drawMinecraftSignToCanvas(updated, fontSize)
+                backTextureRef.current.image = drawMinecraftSignToCanvas(updated, fontSize, lineHeightMulti)
                 backTextureRef.current.needsUpdate = true
             }
         }
@@ -183,9 +185,10 @@ export function MinecraftSign({ signMaterial, signType, front, back, fontSize = 
     const backWidth = backCanvas.width * PIXEL_TO_WORLD
     const backHeight = backCanvas.height * PIXEL_TO_WORLD
 
-    const TOP_INSET_WORLD = signSize.y * 0.06
-    const signTopY = signCenter.y - signSize.y / 2
-    const planeCenterY = signTopY - TOP_INSET_WORLD - (signSize.y * 0.33)
+    const signTopY = signCenter.y + signSize.y / 2
+
+    const planeFrontY = signTopY - signSize.y - 0.11 - frontHeight / 2 + (sign(signType) ? 0 : 0.18)
+    const planeBackY = signTopY - signSize.y - 0.11 - backHeight / 2 + (sign(signType) ? 0 : 0.18)
 
     const planeFrontZ = signCenter.z + 0.065
     const planeBackZ = signCenter.z - 0.065
@@ -194,12 +197,12 @@ export function MinecraftSign({ signMaterial, signType, front, back, fontSize = 
         <group key={`${signMaterial}-${signType}`}>
             <primitive object={model} />
 
-            <mesh position={[signCenter.x, planeCenterY, planeFrontZ]}>
+            <mesh position={[signCenter.x, planeFrontY, planeFrontZ]}>
                 <planeGeometry args={[frontWidth, frontHeight]} />
                 <meshBasicMaterial map={frontTexture} transparent />
             </mesh>
 
-            <mesh position={[signCenter.x, planeCenterY, planeBackZ]} rotation-y={Math.PI}>
+            <mesh position={[signCenter.x, planeBackY, planeBackZ]} rotation-y={Math.PI}>
                 <planeGeometry args={[backWidth, backHeight]} />
                 <meshBasicMaterial map={backTexture} transparent />
             </mesh>
@@ -213,7 +216,7 @@ export default function SignPreview({front, back, signMaterial, signType,}: { fr
             <ambientLight intensity={1.5} />
             <MinecraftSign front={front} back={back} signMaterial={signMaterial} signType={signType} />
             <OrbitControls
-                target={[0, 0.45, 0]}
+                target={[0, sign(signType) ? 0.45 : -0.15, 0]}
                 enablePan={false}
                 enableZoom
                 minDistance={1}
@@ -222,4 +225,8 @@ export default function SignPreview({front, back, signMaterial, signType,}: { fr
             />
         </Canvas>
     )
+}
+
+function sign(text: string) {
+    return text == "sign"
 }

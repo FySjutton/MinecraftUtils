@@ -21,13 +21,15 @@ import {PasteColorFilter} from "@/components/editor/PasteColorFilter";
 import {MaxLines} from "@/components/editor/MaxLines";
 import {MinecraftText} from "@/lib/MinecraftText";
 import {tiptapToMinecraftText} from "@/lib/converters/tiptapToMinecraftText";
+import {SignState} from "@/app/generators/sign-generator/SignSelector";
 
 interface SignEditorProps {
     output: MinecraftText[][]
-    setOutputAction: (lines: MinecraftText[][]) => void
+    setOutputAction: (lines: MinecraftText[][]) => void,
+    signType: SignState
 }
 
-export default function SignEditor({ output, setOutputAction }: SignEditorProps) {
+export default function SignEditor({ output, setOutputAction, signType }: SignEditorProps) {
     const editor = useEditor({
         extensions: [
             Document,
@@ -117,12 +119,13 @@ export default function SignEditor({ output, setOutputAction }: SignEditorProps)
             <div
                 className="h-25 pl-2"
                 style={{
-                    backgroundImage: "url('/assets/sign_types/oak.png')",
-                    backgroundSize: "auto 100%",
-                    backgroundRepeat: "repeat",
-                    backgroundPosition: "center",
+                    backgroundImage: `url('/assets/tool/sign/textures/${signType.signMaterial}/front_preview.png')`,
+                    backgroundSize: 'auto 100%',
+                    backgroundRepeat: 'repeat',
+                    backgroundPosition: 'center',
                 }}
             >
+
                 <EditorContent
                     editor={editor}
                     spellCheck={false}
