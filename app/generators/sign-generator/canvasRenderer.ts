@@ -98,7 +98,7 @@ export function drawMinecraftSignToCanvas(
 }
 
 function getOutlineColor(fillInt: number): string {
-    if (fillInt === 1908001) return '#F0F0CC'
+    if (fillInt === 1908001 || fillInt == 0) return '#F0F0CC'
     return intToRgbString(scaleRgbInt(fillInt, 0.4))
 }
 

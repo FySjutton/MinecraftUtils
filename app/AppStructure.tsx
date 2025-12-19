@@ -21,14 +21,13 @@ import {
     IconRocket,
     IconSettings,
     IconSettingsUp, IconShield,
-    IconStack3,
-    IconTerminal2, IconTextScan2,
+    IconTerminal2,
     IconTransform,
     IconUser,
     IconWand,
     IconWorld
 } from "@tabler/icons-react";
-import {Captions, SlidersVertical, Sun} from "lucide-react";
+import {Captions, Milestone, SlidersVertical, Sun} from "lucide-react";
 
 export interface PageItem {
     name: string
@@ -91,6 +90,7 @@ export const tools: ToolCategory[] = [
         url: "/generators",
         defaultOpen: true,
         pages: [
+            { name: "Sign Generator", url: "sign-generator", icon: <Milestone />, description: "Generate minecraft signs through an editor with live 3D preview." },
             { name: "Motd Creator", url: "motd-creator", icon: <Captions />, description: "Generate server motds through an interactive editor." },
         ],
     },
@@ -133,7 +133,6 @@ export const externals: ToolCategory[] = [
             { name: "Selector Generator", url: "https://minecraft.tools/en/selector.php", icon: <IconBraces />, description: "Generate entity selectors." },
             { name: "Json Text Generator", url: "https://minecraft.tools/en/json_text.php", icon: <IconCode />, description: "Create custom chat messages." },
             { name: "Title Generator", url: "https://minecraft.tools/en/title.php", icon: <IconH1 />, description: "Generate title and subtitle commands." },
-            { name: "Sign Generator", url: "https://minecraft.tools/en/sign.php", icon: <IconAlignBoxLeftBottom />, description: "Create custom signs for builds." },
             { name: "Book Generator", url: "https://minecraft.tools/en/book.php", icon: <IconBook />, description: "Create writable books." },
             { name: "/give Generator", url: "https://www.digminecraft.com/generators/give_tool.php", icon: <IconTerminal2 />, description: "Generate /give commands easily." },
             { name: "Summon Mob Generator", url: "https://www.digminecraft.com/generators/summon_mob.php", icon: <IconPaw />, description: "Generate summon commands for mobs." },
@@ -158,6 +157,7 @@ export const externals: ToolCategory[] = [
 export const featuredHomePage: PageItem[] = [
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
+    getPage(tools, "Sign Generator"),
     getPage(tools, "Nether Calculator"),
     getPage(tools, "Daylight Cycle"),
     getPage(tools, "Motd Creator"),
@@ -172,6 +172,7 @@ export const featuredCalculators: PageItem[] = [
 ]
 
 export const featuredGenerators: PageItem[] = [
+    getPage(tools, "Sign Generator"),
     getPage(tools, "Motd Creator"),
 ]
 
