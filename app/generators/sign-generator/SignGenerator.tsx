@@ -1,7 +1,7 @@
 'use client'
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useState } from 'react'
+import {useMemo, useState} from 'react'
 import SignPreview from '@/app/generators/sign-generator/SignPreview'
 import SignEditor from '@/app/generators/sign-generator/SignEditor'
 import { MinecraftText } from '@/lib/MinecraftText'
@@ -10,6 +10,9 @@ import ColorSelect from '@/components/ColorSelect'
 import {Toggle} from "@/components/ui/toggle";
 import Image from "next/image";
 import SignSelector, {SignState} from "@/app/generators/sign-generator/SignSelector";
+import {InputField} from "@/components/InputField";
+import {generateSignCommand} from "@/app/generators/sign-generator/signCommandGenerator";
+import InProgressBanner from "@/components/banners/InProgressBanner";
 
 export interface SignSide {
     lines: MinecraftText[][]
@@ -34,8 +37,11 @@ export default function SignGenerator() {
         signType: "sign",
     })
 
+    const command = useMemo(() => (generateSignCommand(-4, 72, -7, "oak_sign", signData)), [signData])
+
     return (
-        <Card className="w-full">
+        // TODO: REMOVE ONCE FINISHED | SIGN GENERATOR
+        <><InProgressBanner></InProgressBanner><Card className="w-full">
             <CardHeader>
                 <CardTitle>Sign Generator</CardTitle>
                 <CardDescription>Edit the sign content directly on the sign.</CardDescription>
@@ -48,8 +54,7 @@ export default function SignGenerator() {
                         value={sign}
                         onChange={(newSign) => {
                             setSign(newSign)
-                        }}
-                    />
+                        }}/>
                 </div>
 
                 <Tabs value={activeSide} onValueChange={v => setActiveSide(v as 'front' | 'back')}>
@@ -62,27 +67,27 @@ export default function SignGenerator() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Front Side</CardTitle>
-                                <CardDescription>Edit the front text and choose color. Preview is below.</CardDescription>
+                                <CardDescription>Edit the front text and choose color. Preview is
+                                    below.</CardDescription>
                             </CardHeader>
                             <CardContent className="h-full space-y-2">
                                 <SignEditor
                                     output={signData.front.lines}
-                                    setOutputAction={lines =>
-                                        setSignData(prev => ({ ...prev, front: { ...prev.front, lines } }))
-                                    }
-                                    signType={sign}
-                                />
+                                    setOutputAction={lines => setSignData(prev => ({
+                                        ...prev,
+                                        front: {...prev.front, lines}
+                                    }))}
+                                    signType={sign}/>
                                 <div className="flex gap-4">
                                     {/* Color select */}
                                     <div>
                                         <label>Sign Color</label>
                                         <ColorSelect
                                             value={signData.front.color ?? "none"}
-                                            onChange={color =>
-
-                                                setSignData(prev => ({ ...prev, front: { ...prev.front, color: (color == "none" ? null : color) } }))
-                                            }
-                                        />
+                                            onChange={color => setSignData(prev => ({
+                                                ...prev,
+                                                front: {...prev.front, color: (color == "none" ? null : color)}
+                                            }))}/>
                                     </div>
 
                                     {/* Glowing switch */}
@@ -94,12 +99,10 @@ export default function SignGenerator() {
                                             variant="outline"
                                             className="flex items-center gap-2"
                                             pressed={signData.front.glowing ?? false}
-                                            onPressedChange={checked =>
-                                                setSignData(prev => ({
-                                                    ...prev,
-                                                    front: { ...prev.front, glowing: checked },
-                                                }))
-                                            }
+                                            onPressedChange={checked => setSignData(prev => ({
+                                                ...prev,
+                                                front: {...prev.front, glowing: checked},
+                                            }))}
                                         >
                                             <Image
                                                 src={signData.front.glowing
@@ -108,8 +111,7 @@ export default function SignGenerator() {
                                                 alt="glowing icon"
                                                 width={16}
                                                 height={16}
-                                                className="w-5 h-5"
-                                            />
+                                                className="w-5 h-5"/>
                                             <span>{signData.front.glowing ? "Glowing" : "Normal"}</span>
                                         </Toggle>
                                     </div>
@@ -122,12 +124,10 @@ export default function SignGenerator() {
                                             variant="outline"
                                             className="flex items-center gap-2"
                                             pressed={signData.front.waxed ?? false}
-                                            onPressedChange={checked =>
-                                                setSignData(prev => ({
-                                                    ...prev,
-                                                    front: { ...prev.front, waxed: checked },
-                                                }))
-                                            }
+                                            onPressedChange={checked => setSignData(prev => ({
+                                                ...prev,
+                                                front: {...prev.front, waxed: checked},
+                                            }))}
                                         >
                                             <Image
                                                 src={signData.front.waxed
@@ -136,8 +136,7 @@ export default function SignGenerator() {
                                                 alt="waxed icon"
                                                 width={16}
                                                 height={16}
-                                                className="w-5 h-5"
-                                            />
+                                                className="w-5 h-5"/>
                                             <span>{signData.front.waxed ? "Waxed" : "Normal"}</span>
                                         </Toggle>
                                     </div>
@@ -150,27 +149,27 @@ export default function SignGenerator() {
                         <Card>
                             <CardHeader>
                                 <CardTitle>Back Side</CardTitle>
-                                <CardDescription>Edit the back text and choose color. Preview is below.</CardDescription>
+                                <CardDescription>Edit the back text and choose color. Preview is
+                                    below.</CardDescription>
                             </CardHeader>
                             <CardContent className="h-full space-y-2">
                                 <SignEditor
                                     output={signData.back.lines}
-                                    setOutputAction={lines =>
-                                        setSignData(prev => ({ ...prev, back: { ...prev.back, lines } }))
-                                    }
-                                    signType={sign}
-                                />
+                                    setOutputAction={lines => setSignData(prev => ({
+                                        ...prev,
+                                        back: {...prev.back, lines}
+                                    }))}
+                                    signType={sign}/>
                                 <div className="flex gap-4">
                                     {/* Color select */}
                                     <div>
                                         <label>Sign Color</label>
                                         <ColorSelect
                                             value={signData.back.color ?? "none"}
-                                            onChange={color =>
-
-                                                setSignData(prev => ({ ...prev, back: { ...prev.back, color: (color == "none" ? null : color) } }))
-                                            }
-                                        />
+                                            onChange={color => setSignData(prev => ({
+                                                ...prev,
+                                                back: {...prev.back, color: (color == "none" ? null : color)}
+                                            }))}/>
                                     </div>
 
                                     {/* Glowing switch */}
@@ -182,12 +181,10 @@ export default function SignGenerator() {
                                             variant="outline"
                                             className="flex items-center gap-2"
                                             pressed={signData.back.glowing ?? false}
-                                            onPressedChange={checked =>
-                                                setSignData(prev => ({
-                                                    ...prev,
-                                                    back: { ...prev.back, glowing: checked },
-                                                }))
-                                            }
+                                            onPressedChange={checked => setSignData(prev => ({
+                                                ...prev,
+                                                back: {...prev.back, glowing: checked},
+                                            }))}
                                         >
                                             <Image
                                                 src={signData.back.glowing
@@ -196,8 +193,7 @@ export default function SignGenerator() {
                                                 alt="glowing icon"
                                                 width={16}
                                                 height={16}
-                                                className="w-5 h-5"
-                                            />
+                                                className="w-5 h-5"/>
                                             <span>{signData.back.glowing ? "Glowing" : "Normal"}</span>
                                         </Toggle>
                                     </div>
@@ -210,12 +206,10 @@ export default function SignGenerator() {
                                             variant="outline"
                                             className="flex items-center gap-2"
                                             pressed={signData.back.waxed ?? false}
-                                            onPressedChange={checked =>
-                                                setSignData(prev => ({
-                                                    ...prev,
-                                                    back: { ...prev.back, waxed: checked },
-                                                }))
-                                            }
+                                            onPressedChange={checked => setSignData(prev => ({
+                                                ...prev,
+                                                back: {...prev.back, waxed: checked},
+                                            }))}
                                         >
                                             <Image
                                                 src={signData.back.waxed
@@ -224,8 +218,7 @@ export default function SignGenerator() {
                                                 alt="waxed icon"
                                                 width={16}
                                                 height={16}
-                                                className="w-5 h-5"
-                                            />
+                                                className="w-5 h-5"/>
                                             <span>{signData.back.waxed ? "Waxed" : "Normal"}</span>
                                         </Toggle>
                                     </div>
@@ -236,9 +229,16 @@ export default function SignGenerator() {
                 </Tabs>
 
                 <div className="w-full mt-4 h-[300px] border rounded-md">
-                    <SignPreview front={signData.front} back={signData.back} signMaterial={sign.signMaterial} signType={sign.signType} />
+                    <SignPreview front={signData.front} back={signData.back} signMaterial={sign.signMaterial}
+                                 signType={sign.signType}/>
                 </div>
+
+                <InputField
+                    showCopy
+                    value={command}
+                    label="Generate command"
+                    readOnly/>
             </CardContent>
-        </Card>
+        </Card></>
     )
 }

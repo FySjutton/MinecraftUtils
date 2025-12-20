@@ -90,7 +90,7 @@ export const tools: ToolCategory[] = [
         url: "/generators",
         defaultOpen: true,
         pages: [
-            { name: "Sign Generator", url: "sign-generator", icon: <Milestone />, description: "Generate minecraft signs through an editor with live 3D preview." },
+            // { name: "Sign Generator", url: "sign-generator", icon: <Milestone />, description: "Generate minecraft signs through an editor with live 3D preview." },
             { name: "Motd Creator", url: "motd-creator", icon: <Captions />, description: "Generate server motds through an interactive editor." },
         ],
     },
@@ -157,7 +157,7 @@ export const externals: ToolCategory[] = [
 export const featuredHomePage: PageItem[] = [
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
-    getPage(tools, "Sign Generator"),
+    // getPage(tools, "Sign Generator"),
     getPage(tools, "Nether Calculator"),
     getPage(tools, "Daylight Cycle"),
     getPage(tools, "Motd Creator"),
@@ -172,7 +172,7 @@ export const featuredCalculators: PageItem[] = [
 ]
 
 export const featuredGenerators: PageItem[] = [
-    getPage(tools, "Sign Generator"),
+    // getPage(tools, "Sign Generator"),
     getPage(tools, "Motd Creator"),
 ]
 

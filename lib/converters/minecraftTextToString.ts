@@ -14,7 +14,7 @@ export function minecraftTextToString(
 
     for (const line of lines) {
         for (const ch of line) {
-            if (ch.color !== prev.color) {
+            if (ch.color !== prev.color && ch.color != null) {
                 out += `${prefix}${COLOR_TO_CODE[ch.color]}`
             }
 
