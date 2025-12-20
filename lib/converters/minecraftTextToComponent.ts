@@ -39,7 +39,9 @@ function lineToComponents(line: MinecraftText[]): TextComponent[] {
 
             components.push(current)
         } else {
-            current.text += ch.char
+            if (current != null) {
+                current.text += ch.char
+            }
         }
     }
 

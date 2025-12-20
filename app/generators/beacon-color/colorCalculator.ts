@@ -1,22 +1,22 @@
 export type RGB = [number, number, number];
 
 export const GLASS_COLORS: Record<string, RGB> = {
-    White: [249, 255, 254],
-    Orange: [249, 128, 29],
-    Magenta: [199, 78, 189],
-    LightBlue: [58, 179, 218],
-    Yellow: [254, 216, 61],
-    Lime: [128, 199, 31],
-    Pink: [243, 139, 170],
-    Gray: [71, 79, 82],
-    LightGray: [157, 157, 151],
-    Cyan: [22, 156, 156],
-    Purple: [137, 50, 184],
-    Blue: [60, 68, 170],
-    Brown: [131, 84, 50],
-    Green: [94, 124, 22],
-    Red: [176, 46, 38],
-    Black: [29, 29, 33],
+    white_stained_glass: [249, 255, 254],
+    orange_stained_glass: [249, 128, 29],
+    magenta_stained_glass: [199, 78, 189],
+    light_blue_stained_glass: [58, 179, 218],
+    yellow_stained_glass: [254, 216, 61],
+    lime_stained_glass: [128, 199, 31],
+    pink_stained_glass: [243, 139, 170],
+    gray_stained_glass: [71, 79, 82],
+    light_gray_stained_glass: [157, 157, 151],
+    cyan_stained_glass: [22, 156, 156],
+    purple_stained_glass: [137, 50, 184],
+    blue_stained_glass: [60, 68, 170],
+    brown_stained_glass: [131, 84, 50],
+    green_stained_glass: [94, 124, 22],
+    red_stained_glass: [176, 46, 38],
+    black_stained_glass: [29, 29, 33],
 };
 
 export function hexToRgb(hex: string): RGB {

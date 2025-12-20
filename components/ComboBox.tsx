@@ -17,7 +17,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
-import {IconCheck, IconSelector} from "@tabler/icons-react";
+import { IconCheck, IconSelector } from "@tabler/icons-react"
 
 interface ComboBoxProps {
     items: string[]
@@ -26,6 +26,7 @@ interface ComboBoxProps {
     placeholder: string
     placeholderSearch: string
     width?: string
+    renderItem?: (item: string) => React.ReactNode
 }
 
 export function ComboBox({
@@ -35,6 +36,7 @@ export function ComboBox({
                              placeholder,
                              placeholderSearch,
                              width = "200px",
+                             renderItem,
                          }: ComboBoxProps) {
     const [open, setOpen] = React.useState(false)
 
@@ -46,16 +48,25 @@ export function ComboBox({
                     role="combobox"
                     aria-expanded={open}
                     style={{ maxWidth: width }}
-                    className="justify-between w-full"
+                    className="flex items-center w-full"
                 >
-                    {value || placeholder}
-                    <IconSelector className="opacity-50" />
+                    <span className="truncate">
+                        {value || placeholder}
+                    </span>
+
+                    <span className="ml-auto flex items-center gap-2">
+                        {renderItem?.(value)}
+                        <IconSelector className="opacity-50" />
+                    </span>
                 </Button>
             </PopoverTrigger>
 
             <PopoverContent style={{ width }} className="p-0">
                 <Command>
-                    <CommandInput placeholder={placeholderSearch} className="h-9" />
+                    <CommandInput
+                        placeholder={placeholderSearch}
+                        className="h-9"
+                    />
                     <CommandList>
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup>
@@ -67,12 +78,20 @@ export function ComboBox({
                                         onChange(item)
                                         setOpen(false)
                                     }}
+                                    className="flex items-center gap-2"
                                 >
-                                    {item}
+                                    <span className="flex-1 truncate">
+                                        {item}
+                                    </span>
+
+                                    {renderItem?.(item)}
+
                                     <IconCheck
                                         className={cn(
-                                            "ml-auto",
-                                            value === item ? "opacity-100" : "opacity-0"
+                                            "ml-auto shrink-0",
+                                            value === item
+                                                ? "opacity-100"
+                                                : "opacity-0"
                                         )}
                                     />
                                 </CommandItem>
