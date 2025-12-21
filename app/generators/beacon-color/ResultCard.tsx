@@ -9,7 +9,7 @@ import {
     Candidate,
     findColorName,
     rgbToHex
-} from "@/app/generators/beacon-color/beaconColorTool"
+} from "@/app/generators/beacon-color/subtools/beaconToGlassTool"
 
 interface ResultCardProps {
     result: Candidate

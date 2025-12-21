@@ -49,20 +49,17 @@ export function ComboBox({
                     role="combobox"
                     aria-expanded={open}
                     style={{ maxWidth: width }}
-                    className="flex items-center w-full"
+                    className="flex items-center w-full justify-between"
                 >
-                    {renderIcon && (
-                        <span className="flex-shrink-0">
-                            {renderIcon(value)}
-                        </span>
-                    )}
+                    <div className="flex items-center gap-2 truncate">
+                        {renderIcon && <span className="flex-shrink-0">{renderIcon(value)}</span>}
+                        <span className="truncate">{value || placeholder}</span>
+                    </div>
 
-                    <span className="truncate flex-1">{value || placeholder}</span>
-
-                    <span className="ml-auto flex items-center gap-2">
+                    <div className="flex items-center gap-2 ml-2 shrink-0">
                         {renderItem?.(value)}
                         <IconSelector className="opacity-50" />
-                    </span>
+                    </div>
                 </Button>
             </PopoverTrigger>
 

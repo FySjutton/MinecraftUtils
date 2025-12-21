@@ -1,8 +1,8 @@
 "use client"
 
 import { useState } from 'react'
-import BeaconColorTool from "@/app/generators/beacon-color/beaconColorTool";
-import GlassToBeaconColor from "@/app/generators/beacon-color/glassToBeaconColor";
+import BeaconToGlassTool from "@/app/generators/beacon-color/subtools/beaconToGlassTool";
+import GlassToBeaconColor from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 
 export default function BeaconColorGenerator() {
@@ -15,7 +15,7 @@ export default function BeaconColorGenerator() {
             </TabsList>
 
             <TabsContent value="tool" forceMount className="data-[state=inactive]:hidden">
-                <BeaconColorTool/>
+                <BeaconToGlassTool setTabAction={setTab}/>
             </TabsContent>
 
             <TabsContent value="verify" forceMount className="data-[state=inactive]:hidden">
