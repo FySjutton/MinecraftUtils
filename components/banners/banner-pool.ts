@@ -19,9 +19,10 @@ export const bannerPool: PoolEntry[] = [
     },
     {
         id: "support",
-        title: "Enjoy this project? Star it on GitHub!",
-        bgColor: "#dad872",
+        title: "Enjoy this project? Want to support it? Star it on GitHub!",
+        bgColor: "#fff838",
         textColor: "black",
+        iconClassName: "bg-yellow-400 text-black p-2",
         icon: IconStar,
         actionLabel: "Star now",
         actionUrl: "https://github.com/FySjutton/MinecraftUtils",

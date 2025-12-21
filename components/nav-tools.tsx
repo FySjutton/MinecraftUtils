@@ -106,6 +106,12 @@ export function NavTools({tools, activeCategory, activePage, title}: {
                                                                 >
                                                                     <span className="flex items-center shrink-0 size-4">{renderIcon(page.icon)}</span>
                                                                     <span className="flex-1">{page.name}</span>
+                                                                    {page.type == "beta" && (
+                                                                        <Badge variant="secondary" className="bg-blue-500">Beta</Badge>
+                                                                    )}
+                                                                    {page.type == "alpha" && (
+                                                                        <Badge variant="destructive">Alpha</Badge>
+                                                                    )}
                                                                     {tool.external && (
                                                                         <IconExternalLink className="w-4 h-4 shrink-0 ml-auto" />
                                                                     )}

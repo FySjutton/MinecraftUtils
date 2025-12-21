@@ -12,7 +12,6 @@ import Image from "next/image";
 import SignSelector, {SignState} from "@/app/generators/sign-generator/SignSelector";
 import {InputField} from "@/components/InputField";
 import {generateSignCommand} from "@/app/generators/sign-generator/signCommandGenerator";
-import InProgressBanner from "@/components/banners/InProgressBanner";
 
 export interface SignSide {
     lines: MinecraftText[][]
@@ -40,8 +39,7 @@ export default function SignGenerator() {
     const command = useMemo(() => (generateSignCommand(-4, 72, -7, "oak_sign", signData)), [signData])
 
     return (
-        // TODO: REMOVE ONCE FINISHED | SIGN GENERATOR
-        <><InProgressBanner></InProgressBanner><Card className="w-full">
+        <Card className="w-full">
             <CardHeader>
                 <CardTitle>Sign Generator</CardTitle>
                 <CardDescription>Edit the sign content directly on the sign.</CardDescription>
@@ -239,6 +237,6 @@ export default function SignGenerator() {
                     label="Generate command"
                     readOnly/>
             </CardContent>
-        </Card></>
+        </Card>
     )
 }

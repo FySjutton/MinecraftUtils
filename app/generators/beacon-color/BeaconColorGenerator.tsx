@@ -7,6 +7,7 @@ import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 
 export default function BeaconColorGenerator() {
     const [tab, setTab] = useState<'tool' | 'verify'>('tool');
+
     return (
         <Tabs value={tab} onValueChange={v => setTab(v as 'tool' | 'verify')} className="w-full">
             <TabsList>

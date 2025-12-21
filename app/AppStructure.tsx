@@ -35,6 +35,7 @@ export interface PageItem {
     icon?: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string
     description?: string
     external?: boolean
+    type?: "beta" | "alpha"
 }
 
 export interface ToolCategory {
@@ -67,6 +68,22 @@ function getPage(categories: ToolCategory[], pageName: string): PageItem {
     throw new Error(`Page "${pageName}" not found in any category`)
 }
 
+interface PageWithCategory extends PageItem {
+    categoryUrl: string
+}
+
+export function getCurrentPage(pathname: string) {
+    const allPages: PageWithCategory[] = [
+        ...tools.flatMap(t => t.pages.map(p => ({ ...p, categoryUrl: t.url }))),
+        ...externals.flatMap(t => t.pages.map(p => ({ ...p, categoryUrl: t.url }))),
+    ];
+
+    const cleanPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
+
+    return allPages.find(
+        p => `${p.categoryUrl.replace(/^\/+/, "")}/${p.url.replace(/^\/+/, "")}` === cleanPath
+    );
+}
 
 export const navMain: PageItem[] = [
     { name: "Home", url: "/", icon: <IconHome /> },
@@ -90,7 +107,8 @@ export const tools: ToolCategory[] = [
         url: "/generators",
         defaultOpen: true,
         pages: [
-            // { name: "Sign Generator", url: "sign-generator", icon: <Milestone />, description: "Generate minecraft signs through an editor with live 3D preview." },
+            { name: "Beacon Generator", url: "beacon-color", icon: <Milestone />, description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode.", type: "beta" },
+            { name: "Sign Generator", url: "sign-generator", icon: <Milestone />, description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
             { name: "Motd Creator", url: "motd-creator", icon: <Captions />, description: "Generate server motds through an interactive editor." },
         ],
     },
@@ -157,7 +175,8 @@ export const externals: ToolCategory[] = [
 export const featuredHomePage: PageItem[] = [
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
-    // getPage(tools, "Sign Generator"),
+    getPage(tools, "Beacon Generator"),
+    getPage(tools, "Sign Generator"),
     getPage(tools, "Nether Calculator"),
     getPage(tools, "Daylight Cycle"),
     getPage(tools, "Motd Creator"),
@@ -172,7 +191,8 @@ export const featuredCalculators: PageItem[] = [
 ]
 
 export const featuredGenerators: PageItem[] = [
-    // getPage(tools, "Sign Generator"),
+    getPage(tools, "Beacon Generator"),
+    getPage(tools, "Sign Generator"),
     getPage(tools, "Motd Creator"),
 ]
 

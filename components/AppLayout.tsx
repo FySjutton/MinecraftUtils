@@ -16,6 +16,9 @@ import {
 } from "@/components/ui/breadcrumb";
 import {usePathname} from "next/navigation";
 import RandomBanner from "@/components/banners/RandomBanner";
+import {getCurrentPage} from "@/app/AppStructure";
+import {Banner, BannerIcon, BannerTitle} from "./ui/banner";
+import {IconAlertOctagon} from "@tabler/icons-react";
 
 function toTitleCase(str: string) {
     return str.toLowerCase().split(' ').map((word: string) => {
@@ -25,7 +28,12 @@ function toTitleCase(str: string) {
 
 export default function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
-    const segments = pathname.split("/").filter(Boolean).map((value) => toTitleCase(value.replaceAll(/[-_]/g, " ")));
+    const segments = pathname
+        .split("/")
+        .filter(Boolean)
+        .map((value) => toTitleCase(value.replaceAll(/[-_]/g, " ")));
+
+    const currentPage = getCurrentPage(pathname);
 
     return (
         <SidebarProvider>
@@ -40,7 +48,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                 <BreadcrumbList>
                                     {segments.map((segment, i) => {
                                         const href = "/" + segments.slice(0, i + 1).join("/").toLowerCase();
-                                        const isLast = i === segments.length - 1
+                                        const isLast = i === segments.length - 1;
 
                                         return (
                                             <React.Fragment key={href}>
@@ -54,19 +62,43 @@ export default function AppLayout({ children }: { children: ReactNode }) {
 
                                                 {!isLast && <BreadcrumbSeparator />}
                                             </React.Fragment>
-                                        )
+                                        );
                                     })}
                                 </BreadcrumbList>
                             </Breadcrumb>
                         </header>
+
                         <div className="flex flex-1 flex-col gap-4 p-4 relative z-0">
                             <RandomBanner />
+
+                            {/* Render beta/alpha badge */}
+                            {currentPage?.type == "alpha" && (
+                                <Banner
+                                    variant="secondary"
+                                    inset
+                                    style={{ backgroundColor: "#ba2727", color: "#FFFFFF" }}
+                                >
+                                    <BannerIcon icon={IconAlertOctagon} className={"bg-white/20 text-white"} />
+                                    <BannerTitle>{"WARNING! | This utility is in the alpha phase! Try to avoid using it, it is only here in order for testers/developers to test it!"}</BannerTitle>
+                                </Banner>
+                            )}
+                            {currentPage?.type == "beta" && (
+                                <Banner
+                                    variant="secondary"
+                                    inset
+                                    style={{ backgroundColor: "#2773ba", color: "#FFFFFF" }}
+                                >
+                                    <BannerIcon icon={IconAlertOctagon} className={"bg-white/20 text-white"} />
+                                    <BannerTitle>{"This utility is still in beta, please report any bugs on github!"}</BannerTitle>
+                                </Banner>
+                            )}
+
                             {children}
                         </div>
                     </SidebarInset>
-                    <Footer></Footer>
+                    <Footer />
                 </main>
             </div>
         </SidebarProvider>
-    )
+    );
 }

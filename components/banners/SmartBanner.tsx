@@ -16,21 +16,13 @@ export type SmartBannerProps = {
     bgColor?: string;
     textColor?: string;
     icon?: TablerIcon;
+    iconClassName?: string;
     actionLabel?: string;
     actionUrl?: string;
     expireDays?: number;
 };
 
-export default function SmartBanner({
-                                        id,
-                                        title,
-                                        icon: IconComp,
-                                        bgColor = "#333",
-                                        textColor = "white",
-                                        actionLabel,
-                                        actionUrl,
-                                        expireDays = 30,
-                                    }: SmartBannerProps) {
+export default function SmartBanner({id, title, icon: IconComp, iconClassName = "bg-white/20 text-white", bgColor = "#333", textColor = "white", actionLabel, actionUrl, expireDays = 30,}: SmartBannerProps) {
     const [show, setShow] = React.useState(false);
 
     React.useEffect(() => {
@@ -66,7 +58,7 @@ export default function SmartBanner({
             onClick={actionUrl ? handleAction : undefined}
             style={{ backgroundColor: bgColor, color: textColor }}
         >
-            {IconComp && <BannerIcon icon={IconComp} className="bg-white/20 text-white" />}
+            {IconComp && <BannerIcon icon={IconComp} className={iconClassName} />}
             <BannerTitle>{title}</BannerTitle>
             {actionLabel && actionUrl && (
                 <BannerAction variant="default" onClick={handleAction}>

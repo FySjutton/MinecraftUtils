@@ -4,7 +4,6 @@ import GithubIcon from "@/components/icons/GithubIcon";
 import DiscordIcon from "@/components/icons/DiscordIcon";
 import FeaturedUtils from "@/components/FeaturedUtils";
 import {featuredHomePage} from "@/app/AppStructure";
-import {Metadata} from "next";
 
 export default function HomePage() {
     return (

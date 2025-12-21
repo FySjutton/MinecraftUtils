@@ -20,9 +20,9 @@ import { turnToHex } from "@/lib/ColorsToHex"
 import { ComboBox } from "@/components/ComboBox"
 import { BeaconPreview } from "@/app/generators/beacon-color/preview/BeaconBeam"
 import {ResultCard} from "@/app/generators/beacon-color/ResultCard";
+import {StepSlider} from "@/components/Slider";
 
 const COLOR_ENTRIES = Object.entries(GLASS_COLORS)
-const MAX_HEIGHT = 6
 
 export function rgbToHex(rgb: RGB) {
     return `#${rgb.map(c => Math.round(c).toString(16).padStart(2, '0')).join('')}`
@@ -59,6 +59,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
     const [colorsChecked, setColorsChecked] = useState(0)
     const [status, setStatus] = useState<string | null>(null)
     const [overrides, setOverrides] = useState<Record<number, boolean>>({})
+    const [maxHeight, setMaxHeight] = React.useState(6)
 
     const workerRef = useRef<Worker | null>(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -85,7 +86,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
             dist: deltaE_lab_rgb(target, [0, 0, 0])
         }]
 
-        for (let depth = 1; depth <= MAX_HEIGHT; depth++) {
+        for (let depth = 1; depth <= maxHeight; depth++) {
             const expanded: Candidate[] = []
             for (const cand of beam) {
                 for (const [, rgb] of COLOR_ENTRIES) {
@@ -123,7 +124,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
         setSearchEndTime(null)
         const worker = new Worker(new URL('../helpers/beaconWorker.ts', import.meta.url), { type: 'module' })
         workerRef.current = worker
-        worker.postMessage({ cmd: 'exhaustive', maxHeight: MAX_HEIGHT, targetHex: hex })
+        worker.postMessage({ cmd: 'exhaustive', maxHeight: maxHeight, targetHex: hex })
         const bestPerLength: Record<number, Candidate | null> = {}
 
         worker.onmessage = (ev: MessageEvent) => {
@@ -140,7 +141,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
             } else if (data.type === 'done') {
                 const resultsArr: Candidate[] = []
                 let bestDistSoFar = Infinity
-                for (let len = 1; len <= MAX_HEIGHT; len++) {
+                for (let len = 1; len <= maxHeight; len++) {
                     const cand = bestPerLength[len]
                     if (cand && cand.dist < bestDistSoFar) {
                         resultsArr.push({ ...cand })
@@ -175,7 +176,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
         const resultsArr: Candidate[] = []
         let bestDistSoFar = Infinity
 
-        for (let len = 1; len <= MAX_HEIGHT; len++) {
+        for (let len = 1; len <= maxHeight; len++) {
             const cand = bestPerLength[len]
             if (cand && cand.dist < bestDistSoFar) {
                 resultsArr.push({ ...cand })
@@ -273,6 +274,16 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                         />
                     </div>
 
+                    <div>
+                        <p className="font-medium">Max glass height:</p>
+                        <p className="text-xs text-gray-400 mb-2">
+                            Higher numbers gives better results in <span className="underline">some</span> cases, but <span className="underline">MUCH</span> worse performance!
+                        </p>
+                        <div className="w-[300px]">
+                            <StepSlider value={maxHeight} onValueChange={setMaxHeight} disabled={isLoading}/>
+                        </div>
+                    </div>
+
                     <Separator />
 
                     {/* Buttons */}
@@ -349,10 +360,10 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                         <p className="mt-2">How this compares to other tools:</p>
                         <ul className="list-disc list-inside space-y-1">
                             <li>
-                                <a href="https://minecraft.fandom.com/wiki/Beacon" target="_blank" className="underline">Minecraft Wiki</a>: Uses ΔE too, but with a simpler method. It often gives less accurate results.
+                                <a href="https://minecraft.wiki/w/Calculators/Beacon_color" target="_blank" className="underline">Minecraft Wiki</a>: Uses ΔE too, but with a simpler method. It often gives less accurate results.
                             </li>
                             <li>
-                                <a href="https://minecraft.tools/en/beacon.php" target="_blank" className="underline">Minecraft Tools</a>: Shows similarity percentages in a different way. These numbers aren’t comparable to ours.
+                                <a href="https://minecraft.tools/en/beacon-color.php" target="_blank" className="underline">Minecraft Tools</a>: Shows similarity percentages in a different way. These numbers aren’t comparable to ours.
                             </li>
                         </ul>
                         <p>
