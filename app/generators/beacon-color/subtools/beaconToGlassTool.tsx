@@ -60,6 +60,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
     const [preset, setPreset] = useState(presets[2].name)
     const [results, setResults] = useState<Candidate[]>([])
     const [colorsChecked, setColorsChecked] = useState(0)
+    const [percentFinished, setPercentFinished] = useState(0)
     const [status, setStatus] = useState<string | null>(null)
     const [overrides, setOverrides] = useState<Record<number, boolean>>({})
 
@@ -132,6 +133,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
         setIsLoading(true)
         setSearchStartTime(Date.now())
         setSearchEndTime(null)
+        setPercentFinished(0)
         const worker = new Worker(new URL('../helpers/beaconWorker.ts', import.meta.url), { type: 'module' })
         workerRef.current = worker
         worker.postMessage({ cmd: 'exhaustive', maxHeight: maxHeight, targetHex: hex })
@@ -139,7 +141,10 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
 
         worker.onmessage = (ev: MessageEvent) => {
             const data = ev.data
-            if (data.type === 'progress') setColorsChecked(data.checked)
+            if (data.type === 'progress') {
+                setColorsChecked(data.checked)
+                setPercentFinished(data.checked / ((Math.pow(glassColors.length, maxHeight + 1) - 1) / (glassColors.length - 1)))
+            }
             else if (data.type === 'lengthResult') {
                 const best = data.best as Candidate
                 if (best) {
@@ -162,6 +167,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                 setColorsChecked(data.checked)
                 setSearchEndTime(Date.now())
                 setIsLoading(false)
+                setPercentFinished(1)
                 setStatus(`Search finished`)
                 worker.terminate()
                 workerRef.current = null
@@ -181,6 +187,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
         setStatus('Running beam search')
         setIsLoading(true)
         setSearchStartTime(Date.now())
+        setPercentFinished(0)
         setSearchEndTime(null)
         const { bestPerLength, checked } = await runBeamSearch(currentPreset.beamWidth)
         const resultsArr: Candidate[] = []
@@ -275,7 +282,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                             placeholderSearch="Search present..."
                             width="300px"
                             renderItem={item => (
-                                <p className="text-xs text-gray-400">
+                                <p className={`text-xs ${item === "Absolute" ? "text-red-400" : "text-gray-400"}`}>
                                     {item === "Absolute"
                                         ? "Check all combinations"
                                         : `Beam width: ${presets.find(v => v.name === item)?.beamWidth}`}
@@ -290,7 +297,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                             Higher numbers gives better results in <span className="underline">some</span> cases, but <span className="underline">MUCH</span> worse performance!
                         </p>
                         <div className="w-[300px]">
-                            <StepSlider value={maxHeight} onValueChange={setMaxHeight} disabled={isLoading}/>
+                            <StepSlider min={1} value={maxHeight} onValueChange={setMaxHeight} disabled={isLoading}/>
                         </div>
                     </div>
 
@@ -323,8 +330,10 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                         {isLoading && (<Button variant="destructive" onClick={cancelWorker}>Cancel</Button>)}
                     </div>
                     <div className="flex gap-2">
-                        <div className="text-xs text-muted-foreground">
-                            Colors checked: {colorsChecked}
+                        <div className="flex text-xs text-muted-foreground">
+                            Colors checked: {colorsChecked}{percentFinished != 0 && (
+                                <p className="text-white">{`‎ - ${Math.round(percentFinished * 100 * 100) / 100}%`}</p>
+                            )}
                         </div>
                         {status && <div className="text-xs">{status}</div>}
                         {durationMs !== null && (
