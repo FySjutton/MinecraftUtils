@@ -16,16 +16,15 @@ import {
     ColorPickerSwatch,
     ColorPickerTrigger
 } from "@/components/ui/color-picker"
-import { turnToHex } from "@/lib/ColorsToHex";
-import { ComboBox } from "@/components/ComboBox";
-import { BeaconPreview } from "@/app/generators/beacon-color/preview/BeaconBeam";
-import Beacon3d, { SegmentTuple } from "@/app/generators/beacon-color/preview/Beacon3d";
-import {Switch} from "@/components/ui/switch";
+import { turnToHex } from "@/lib/ColorsToHex"
+import { ComboBox } from "@/components/ComboBox"
+import { BeaconPreview } from "@/app/generators/beacon-color/preview/BeaconBeam"
+import {ResultCard} from "@/app/generators/beacon-color/ResultCard";
 
 const COLOR_ENTRIES = Object.entries(GLASS_COLORS)
 const MAX_HEIGHT = 6
 
-function rgbToHex(rgb: RGB) {
+export function rgbToHex(rgb: RGB) {
     return `#${rgb.map(c => Math.round(c).toString(16).padStart(2, '0')).join('')}`
 }
 
@@ -37,16 +36,16 @@ const presets = [
     { name: 'Very High', beamWidth: 4000 },
     { name: 'Absolute', beamWidth: null },
 ]
-const presentTypes = presets.map(i => (i.name))
+const presentTypes = presets.map(i => i.name)
 
-interface Candidate {
+export interface Candidate {
     stack: RGB[]
     mergedStackColors?: RGB[]
     color: RGB
     dist: number
 }
 
-function findColorName(rgb: RGB): string {
+export function findColorName(rgb: RGB): string {
     const found = COLOR_ENTRIES.find(([_, v]) =>
         v[0] === rgb[0] && v[1] === rgb[1] && v[2] === rgb[2]
     )
@@ -59,23 +58,32 @@ export default function BeaconColorTool() {
     const [results, setResults] = useState<Candidate[]>([])
     const [colorsChecked, setColorsChecked] = useState(0)
     const [status, setStatus] = useState<string | null>(null)
+    const [overrides, setOverrides] = useState<Record<number, boolean>>({})
 
     const workerRef = useRef<Worker | null>(null)
+    const [isLoading, setIsLoading] = useState(false)
 
     const target = useMemo(() => hexToRgb(hex), [hex])
     const currentPreset = useMemo(() => presets.find(p => p.name === preset), [preset])
+
+    const [searchStartTime, setSearchStartTime] = useState<number | null>(null)
+    const [searchEndTime, setSearchEndTime] = useState<number | null>(null)
 
     const handleColorPickerChange = (val: string) => {
         const hex = turnToHex(val)
         if (hex) setHex(hex)
     }
 
-    // Beam search logic
     const runBeamSearch = async (beamWidth: number) => {
         setStatus(`Running beam search (width=${beamWidth})`)
         let checked = 0
         const bestPerLength: Record<number, Candidate | null> = {}
-        let beam: Candidate[] = [{ stack: [], mergedStackColors: [], color: [0, 0, 0], dist: deltaE_lab_rgb(target, [0, 0, 0]) }]
+        let beam: Candidate[] = [{
+            stack: [],
+            mergedStackColors: [],
+            color: [0, 0, 0],
+            dist: deltaE_lab_rgb(target, [0, 0, 0])
+        }]
 
         for (let depth = 1; depth <= MAX_HEIGHT; depth++) {
             const expanded: Candidate[] = []
@@ -109,7 +117,10 @@ export default function BeaconColorTool() {
 
     const runExhaustive = () => {
         if (workerRef.current) workerRef.current.terminate()
-        setStatus('Starting exhaustive search (worker)')
+        setStatus('Running exhaustive search')
+        setIsLoading(true)
+        setSearchStartTime(Date.now())
+        setSearchEndTime(null)
         const worker = new Worker(new URL('./beaconWorker.ts', import.meta.url), { type: 'module' })
         workerRef.current = worker
         worker.postMessage({ cmd: 'exhaustive', maxHeight: MAX_HEIGHT, targetHex: hex })
@@ -132,27 +143,18 @@ export default function BeaconColorTool() {
                 for (let len = 1; len <= MAX_HEIGHT; len++) {
                     const cand = bestPerLength[len]
                     if (cand && cand.dist < bestDistSoFar) {
-                        if (!cand.mergedStackColors) {
-                            const mergedStack: RGB[] = []
-                            for (let i = 0; i < cand.stack.length; i++) mergedStack.push(beaconColor(cand.stack.slice(0, i + 1)))
-                            cand.mergedStackColors = mergedStack
-                        }
                         resultsArr.push({ ...cand })
                         bestDistSoFar = cand.dist
                     }
                 }
                 setResults(resultsArr)
                 setColorsChecked(data.checked)
-                setStatus('Exhaustive search finished')
+                setSearchEndTime(Date.now())
+                setIsLoading(false)
+                setStatus(`Search finished`)
                 worker.terminate()
                 workerRef.current = null
             }
-        }
-
-        worker.onerror = (e) => {
-            setStatus('Worker error: ' + e.message)
-            worker.terminate()
-            workerRef.current = null
         }
     }
 
@@ -160,42 +162,47 @@ export default function BeaconColorTool() {
         if (!currentPreset) return
         setResults([])
         setColorsChecked(0)
-        if (currentPreset.beamWidth === null) { runExhaustive(); return }
+        if (currentPreset.beamWidth === null) {
+            runExhaustive()
+            return
+        }
 
-        setStatus('Starting beam search')
+        setStatus('Running beam search')
+        setIsLoading(true)
+        setSearchStartTime(Date.now())
+        setSearchEndTime(null)
         const { bestPerLength, checked } = await runBeamSearch(currentPreset.beamWidth)
         const resultsArr: Candidate[] = []
         let bestDistSoFar = Infinity
+
         for (let len = 1; len <= MAX_HEIGHT; len++) {
             const cand = bestPerLength[len]
-            if (cand) {
-                if (!cand.mergedStackColors) {
-                    const mergedStack: RGB[] = []
-                    for (let i = 0; i < cand.stack.length; i++) mergedStack.push(beaconColor(cand.stack.slice(0, i + 1)))
-                    cand.mergedStackColors = mergedStack
-                }
-                if (cand.dist < bestDistSoFar) {
-                    resultsArr.push({ ...cand })
-                    bestDistSoFar = cand.dist
-                }
+            if (cand && cand.dist < bestDistSoFar) {
+                resultsArr.push({ ...cand })
+                bestDistSoFar = cand.dist
             }
         }
+
         setResults(resultsArr)
         setColorsChecked(checked)
-        setStatus(null)
+        setSearchEndTime(Date.now())
+        setIsLoading(false)
+        setStatus(`Search finished`)
     }
 
     const cancelWorker = () => {
         if (workerRef.current) {
             workerRef.current.terminate()
             workerRef.current = null
-            setStatus('Worker cancelled')
+            setStatus('Search cancelled')
+            setIsLoading(false)
         }
     }
 
-    // --- Toggle state for 3D / list ---
-    const reversedResults = useMemo(() => results.slice().reverse(), [results])
-    const [overrides, setOverrides] = useState<Record<number, boolean>>({})
+    const durationMs =
+        searchStartTime && searchEndTime
+            ? searchEndTime - searchStartTime
+            : null
 
     return (
         <Card>
@@ -206,13 +213,20 @@ export default function BeaconColorTool() {
             <CardContent className="flex flex-col gap-4">
                 {/* Target color picker */}
                 <div>
-                    <p>Target Color:</p>
-                    <p className="text-xs text-gray-300 mb-2">Select the color that you want the beacon to be.</p>
+                    <p className="font-medium">Target Color:</p>
+                    <p className="text-xs text-gray-400">Select the color that you want the beacon to be.</p>
                     <div className="flex w-full items-center">
-                        <ColorPicker className="w-full mr-5" defaultFormat="hex" value={hex} onValueChange={handleColorPickerChange}>
+                        <ColorPicker
+                            className="w-full mr-5"
+                            defaultFormat="hex"
+                            value={hex}
+                            onValueChange={handleColorPickerChange}
+                        >
                             <ColorPickerTrigger asChild className="w-full px-5">
                                 <ColorPickerSwatch className="flex place-items-center">
-                                    <p className="text-stroke-black select-none">{hex.toUpperCase()}</p>
+                                    <p className="text-stroke-black select-none">
+                                        {hex.toUpperCase()}
+                                    </p>
                                 </ColorPickerSwatch>
                             </ColorPickerTrigger>
                             <ColorPickerContent>
@@ -229,7 +243,7 @@ export default function BeaconColorTool() {
                                 </div>
                             </ColorPickerContent>
                         </ColorPicker>
-                        <BeaconPreview color={hex}></BeaconPreview>
+                        <BeaconPreview color={hex} />
                     </div>
                 </div>
 
@@ -238,7 +252,9 @@ export default function BeaconColorTool() {
                 {/* Presets */}
                 <div>
                     <p className="font-medium">Search Preset:</p>
-                    <p className="text-sx text-gray-400 mb-2">A measurement of speed compared to accuracy.</p>
+                    <p className="text-xs text-gray-400 mb-2">
+                        A measurement of speed compared to accuracy.
+                    </p>
                     <ComboBox
                         items={presentTypes}
                         value={preset}
@@ -246,9 +262,13 @@ export default function BeaconColorTool() {
                         placeholder="Select present"
                         placeholderSearch="Search present..."
                         width="300px"
-                        renderItem={item => {
-                            return <p className="text-xs text-gray-400">{item == "Absolute" ? "Check all combinations" : `Beam width: ${presets.find(value => value.name == item)?.beamWidth}`}</p>
-                        }}
+                        renderItem={item => (
+                            <p className="text-xs text-gray-400">
+                                {item === "Absolute"
+                                    ? "Check all combinations"
+                                    : `Beam width: ${presets.find(v => v.name === item)?.beamWidth}`}
+                            </p>
+                        )}
                     />
                 </div>
 
@@ -256,69 +276,40 @@ export default function BeaconColorTool() {
 
                 {/* Buttons */}
                 <div className="flex gap-2">
-                    <Button onClick={findBest}>Find Closest Glass Stacks</Button>
-                    <Button onClick={cancelWorker}>Cancel</Button>
-                    <div className="text-xs text-muted-foreground">Colors checked: {colorsChecked}</div>
+                    <Button variant="outline" disabled={isLoading} onClick={findBest}>Find Closest Glass Stacks</Button>
+                    {isLoading && (<Button variant="destructive" onClick={cancelWorker}>Cancel</Button>)}
+                </div>
+                <div className="flex gap-2">
+                    <div className="text-xs text-muted-foreground">
+                        Colors checked: {colorsChecked}
+                    </div>
                     {status && <div className="text-xs">{status}</div>}
+                    {durationMs !== null && (
+                        <div className="text-xs text-muted-foreground">Ran for {durationMs}ms</div>
+                    )}
                 </div>
 
+                <Separator />
+
                 {/* Results */}
-                <div className="flex gap-2">
-                    {reversedResults.map((r, revIdx) => {
+                <div className="flex gap-2 flex-wrap justify-center">
+                    {results.slice().reverse().map((r, revIdx) => {
                         const originalIdx = results.length - 1 - revIdx
-                        const segmentsFor3D: SegmentTuple[] = r.mergedStackColors!.map((color, i) => [
-                            `#${color.map(c => Math.round(c).toString(16).padStart(2, '0')).join('')}`,
-                            findColorName(r.stack[i])
-                        ])
                         const show3D = overrides[originalIdx] ?? true
 
                         return (
-                            <Card key={originalIdx}>
-                                <CardHeader className="flex justify-between items-center">
-                                    <CardTitle>{`ΔE: ${r.dist.toFixed(2)} - ${Math.max(0, 100 - r.dist).toFixed(0)}% Accuracy`}</CardTitle>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs">3D Preview</span>
-                                        <Switch
-                                            id={`preview-${originalIdx}`}
-                                            checked={show3D}
-                                            onCheckedChange={(checked) =>
-                                                setOverrides(prev => ({ ...prev, [originalIdx]: checked }))
-                                            }
-                                        />
-                                    </div>
-                                </CardHeader>
-
-                                <CardContent>
-                                    <div className="mx-auto" style={{ width: 250 }}>
-                                        {show3D ? (
-                                            <Beacon3d segments={segmentsFor3D} width={250} height={300} />
-                                        ) : (
-                                            <ul className="flex flex-col gap-2">
-                                                {segmentsFor3D.map(([_, glass], i) => (
-                                                    <li key={i} className="flex items-center gap-2">
-                                                        <img
-                                                            src={`/assets/tool/beacon/glass/${glass}.png`}
-                                                            alt={glass}
-                                                            className="w-6 h-6 border"
-                                                        />
-                                                        <span className="text-xs">{glass}</span>
-                                                    </li>
-                                                ))}
-                                            </ul>
-                                        )}
-                                    </div>
-
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <div
-                                            className="w-6 h-6 rounded border"
-                                            style={{ backgroundColor: `rgb(${r.color.map(c => Math.round(c)).join(',')})` }}
-                                        />
-                                        <span className="text-xs">
-                                            RGB: {r.color.map(c => Math.round(c)).join(', ')} ({rgbToHex(r.color)})
-                                        </span>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                            <ResultCard
+                                key={originalIdx}
+                                result={r}
+                                index={originalIdx}
+                                show3D={show3D}
+                                onToggle={(checked) =>
+                                    setOverrides(prev => ({
+                                        ...prev,
+                                        [originalIdx]: checked
+                                    }))
+                                }
+                            />
                         )
                     })}
                 </div>

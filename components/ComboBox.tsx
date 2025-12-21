@@ -1,7 +1,6 @@
 'use client'
 
 import * as React from "react"
-
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,6 +26,7 @@ interface ComboBoxProps {
     placeholderSearch: string
     width?: string
     renderItem?: (item: string) => React.ReactNode
+    renderIcon?: (item: string) => React.ReactNode
 }
 
 export function ComboBox({
@@ -37,6 +37,7 @@ export function ComboBox({
                              placeholderSearch,
                              width = "200px",
                              renderItem,
+                             renderIcon,
                          }: ComboBoxProps) {
     const [open, setOpen] = React.useState(false)
 
@@ -50,9 +51,13 @@ export function ComboBox({
                     style={{ maxWidth: width }}
                     className="flex items-center w-full"
                 >
-                    <span className="truncate">
-                        {value || placeholder}
-                    </span>
+                    {renderIcon && (
+                        <span className="flex-shrink-0">
+                            {renderIcon(value)}
+                        </span>
+                    )}
+
+                    <span className="truncate flex-1">{value || placeholder}</span>
 
                     <span className="ml-auto flex items-center gap-2">
                         {renderItem?.(value)}
@@ -80,9 +85,13 @@ export function ComboBox({
                                     }}
                                     className="flex items-center gap-2"
                                 >
-                                    <span className="flex-1 truncate">
-                                        {item}
-                                    </span>
+                                    {renderIcon && (
+                                        <span className="flex-shrink-0">
+                                            {renderIcon(item)}
+                                        </span>
+                                    )}
+
+                                    <span className="flex-1 truncate">{item}</span>
 
                                     {renderItem?.(item)}
 

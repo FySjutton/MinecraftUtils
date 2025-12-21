@@ -9,7 +9,7 @@ export default function BeaconColorGenerator() {
     const [tab, setTab] = useState<'tool' | 'verify'>('tool');
     return (
         <Tabs value={tab} onValueChange={v => setTab(v as 'tool' | 'verify')} className="w-full">
-            <TabsList className="mx-auto">
+            <TabsList>
                 <TabsTrigger value="tool">Beacon to Glass Calculator</TabsTrigger>
                 <TabsTrigger value="verify">Glass to Beacon Calculator</TabsTrigger>
             </TabsList>
