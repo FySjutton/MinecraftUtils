@@ -21,6 +21,9 @@ import { ComboBox } from "@/components/ComboBox"
 import { BeaconPreview } from "@/app/generators/beacon-color/preview/BeaconBeam"
 import {ResultCard} from "@/app/generators/beacon-color/ResultCard";
 import {StepSlider} from "@/components/Slider";
+import {MultiSelectDropdown} from "@/components/MultiSelectDropdown";
+import Image from "next/image";
+import {toDisplayName, toInternalName} from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
 
 const COLOR_ENTRIES = Object.entries(GLASS_COLORS)
 
@@ -29,11 +32,11 @@ export function rgbToHex(rgb: RGB) {
 }
 
 const presets = [
-    { name: 'Very Low', beamWidth: 60 },
-    { name: 'Low', beamWidth: 180 },
-    { name: 'Normal', beamWidth: 400 },
-    { name: 'High', beamWidth: 800 },
-    { name: 'Very High', beamWidth: 4000 },
+    { name: 'Very Low', beamWidth: 500 },
+    { name: 'Low', beamWidth: 1000 },
+    { name: 'Normal', beamWidth: 2000 },
+    { name: 'High', beamWidth: 4000 },
+    { name: 'Very High', beamWidth: 10000 },
     { name: 'Absolute', beamWidth: null },
 ]
 const presentTypes = presets.map(i => i.name)
@@ -59,7 +62,14 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
     const [colorsChecked, setColorsChecked] = useState(0)
     const [status, setStatus] = useState<string | null>(null)
     const [overrides, setOverrides] = useState<Record<number, boolean>>({})
+
     const [maxHeight, setMaxHeight] = React.useState(6)
+    const [glassColors, setGlassColors] = React.useState(Object.keys(GLASS_COLORS))
+    const filteredColors = useMemo(() => {
+        return COLOR_ENTRIES.filter(([name]) =>
+            glassColors.includes(name)
+        )
+    }, [glassColors])
 
     const workerRef = useRef<Worker | null>(null)
     const [isLoading, setIsLoading] = useState(false)
@@ -89,7 +99,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
         for (let depth = 1; depth <= maxHeight; depth++) {
             const expanded: Candidate[] = []
             for (const cand of beam) {
-                for (const [, rgb] of COLOR_ENTRIES) {
+                for (const [, rgb] of filteredColors) {
                     const newStack = [...cand.stack, rgb]
                     const newMergedStack: RGB[] = cand.mergedStackColors ? [...cand.mergedStackColors] : []
                     const lastMerged = newMergedStack.length > 0 ? newMergedStack[newMergedStack.length - 1] : null
@@ -282,6 +292,27 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                         <div className="w-[300px]">
                             <StepSlider value={maxHeight} onValueChange={setMaxHeight} disabled={isLoading}/>
                         </div>
+                    </div>
+
+                    <div>
+                        <p className="font-medium">Glass Filtering:</p>
+                        <p className="text-xs text-gray-400 mb-2">
+                            Choose which glass types the calculator is allowed to use. All enabled by default. Useful for superflat etc.
+                        </p>
+                        <MultiSelectDropdown
+                            width={"300px"}
+                            items={Object.keys(GLASS_COLORS).map(value => toDisplayName(value))}
+                            selected={glassColors.map(value => toDisplayName(value))} onChange={values => setGlassColors(values.map(value => toInternalName(value)))}
+                            renderIcon={item => {
+                                return <Image
+                                    src={`/assets/tool/beacon/glass/${toInternalName(item)}.png`}
+                                    alt={item}
+                                    width={20}
+                                    height={20}
+                                    className="w-6 h-6 border"
+                                />
+                            }
+                        }></MultiSelectDropdown>
                     </div>
 
                     <Separator />

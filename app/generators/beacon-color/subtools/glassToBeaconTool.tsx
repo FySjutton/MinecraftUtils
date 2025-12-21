@@ -25,7 +25,7 @@ function rgbToHex(rgb: RGB) {
     return `#${rgb.map(c => Math.round(c).toString(16).padStart(2, '0')).join('')}`
 }
 
-function toDisplayName(internal?: string) {
+export function toDisplayName(internal?: string) {
     if (!internal) return "White Stained Glass"
     return internal.replaceAll("_", " ")
         .split(" ")
@@ -33,7 +33,7 @@ function toDisplayName(internal?: string) {
         .join(" ")
 }
 
-function toInternalName(display?: string) {
+export function toInternalName(display?: string) {
     if (!display) return "white_stained_glass"
     return display.replaceAll(" ", "_").toLowerCase()
 }

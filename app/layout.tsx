@@ -41,7 +41,7 @@ export const metadata: Metadata = {
         locale: "en-US",
         images: [
             {
-                url: "/og-banner.png",
+                url: `${domain}/og-banner.png`,
                 width: 1200,
                 height: 630,
                 alt: "Minecraft Utils",
@@ -52,7 +52,7 @@ export const metadata: Metadata = {
         card: "summary_large_image",
         title: "Minecraft Utils",
         description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
-        images: ["/og-banner.png"],
+        images: [`${domain}/og-banner.png`],
     },
 };
 
