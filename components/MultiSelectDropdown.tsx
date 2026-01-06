@@ -17,7 +17,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
-import { IconCheck, IconSelector } from "@tabler/icons-react"
+import { IconSelector } from "@tabler/icons-react"
 
 interface MultiSelectDropdownProps {
     items: string[]
@@ -25,19 +25,11 @@ interface MultiSelectDropdownProps {
     onChange: (selected: string[]) => void
     placeholder?: string
     placeholderSearch?: string
-    width?: string
+    className?: string
     renderIcon?: (item: string) => React.ReactNode
 }
 
-export function MultiSelectDropdown({
-                                        items,
-                                        selected,
-                                        onChange,
-                                        placeholder = "Select items...",
-                                        placeholderSearch = "Search...",
-                                        width = "200px",
-                                        renderIcon,
-                                    }: MultiSelectDropdownProps) {
+export function MultiSelectDropdown({items, selected, onChange, placeholder = "Select items...", placeholderSearch = "Search...", className, renderIcon}: MultiSelectDropdownProps) {
     const [open, setOpen] = React.useState(false)
     const [search, setSearch] = React.useState("")
 
@@ -60,8 +52,7 @@ export function MultiSelectDropdown({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    style={{ width: width }}
-                    className="flex items-center justify-between"
+                    className={cn("flex items-center justify-between", className)}
                 >
                     <div className="flex gap-2 truncate">
                         {selected.length === 0 ? placeholder : `${selected.length} selected`}
@@ -70,7 +61,7 @@ export function MultiSelectDropdown({
                 </Button>
             </PopoverTrigger>
 
-            <PopoverContent style={{ width }} className="p-0">
+            <PopoverContent className={cn("p-0", className)}>
                 <Command>
                     <CommandInput
                         placeholder={placeholderSearch}

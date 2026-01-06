@@ -88,7 +88,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
 
     return (
         <div className="relative select-none overflow-visible mx-auto flex flex-col items-center">
-            <div className="flex items-center">
+            <div className="flex items-center pb-0 max-[700px]:pb-2">
                 <Button variant="outline" size="icon" disabled={decreaseBtnDisabled} onClick={() => {
                     if (level == 1) {
                         setDecreaseBtnDisabled(true)
@@ -107,11 +107,11 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
                         width: `${String(level).length || 1}ch`,
                         minWidth: "2ch",
                         textShadow: `
-            -1px 0px 0px black,
-            1px 0px 0px black,
-            0px -1px 0px black,
-            0px 1px 0px black
-          `,
+                            -1px 0px 0px black,
+                            1px 0px 0px black,
+                            0px -1px 0px black,
+                            0px 1px 0px black
+                        `,
                     }}
                 />
                 <Button variant="outline" size="icon" onClick={() => {

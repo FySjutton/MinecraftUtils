@@ -8,16 +8,9 @@ import { GLASS_COLORS, beaconColor, deltaE_lab_rgb, RGB } from "@/app/generators
 import { ComboBox } from "@/components/ComboBox"
 import Beacon3d, { SegmentTuple } from "@/app/generators/beacon-color/preview/Beacon3d"
 import Image from "next/image"
-import {
-    ColorPicker,
-    ColorPickerArea,
-    ColorPickerContent,
-    ColorPickerEyeDropper, ColorPickerFormatSelect, ColorPickerHueSlider, ColorPickerInput,
-    ColorPickerSwatch,
-    ColorPickerTrigger
-} from "@/components/ui/color-picker";
-import {turnToHex} from "@/lib/ColorsToHex";
 import {BeaconPreview} from "@/app/generators/beacon-color/preview/BeaconBeam";
+import {ColorPicker} from "@/components/ColorPicker";
+import {Trash2} from "lucide-react";
 
 const COLOR_NAMES = Object.keys(GLASS_COLORS)
 
@@ -39,13 +32,10 @@ export function toInternalName(display?: string) {
 }
 
 export default function GlassToBeaconColorEditor() {
-    const [stack, setStack] = useState<string[]>([])
-    const [targetHex, setTargetHex] = useState('#00eb76')
+    const initialValue = '#00eb76'
 
-    const handleColorPickerChange = (val: string) => {
-        const hex = turnToHex(val)
-        if (hex) setTargetHex(hex)
-    }
+    const [stack, setStack] = useState<string[]>([])
+    const [targetHex, setTargetHex] = useState(initialValue)
 
     const targetRgb: RGB = useMemo(() => {
         const h = targetHex.startsWith('#') ? targetHex.slice(1) : targetHex
@@ -94,7 +84,7 @@ export default function GlassToBeaconColorEditor() {
         <div className="flex flex-col gap-3">
             <Card>
                 <CardHeader>
-                    <CardTitle>Glass → Beacon Color Editor</CardTitle>
+                    <CardTitle>Glass Tester & Accuracy Calculator</CardTitle>
                 </CardHeader>
 
                 <CardContent className="flex flex-col">
@@ -102,34 +92,12 @@ export default function GlassToBeaconColorEditor() {
                     <p className="text-xs text-gray-400 mb-3">Enter the color that you want to compare your glass selection towards.</p>
 
                     <div className="flex w-full items-center">
-                        <ColorPicker
-                            className="w-full mr-5"
-                            defaultFormat="hex"
-                            value={targetHex}
-                            onValueChange={handleColorPickerChange}
-                        >
-                            <ColorPickerTrigger asChild className="w-full px-5">
-                                <ColorPickerSwatch className="flex place-items-center">
-                                    <p className="text-stroke-black select-none">
-                                        {targetHex.toUpperCase()}
-                                    </p>
-                                </ColorPickerSwatch>
-                            </ColorPickerTrigger>
-                            <ColorPickerContent>
-                                <ColorPickerArea />
-                                <div className="flex items-center gap-2">
-                                    <ColorPickerEyeDropper />
-                                    <div className="flex flex-1 flex-col gap-2">
-                                        <ColorPickerHueSlider />
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <ColorPickerFormatSelect />
-                                    <ColorPickerInput withoutAlpha />
-                                </div>
-                            </ColorPickerContent>
-                        </ColorPicker>
-                        <BeaconPreview color={targetHex} />
+                        <div className="mt-2">
+                            <ColorPicker onChange={setTargetHex} initialValue={initialValue}/>
+                            <div className="mt-2 h-16 w-full rounded-lg border" style={{ backgroundColor: targetHex }}/>
+                        </div>
+
+                        <BeaconPreview color={targetHex} className="ml-4"/>
                     </div>
                     <Separator className="my-5" />
 
@@ -151,7 +119,7 @@ export default function GlassToBeaconColorEditor() {
                                     value={toDisplayName(name)}
                                     onChange={(v) => updateColor(idx, toInternalName(v))}
                                     placeholder="Select glass..."
-                                    width="220px"
+                                    className="w-[260px] max-[420px]:w-[230px] max-[390px]:w-[170px]"
                                     placeholderSearch="Select glass..."
                                     renderIcon={item => (
                                         <Image
@@ -164,13 +132,15 @@ export default function GlassToBeaconColorEditor() {
                                     )}
                                 />
 
-                                <Button variant="outline" size="sm" onClick={() => removeColor(idx)}>Remove</Button>
+                                <Button variant="outline" size="sm" onClick={() => removeColor(idx)}>
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
                             </div>
                         ))}
 
                         <div className="flex gap-2 mt-2">
                             <Button variant="outline" size="sm" onClick={addColor}>Add Color</Button>
-                            <Button onClick={() => setStack([])} variant="ghost" size="sm">Clear</Button>
+                            <Button onClick={() => setStack([])} variant="destructive" size="sm">Clear</Button>
                         </div>
                     </div>
 
@@ -179,7 +149,7 @@ export default function GlassToBeaconColorEditor() {
                     {stack.length > 0 ? (<Beacon3d
                         key={previewSegments.map(([hex]) => hex).join('-')}
                         segments={previewSegments}
-                        width={250}
+                        width={230}
                         height={300}
                     />) : <></>}
 

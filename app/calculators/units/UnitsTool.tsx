@@ -32,7 +32,7 @@ export default function UnitsTool() {
     const remainingItems = totalItems % 64
 
     return (
-        <div className="flex flex-col md:flex-row gap-6 p-6">
+        <div className="flex flex-col md:flex-row gap-6">
             <Card className="w-full md:w-1/2">
                 <CardHeader>
                     <CardTitle>Input</CardTitle>
@@ -44,7 +44,7 @@ export default function UnitsTool() {
                         onChange={setInputType}
                         placeholder="Select type"
                         placeholderSearch="Search type..."
-                        width="300px"
+                        className="w-full"
                     />
                     <InputField
                         variant="number"

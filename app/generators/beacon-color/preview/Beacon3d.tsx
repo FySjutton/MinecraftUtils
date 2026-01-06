@@ -140,7 +140,13 @@ interface Beacon3dProps {
 export default function Beacon3d({ segments, width = 200, height = 1000 }: Beacon3dProps) {
     const [beamTextures, setBeamTextures] = useState<Texture[]>([])
     const beaconGltf = useGLTF('/assets/tool/beacon/beacon.gltf')
-    const diamondTexture = new TextureLoader().load('/assets/tool/beacon/diamond_block.png')
+    const diamondTexture = new TextureLoader().load('/assets/tool/beacon/diamond_block.png', (tex) => {
+        tex.wrapS = RepeatWrapping
+        tex.wrapT = RepeatWrapping
+        tex.magFilter = NearestFilter
+        tex.minFilter = NearestFilter
+        tex.needsUpdate = true
+    })
 
     beaconGltf.scene.traverse((child) => {
         if ((child as Mesh).isMesh) {

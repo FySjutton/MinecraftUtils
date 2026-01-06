@@ -107,7 +107,7 @@ export const tools: ToolCategory[] = [
         url: "/generators",
         defaultOpen: true,
         pages: [
-            { name: "Beacon Generator", url: "beacon-color", icon: <Milestone />, description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode.", type: "beta" },
+            { name: "Beacon Generator", url: "beacon-color", icon: <Milestone />, description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
             { name: "Sign Generator", url: "sign-generator", icon: <Milestone />, description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
             { name: "Motd Creator", url: "motd-creator", icon: <Captions />, description: "Generate server motds through an interactive editor." },
         ],
@@ -137,7 +137,6 @@ export const externals: ToolCategory[] = [
             { name: "Skin Stealer", url: "https://minecraft.tools/en/skin.php", icon: <IconUser />, description: "Download and view player skins." },
             { name: "Armor Color Crafting", url: "https://minecraft.tools/en/armor.php", icon: <IconHanger2 />, description: "Mix and match armor colors." },
             { name: "Custom Potions", url: "https://minecraft.tools/en/potion.php", icon: <IconBubbleTea2 />, description: "Create potion recipes." },
-            { name: "Beacon Color", url: "https://minecraft.tools/en/beacon-color.php", icon: <IconBuildingLighthouse />, description: "Visualize beacon beam colors." },
             { name: "Coordinate Calculator", url: "https://minecraft.tools/en/coordinate-calculator.php", icon: <IconMapPins />, description: "Calculate positions and distances." },
         ],
     },

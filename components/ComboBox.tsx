@@ -22,23 +22,14 @@ interface ComboBoxProps {
     items: string[]
     value: string
     onChange: (value: string) => void
-    placeholder: string
-    placeholderSearch: string
-    width?: string
+    placeholder?: string
+    placeholderSearch?: string
+    className?: string
     renderItem?: (item: string) => React.ReactNode
     renderIcon?: (item: string) => React.ReactNode
 }
 
-export function ComboBox({
-                             items,
-                             value,
-                             onChange,
-                             placeholder,
-                             placeholderSearch,
-                             width = "200px",
-                             renderItem,
-                             renderIcon,
-                         }: ComboBoxProps) {
+export function ComboBox({items, value, onChange, placeholder = "Select...", placeholderSearch = "Search...", className, renderItem, renderIcon}: ComboBoxProps) {
     const [open, setOpen] = React.useState(false)
 
     return (
@@ -48,8 +39,7 @@ export function ComboBox({
                     variant="outline"
                     role="combobox"
                     aria-expanded={open}
-                    style={{ maxWidth: width }}
-                    className="flex items-center w-full justify-between"
+                    className={cn("flex items-center justify-between w-full", className)}
                 >
                     <div className="flex items-center gap-2 truncate">
                         {renderIcon && <span className="flex-shrink-0">{renderIcon(value)}</span>}
@@ -63,7 +53,7 @@ export function ComboBox({
                 </Button>
             </PopoverTrigger>
 
-            <PopoverContent style={{ width }} className="p-0">
+            <PopoverContent className={cn("p-0", className)}>
                 <Command>
                     <CommandInput
                         placeholder={placeholderSearch}
@@ -95,9 +85,7 @@ export function ComboBox({
                                     <IconCheck
                                         className={cn(
                                             "ml-auto shrink-0",
-                                            value === item
-                                                ? "opacity-100"
-                                                : "opacity-0"
+                                            value === item ? "opacity-100" : "opacity-0"
                                         )}
                                     />
                                 </CommandItem>

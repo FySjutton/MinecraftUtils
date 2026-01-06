@@ -11,8 +11,8 @@ export default function BeaconColorGenerator() {
     return (
         <Tabs value={tab} onValueChange={v => setTab(v as 'tool' | 'verify')} className="w-full">
             <TabsList>
-                <TabsTrigger value="tool">Beacon to Glass Calculator</TabsTrigger>
-                <TabsTrigger value="verify">Glass to Beacon Calculator</TabsTrigger>
+                <TabsTrigger value="tool">Beacon Beam</TabsTrigger>
+                <TabsTrigger value="verify">Glass Tester</TabsTrigger>
             </TabsList>
 
             <TabsContent value="tool" forceMount className="data-[state=inactive]:hidden">

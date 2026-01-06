@@ -100,7 +100,7 @@ export default function InventorySlotsTool() {
     }
 
     return (
-        <div className="w-[100%] lg:w-[80%] md:w-[90%] mx-auto space-y-6 p-4">
+        <div className="w-[100%] lg:w-[80%] md:w-[90%] mx-auto space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Minecraft Inventory Viewer</CardTitle>
@@ -120,32 +120,45 @@ export default function InventorySlotsTool() {
                         onChange={setSelectedLabel}
                         placeholder="Choose an inventory"
                         placeholderSearch="Search inventory..."
-                        width="300px"
+                        className="w-full"
                     />
 
                     <Card>
                         <Carousel className="relative w-full max-w-[900px] mx-auto" setApi={setApi}>
-                            <CarouselContent>
-                                {inventories.map((inv, index) => (
-                                    <CarouselItem key={index}>
-                                        <div className="flex items-center justify-center w-full min-h-[280px] md:min-h-[420px] lg:min-h-[520px] p-4">
-                                            <div className="flex items-center justify-center max-w-full">
-                                                <Image
-                                                    src={`/assets/tool/inv_slots/${inv.value}.png`}
-                                                    alt={inv.label}
-                                                    width={900}
-                                                    height={900}
-                                                    className="max-w-full max-h-[60vh] md:max-h-[70vh] object-contain"
-                                                    priority={index === 0}
-                                                />
-                                            </div>
-                                        </div>
-                                    </CarouselItem>
-                                ))}
-                            </CarouselContent>
+                            {/* Top buttons for small screens */}
+                            <div className="flex justify-between mb-4 px-4 md:hidden">
+                                <CarouselPrevious free />
+                                <CarouselNext free />
+                            </div>
 
-                            <CarouselPrevious className="absolute -left-10 sm:-left-14 top-1/2 -translate-y-1/2 z-20" />
-                            <CarouselNext className="absolute -right-10 sm:-right-14 top-1/2 -translate-y-1/2 z-20" />
+                            <div className="flex">
+                                <div className="hidden md:flex flex-row items-center ml-2">
+                                    <CarouselPrevious free />
+                                </div>
+
+                                <CarouselContent>
+                                    {inventories.map((inv, index) => (
+                                        <CarouselItem key={index}>
+                                            <div className="flex items-center justify-center w-full p-2">
+                                                <div className="flex items-center justify-center max-w-full">
+                                                    <Image
+                                                        src={`/assets/tool/inv_slots/${inv.value}.png`}
+                                                        alt={inv.label}
+                                                        width={900}
+                                                        height={900}
+                                                        className="w-full max-h-[60vh] md:max-h-[70vh] object-contain"
+                                                        priority={index === 0}
+                                                    />
+                                                </div>
+                                            </div>
+                                        </CarouselItem>
+                                    ))}
+                                </CarouselContent>
+
+                                <div className="hidden md:flex flex-row items-center mr-2">
+                                    <CarouselNext free />
+                                </div>
+                            </div>
                         </Carousel>
                     </Card>
                 </CardContent>

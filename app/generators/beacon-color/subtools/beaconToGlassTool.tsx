@@ -5,18 +5,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { GLASS_COLORS, RGB, beaconColor, deltaE_lab_rgb, hexToRgb } from '@/app/generators/beacon-color/helpers/colorCalculator'
-import {
-    ColorPicker,
-    ColorPickerArea,
-    ColorPickerContent,
-    ColorPickerEyeDropper,
-    ColorPickerFormatSelect,
-    ColorPickerHueSlider,
-    ColorPickerInput,
-    ColorPickerSwatch,
-    ColorPickerTrigger
-} from "@/components/ui/color-picker"
-import { turnToHex } from "@/lib/ColorsToHex"
+
 import { ComboBox } from "@/components/ComboBox"
 import { BeaconPreview } from "@/app/generators/beacon-color/preview/BeaconBeam"
 import {ResultCard} from "@/app/generators/beacon-color/ResultCard";
@@ -24,6 +13,7 @@ import {StepSlider} from "@/components/Slider";
 import {MultiSelectDropdown} from "@/components/MultiSelectDropdown";
 import Image from "next/image";
 import {toDisplayName, toInternalName} from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
+import {ColorPicker} from "@/components/ColorPicker";
 
 const COLOR_ENTRIES = Object.entries(GLASS_COLORS)
 
@@ -56,7 +46,9 @@ export function findColorName(rgb: RGB): string {
 }
 
 export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab: 'tool' | 'verify') => void }) {
-    const [hex, setHex] = useState('#00eb76')
+    const initialValue = "#00eb76"
+
+    const [hex, setHex] = useState(initialValue)
     const [preset, setPreset] = useState(presets[2].name)
     const [results, setResults] = useState<Candidate[]>([])
     const [colorsChecked, setColorsChecked] = useState(0)
@@ -81,10 +73,6 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
     const [searchStartTime, setSearchStartTime] = useState<number | null>(null)
     const [searchEndTime, setSearchEndTime] = useState<number | null>(null)
 
-    const handleColorPickerChange = (val: string) => {
-        const hex = turnToHex(val)
-        if (hex) setHex(hex)
-    }
 
     const runBeamSearch = async (beamWidth: number) => {
         setStatus(`Running beam search (width=${beamWidth})`)
@@ -131,7 +119,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
         if (workerRef.current) workerRef.current.terminate()
         setStatus('Running exhaustive search')
         setIsLoading(true)
-        setSearchStartTime(Date.now())
+        setSearchStartTime(() => Date.now())
         setSearchEndTime(null)
         setPercentFinished(0)
         const worker = new Worker(new URL('../helpers/beaconWorker.ts', import.meta.url), { type: 'module' })
@@ -154,16 +142,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                     bestPerLength[data.length] = best
                 } else bestPerLength[data.length] = null
             } else if (data.type === 'done') {
-                const resultsArr: Candidate[] = []
-                let bestDistSoFar = Infinity
-                for (let len = 1; len <= maxHeight; len++) {
-                    const cand = bestPerLength[len]
-                    if (cand && cand.dist < bestDistSoFar) {
-                        resultsArr.push({ ...cand })
-                        bestDistSoFar = cand.dist
-                    }
-                }
-                setResults(resultsArr)
+                setOutputResults(bestPerLength)
                 setColorsChecked(data.checked)
                 setSearchEndTime(Date.now())
                 setIsLoading(false)
@@ -186,13 +165,21 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
 
         setStatus('Running beam search')
         setIsLoading(true)
-        setSearchStartTime(Date.now())
+        setSearchStartTime(() => Date.now())
         setPercentFinished(0)
         setSearchEndTime(null)
         const { bestPerLength, checked } = await runBeamSearch(currentPreset.beamWidth)
+        setOutputResults(bestPerLength)
+
+        setColorsChecked(checked)
+        setSearchEndTime(() => Date.now())
+        setIsLoading(false)
+        setStatus(`Search finished`)
+    }
+
+    const setOutputResults = (bestPerLength: Record<number, Candidate | null>) => {
         const resultsArr: Candidate[] = []
         let bestDistSoFar = Infinity
-
         for (let len = 1; len <= maxHeight; len++) {
             const cand = bestPerLength[len]
             if (cand && cand.dist < bestDistSoFar) {
@@ -200,12 +187,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                 bestDistSoFar = cand.dist
             }
         }
-
         setResults(resultsArr)
-        setColorsChecked(checked)
-        setSearchEndTime(Date.now())
-        setIsLoading(false)
-        setStatus(`Search finished`)
     }
 
     const cancelWorker = () => {
@@ -217,10 +199,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
         }
     }
 
-    const durationMs =
-        searchStartTime && searchEndTime
-            ? searchEndTime - searchStartTime
-            : null
+    const durationMs = searchStartTime && searchEndTime ? searchEndTime - searchStartTime : null
 
     return (
         <div className="flex flex-col gap-3">
@@ -235,34 +214,12 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                         <p className="font-medium">Target Color:</p>
                         <p className="text-xs text-gray-400">Select the color that you want the beacon to be.</p>
                         <div className="flex w-full items-center">
-                            <ColorPicker
-                                className="w-full mr-5"
-                                defaultFormat="hex"
-                                value={hex}
-                                onValueChange={handleColorPickerChange}
-                            >
-                                <ColorPickerTrigger asChild className="w-full px-5">
-                                    <ColorPickerSwatch className="flex place-items-center">
-                                        <p className="text-stroke-black select-none">
-                                            {hex.toUpperCase()}
-                                        </p>
-                                    </ColorPickerSwatch>
-                                </ColorPickerTrigger>
-                                <ColorPickerContent>
-                                    <ColorPickerArea />
-                                    <div className="flex items-center gap-2">
-                                        <ColorPickerEyeDropper />
-                                        <div className="flex flex-1 flex-col gap-2">
-                                            <ColorPickerHueSlider />
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <ColorPickerFormatSelect />
-                                        <ColorPickerInput withoutAlpha />
-                                    </div>
-                                </ColorPickerContent>
-                            </ColorPicker>
-                            <BeaconPreview color={hex} />
+                            <div className="mt-2">
+                                <ColorPicker onChange={setHex} initialValue={initialValue}/>
+                                <div className="mt-2 h-16 w-full rounded-lg border" style={{ backgroundColor: hex }}/>
+                            </div>
+
+                            <BeaconPreview color={hex} className="ml-4"/>
                         </div>
                     </div>
 
@@ -280,7 +237,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                             onChange={setPreset}
                             placeholder="Select present"
                             placeholderSearch="Search present..."
-                            width="300px"
+                            className="w-[300px] max-[390px]:w-[235px]"
                             renderItem={item => (
                                 <p className={`text-xs ${item === "Absolute" ? "text-red-400" : "text-gray-400"}`}>
                                     {item === "Absolute"
@@ -296,7 +253,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                         <p className="text-xs text-gray-400 mb-2">
                             Higher numbers gives better results in <span className="underline">some</span> cases, but <span className="underline">MUCH</span> worse performance!
                         </p>
-                        <div className="w-[300px]">
+                        <div className="w-[300px] max-[390px]:w-[235px]">
                             <StepSlider min={1} value={maxHeight} onValueChange={setMaxHeight} disabled={isLoading}/>
                         </div>
                     </div>
@@ -307,7 +264,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                             Choose which glass types the calculator is allowed to use. All enabled by default. Useful for superflat etc.
                         </p>
                         <MultiSelectDropdown
-                            width={"300px"}
+                            className="w-[300px] max-[390px]:w-[235px]"
                             items={Object.keys(GLASS_COLORS).map(value => toDisplayName(value))}
                             selected={glassColors.map(value => toDisplayName(value))} onChange={values => setGlassColors(values.map(value => toInternalName(value)))}
                             renderIcon={item => {
@@ -318,8 +275,8 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                                     height={20}
                                     className="w-6 h-6 border"
                                 />
-                            }
-                        }></MultiSelectDropdown>
+                            }}
+                        />
                     </div>
 
                     <Separator />
@@ -329,19 +286,18 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                         <Button variant="outline" disabled={isLoading} onClick={findBest}>Calculate</Button>
                         {isLoading && (<Button variant="destructive" onClick={cancelWorker}>Cancel</Button>)}
                     </div>
-                    <div className="flex gap-2">
-                        <div className="flex text-xs text-muted-foreground">
-                            Colors checked: {colorsChecked}{percentFinished != 0 && (
-                                <p className="text-white">{`‎ - ${Math.round(percentFinished * 100 * 100) / 100}%`}</p>
-                            )}
-                        </div>
-                        {status && <div className="text-xs">{status}</div>}
+
+                    <div className="flex flex-wrap gap-2 text-xs">
+                        <span className="text-muted-foreground">
+                            Colors checked: {colorsChecked}
+                            {percentFinished !== 0 && (<span className="text-white">{` - ${Math.round(percentFinished * 100 * 100) / 100}%`}</span>)}
+                        </span>
+                        {status && <span>{status}</span>}
                         {durationMs !== null && (
-                            <div className="text-xs text-muted-foreground">Ran for {durationMs}ms</div>
+                            <span className="text-muted-foreground">Ran for {durationMs}ms</span>
                         )}
                     </div>
-
-                    <Separator />
+                    {results.length > 0 && <Separator />}
 
                     {/* Results */}
                     <div className="flex gap-2 flex-wrap justify-center">

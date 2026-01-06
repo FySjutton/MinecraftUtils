@@ -43,11 +43,11 @@ export const ResultCard = memo(function ResultCard({result, index, show3D, onTog
             </CardHeader>
 
             <CardContent className="h-full flex flex-col justify-between">
-                <div className="mx-auto" style={{ width: 250 }}>
+                <div className="mx-auto" style={{ width: 230 }}>
                     {show3D ? (
                         <Beacon3d
                             segments={segmentsFor3D}
-                            width={250}
+                            width={220}
                             height={300}
                         />
                     ) : (
