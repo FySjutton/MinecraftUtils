@@ -80,6 +80,9 @@ export function ColorPicker(props: ColorPickerProps) {
 
         if (isValidHex(normalized)) {
             setHex(normalized);
+            if (props.onChange) {
+                props.onChange(normalized);
+            }
         } else {
             setHexDraft(hex);
         }
