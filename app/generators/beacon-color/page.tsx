@@ -8,6 +8,6 @@ export default function Page() {
 }
 
 export const metadata: Metadata = {
-    title: "Beacon Color - MinecraftUtils",
-    description: "Calculate the beacon beam color."
+    title: "Beacon Beam Calculator",
+    description: "Calculate the best glass combinations to achieve a specific beacon beam color in Minecraft. Accurate results for all presets.",
 };

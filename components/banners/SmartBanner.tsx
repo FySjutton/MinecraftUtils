@@ -51,20 +51,17 @@ export default function SmartBanner({id, title, icon: IconComp, iconClassName = 
     if (!show) return null;
 
     return (
-        <Banner
-            variant="secondary"
-            inset
-            className="cursor-pointer"
-            onClick={actionUrl ? handleAction : undefined}
-            style={{ backgroundColor: bgColor, color: textColor }}
-        >
+        <Banner variant="secondary" inset className="cursor-pointer" onClick={actionUrl ? handleAction : undefined} style={{ backgroundColor: bgColor, color: textColor }}>
             {IconComp && <BannerIcon icon={IconComp} className={iconClassName} />}
-            <BannerTitle>{title}</BannerTitle>
-            {actionLabel && actionUrl && (
-                <BannerAction variant="default" onClick={handleAction}>
-                    {actionLabel}
-                </BannerAction>
-            )}
+            <BannerTitle className="flex flex-wrap items-center">
+                <p className="pr-2">{title}</p>
+                {actionLabel && actionUrl && (
+                    <BannerAction variant="default" onClick={handleAction} className="ml-auto max-[610px]:ml-0">
+                        {actionLabel}
+                    </BannerAction>
+                )}
+            </BannerTitle>
+
             <BannerClose onClick={handleClose} />
         </Banner>
     );

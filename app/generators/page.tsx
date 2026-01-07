@@ -12,7 +12,7 @@ export default function Page() {
             <div className="text-center space-y-4">
                 <h1 className="text-4xl md:text-5xl font-bold">MinecraftUtils - Generators</h1>
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                    Our generators lets you generate everything from server motds, to *coming soon* and *coming soon*.
+                    Our generators lets you generate everything from server motds, to beacon beams and signs.
                 </p>
                 <div className="flex justify-center gap-4 mt-4">
                     <a href="https://discord.gg/tqn38v6w7k" target="_blank" rel="noopener noreferrer">
@@ -34,6 +34,6 @@ export default function Page() {
 }
 
 export const metadata: Metadata = {
-    title: "Generators - MinecraftUtils",
+    title: "Generators",
     description: "Multiple generators for Minecraft-related commands and features."
 };

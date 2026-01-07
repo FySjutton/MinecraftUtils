@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset
+        xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+            http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+    <!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
+
+
+    <url>
+        <loc>https://minecraftutils.com/</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>1.00</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/calculators</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/calculators/units</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/calculators/experience</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/calculators/nether-cords</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/generators</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/generators/beacon-color</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/generators/sign-generator</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/generators/motd-creator</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/references</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/references/daylight-cycle</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/references/inventory-slots</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+    <url>
+        <loc>https://minecraftutils.com/references/color-codes</loc>
+        <lastmod>2026-01-07T09:15:31+00:00</lastmod>
+        <priority>0.80</priority>
+    </url>
+</urlset>

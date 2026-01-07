@@ -1,61 +1,63 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/app/globals.css";
 import React from "react";
-import {Metadata, Viewport} from "next";
+import { Metadata, Viewport } from "next";
 import AppLayout from "@/components/AppLayout";
-import { Analytics } from '@vercel/analytics/next';
-import { SpeedInsights } from "@vercel/speed-insights/next"
+import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
-const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
+const geistSans = Geist({variable: "--font-geist-sans", subsets: ["latin"],});
+const geistMono = Geist_Mono({variable: "--font-geist-mono", subsets: ["latin"],});
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({children}: { children: React.ReactNode; }) {
     return (
         <html lang="en" className="dark">
-        <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-            <AppLayout>{children}</AppLayout>
-            <Analytics />
-            <SpeedInsights/>
-        </body>
+            <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+                <AppLayout>{children}</AppLayout>
+                <Analytics />
+                <SpeedInsights />
+            </body>
         </html>
     );
 }
 
-const domain = process.env.VERCEL_URL
-    ? `https://${process.env.VERCEL_URL}`
-    : "http://localhost:3000";
-
 export const metadata: Metadata = {
-    metadataBase: new URL(domain),
-    title: "Minecraft Utils",
-    description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
-    icons: {
-        icon: "/favicon.ico",
-        shortcut: "/favicon-32x32.png",
-        apple: "/apple-touch-icon.png",
+    metadataBase: new URL("https://minecraftutils.com"),
+
+    title: {
+        default: "Minecraft Utils",
+        template: "%s – Minecraft Utils",
     },
+
+    description: "Free Minecraft utilities, calculators, generators, and tools for players, server admins, and creators.",
+    applicationName: "Minecraft Utils",
+
     openGraph: {
-        title: "Minecraft Utils",
-        description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
         type: "website",
-        locale: "en-US",
+        siteName: "Minecraft Utils",
+        title: "Minecraft Utils",
+        description: "Free Minecraft utilities, calculators, generators, and tools for players, server admins, and creators.",
+        locale: "en_US",
         images: [
             {
-                url: `${domain}/og-banner.png`,
+                url: "/og-banner.png",
                 width: 1200,
                 height: 630,
                 alt: "Minecraft Utils",
-            }
+            },
         ],
     },
+
     twitter: {
         card: "summary_large_image",
         title: "Minecraft Utils",
-        description: "Useful Minecraft utilities, calculators, and generators for players, admins, and creators alike.",
-        images: [`${domain}/og-banner.png`],
+        description:
+            "Free Minecraft utilities, calculators, generators, and tools for players, server admins, and creators.",
+        images: ["/og-banner.png"],
     },
-};
 
+    icons: undefined,
+};
 
 export const viewport: Viewport = {
     themeColor: "#1cffca",
