@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/sidebar"
 
 import { navMain, tools, externals } from "@/app/AppStructure"
-import {IconHammer} from "@tabler/icons-react";
 import Image from "next/image";
 
 export function AppSidebar() {
@@ -48,7 +47,7 @@ export function AppSidebar() {
                             <Link href="/" className="flex items-center gap-2">
                                 <div className="bg-sidebar-accent text-sidebar-primary-foreground relative flex w-8 h-8 items-center justify-center rounded-lg">
                                     <Image
-                                        src="/logo.png"
+                                        src="/logo_high.png"
                                         alt="Logo"
                                         fill
                                         style={{ objectFit: 'contain' }}
