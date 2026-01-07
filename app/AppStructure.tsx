@@ -27,7 +27,7 @@ import {
     IconWand,
     IconWorld
 } from "@tabler/icons-react";
-import {Captions, Milestone, SlidersVertical, Sun} from "lucide-react";
+import {Captions, GlassWater, Milestone, SlidersVertical, Sun} from "lucide-react";
 
 export interface PageItem {
     name: string
@@ -119,6 +119,7 @@ export const tools: ToolCategory[] = [
         defaultOpen: true,
         pages: [
             { name: "Daylight Cycle", url: "daylight-cycle", icon: <Sun />, description: "Interactive daylight cycle viewer, with video, daylight detector output, and time converter." },
+            { name: "Potion Brewing", url: "potion-brewing", icon: <GlassWater />, description: "View instructions how to brew a specific potion.", type: "alpha" },
             { name: "Inventory Slots", url: "inventory-slots", icon: <IconCircleNumber0 />, description: "Visual guide to inventory slot positions." },
             { name: "Color Codes", url: "color-codes", icon: <IconPalette />, description: "A list of all formatting codes in Minecraft." },
         ],
@@ -165,7 +166,6 @@ export const externals: ToolCategory[] = [
         url: "#",
         external: true,
         pages: [
-            { name: "Brewing Guide", url: "https://minecraft.wiki/w/Brewing#/media/File:Minecraft_brewing_en.png", icon: <IconBottle />, description: "Step-by-step brewing reference." },
             { name: "Trading Guide", url: "https://minecraft.wiki/w/Trading#/media/File:Trading_and_Bartering_Guide_for_Minecraft_Java_Edition_1.17+.png", icon: <IconBuildingFactory2 />, description: "Reference for villager trades." },
         ],
     },

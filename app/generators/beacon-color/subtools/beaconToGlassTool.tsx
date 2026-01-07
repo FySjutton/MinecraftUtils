@@ -46,7 +46,7 @@ export function findColorName(rgb: RGB): string {
 }
 
 export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab: 'tool' | 'verify') => void }) {
-    const initialValue = "#00eb76"
+    const initialValue = "#3263B7"
 
     const [hex, setHex] = useState(initialValue)
     const [preset, setPreset] = useState(presets[2].name)

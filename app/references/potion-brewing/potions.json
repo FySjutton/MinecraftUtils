@@ -1,0 +1,780 @@
+{
+  "Potion of Swiftness": {
+    "aliases": [
+      "Speed Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["sugar", "Potion of Swiftness"]
+      ]
+    ],
+    "effects": [
+      "+20% Speed"
+    ],
+    "length": "3:00",
+    "image": "swiftness"
+  },
+  "Potion of Swiftness II": {
+    "aliases": [
+      "Speed Potion II"
+    ],
+    "recipe": [
+      [
+        "Potion of Swiftness",
+        ["glowstone", "Potion of Swiftness II"]
+      ]
+    ],
+    "effects": [
+      "+40% Speed"
+    ],
+    "length": "1:30",
+    "image": "swiftness"
+  },
+  "Potion of Swiftness +": {
+    "aliases": [
+      "Speed Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Swiftness",
+        ["redstone", "Potion of Swiftness +"]
+      ]
+    ],
+    "effects": [
+      "+20% Speed"
+    ],
+    "length": "8:00",
+    "image": "swiftness"
+  },
+  "Potion of Slowness": {
+    "aliases": [
+      "Slowness Potion"
+    ],
+    "recipe": [
+      [
+        "Potion of Swiftness",
+        ["fermented_spider_eye", "Potion of Slowness"]
+      ],
+      [
+        "Potion of Leaping",
+        ["fermented_spider_eye", "Potion of Slowness"]
+      ]
+    ],
+    "effects": [
+      "-15% Speed"
+    ],
+    "length": "1:30",
+    "image": "slowness"
+  },
+  "Potion of Slowness +": {
+    "aliases": [
+      "Slowness Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Swiftness +",
+        ["fermented_spider_eye", "Potion of Slowness +"]
+      ],
+      [
+        "Potion of Slowness",
+        ["redstone", "Potion of Slowness +"]
+      ],
+      [
+        "Potion of Leaping +",
+        ["fermented_spider_eye", "Potion of Slowness +"]
+      ]
+    ],
+    "effects": [
+      "-15% Speed"
+    ],
+    "length": "4:00",
+    "image": "slowness"
+  },
+  "Potion of Slowness IV": {
+    "aliases": [
+      "Slowness Potion IV",
+      "Slowness Potion II"
+    ],
+    "recipe": [
+      [
+        "Potion of Slowness",
+        ["glowstone", "Potion of Slowness IV"]
+      ]
+    ],
+    "effects": [
+      "-60% Speed"
+    ],
+    "length": "0:20",
+    "image": "slowness"
+  },
+  "Potion of Leaping": {
+    "aliases": [
+      "Jump Boost Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["rabbit_foot", "Potion of Leaping"]
+      ]
+    ],
+    "effects": [
+      "+0.5 blocks"
+    ],
+    "length": "3:00",
+    "image": "leaping"
+  },
+  "Potion of Leaping +": {
+    "aliases": [
+      "Jump Boost Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Leaping",
+        ["redstone", "Potion of Leaping +"]
+      ]
+    ],
+    "effects": [
+      "+0.5 blocks"
+    ],
+    "length": "8:00",
+    "image": "leaping"
+  },
+  "Potion of Leaping II": {
+    "aliases": [
+      "Jump Boost Potion II"
+    ],
+    "recipe": [
+      [
+        "Potion of Leaping",
+        ["glowstone", "Potion of Leaping II"]
+      ]
+    ],
+    "effects": [
+      "+1.25 blocks"
+    ],
+    "length": "1:30",
+    "image": "leaping"
+  },
+  "Potion of Strength": {
+    "aliases": [
+      "Strength Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["blaze_powder", "Potion of Strength"]
+      ]
+    ],
+    "effects": [
+      "+3 hp"
+    ],
+    "length": "3:00",
+    "image": "strength"
+  },
+  "Potion of Strength +": {
+    "aliases": [
+      "Strength Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Strength",
+        ["redstone", "Potion of Strength +"]
+      ]
+    ],
+    "effects": [
+      "+1.5 hp"
+    ],
+    "length": "8:00",
+    "image": "strength"
+  },
+  "Potion of Strength II": {
+    "aliases": [
+      "Strength Potion II"
+    ],
+    "recipe": [
+      [
+        "Potion of Strength",
+        ["glowstone", "Potion of Strength II"]
+      ]
+    ],
+    "effects": [
+      "+6 hp"
+    ],
+    "length": "1:30",
+    "image": "strength"
+  },
+  "Potion of Healing": {
+    "aliases": [
+      "Healing Potion",
+      "Health Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["glistering_melon_slice", "Potion of Healing"]
+      ]
+    ],
+    "effects": [
+      "4 hp"
+    ],
+    "length": "N/A",
+    "image": "healing"
+  },
+  "Potion of Healing II": {
+    "aliases": [
+      "Healing Potion II",
+      "Health Potion"
+    ],
+    "recipe": [
+      [
+        "Potion of Healing",
+        ["glowstone", "Potion of Healing II"]
+      ]
+    ],
+    "effects": [
+      "8 hp"
+    ],
+    "length": "N/A",
+    "image": "healing"
+  },
+  "Potion of Harming": {
+    "aliases": [
+      "Harming Potion",
+      "Instant Damage"
+    ],
+    "recipe": [
+      [
+        "Potion of Healing",
+        ["fermented_spider_eye", "Potion of Harming"]
+      ],
+      [
+        "Potion of Poison",
+        ["fermented_spider_eye", "Potion of Harming"]
+      ]
+    ],
+    "effects": [
+      "-6 hp"
+    ],
+    "length": "N/A",
+    "image": "harming"
+  },
+  "Potion of Harming II": {
+    "aliases": [
+      "Harming Potion II",
+      "Instant Damage II"
+    ],
+    "recipe": [
+      [
+        "Potion of Healing II",
+        ["fermented_spider_eye", "Potion of Harming II"]
+      ],
+      [
+        "Potion of Poison II",
+        ["fermented_spider_eye", "Potion of Harming II"]
+      ],
+      [
+        "Potion of Harming",
+        ["glowstone", "Potion of Harming II"]
+      ]
+    ],
+    "effects": [
+      "-8 hp"
+    ],
+    "length": "N/A",
+    "image": "harming"
+  },
+  "Potion of Poison": {
+    "aliases": [
+      "Poison Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["spider_eye", "Potion of Poison"]
+      ]
+    ],
+    "effects": [
+      "-0.5 hp/1.25s"
+    ],
+    "length": "0:45",
+    "image": "poison"
+  },
+  "Potion of Poison II": {
+    "aliases": [
+      "Poison Potion II"
+    ],
+    "recipe": [
+      [
+        "Potion of Poison",
+        ["glowstone", "Potion of Poison II"]
+      ]
+    ],
+    "effects": [
+      "-0.5 hp/0.6s"
+    ],
+    "length": "0:21",
+    "image": "poison"
+  },
+  "Potion of Poison +": {
+    "aliases": [
+      "Poison Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Poison",
+        ["redstone", "Potion of Poison +"]
+      ]
+    ],
+    "effects": [
+      "-0.5 hp/1.25s"
+    ],
+    "length": "1:30",
+    "image": "poison"
+  },
+  "Potion of Regeneration": {
+    "aliases": [
+      "Regeneration Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["ghast_tear", "Potion of Regeneration"]
+      ]
+    ],
+    "effects": [
+      "+0.5 hp/2.5s"
+    ],
+    "length": "0:45",
+    "image": "regeneration"
+  },
+  "Potion of Regeneration +": {
+    "aliases": [
+      "Regeneration Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Regeneration",
+        ["redstone", "Potion of Regeneration +"]
+      ]
+    ],
+    "effects": [
+      "+0.5 hp/2.5s"
+    ],
+    "length": "1:30",
+    "image": "regeneration"
+  },
+  "Potion of Regeneration II": {
+    "aliases": [
+      "Regeneration Potion II"
+    ],
+    "recipe": [
+      [
+        "Potion of Regeneration",
+        ["glowstone", "Potion of Regeneration II"]
+      ]
+    ],
+    "effects": [
+      "+0.5 hp/1.2s"
+    ],
+    "length": "0:22",
+    "image": "regeneration"
+  },
+  "Potion of Water Breathing": {
+    "aliases": [
+      "Water Breathing Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["pufferfish", "Potion of Water Breathing"]
+      ]
+    ],
+    "effects": [
+      "Water Breathing"
+    ],
+    "length": "3:00",
+    "image": "water_breathing"
+  },
+  "Potion of Water Breathing +": {
+    "aliases": [
+      "Water Breathing Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Water Breathing",
+        ["redstone", "Potion of Water Breathing +"]
+      ]
+    ],
+    "effects": [
+      "Water Breathing"
+    ],
+    "length": "8:00",
+    "image": "water_breathing"
+  },
+  "Potion of Fire Resistance": {
+    "aliases": [
+      "Fire Resistance Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["magma_cream", "Potion of Fire Resistance"]
+      ]
+    ],
+    "effects": [
+      "Fire Resistance"
+    ],
+    "length": "3:00",
+    "image": "fire_resistance"
+  },
+  "Potion of Fire Resistance +": {
+    "aliases": [
+      "Fire Resistance Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Fire Resistance",
+        ["redstone", "Potion of Fire Resistance +"]
+      ]
+    ],
+    "effects": [
+      "Fire Resistance"
+    ],
+    "length": "8:00",
+    "image": "fire_resistance"
+  },
+  "Potion of Night Vision": {
+    "aliases": [
+      "Night Vision Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["golden_carrot", "Potion of Night Vision"]
+      ]
+    ],
+    "effects": [
+      "Night Vision"
+    ],
+    "length": "3:00",
+    "image": "night_vision"
+  },
+  "Potion of Night Vision +": {
+    "aliases": [
+      "Night Vision Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Night Vision",
+        ["redstone", "Potion of Night Vision +"]
+      ]
+    ],
+    "effects": [
+      "Night Vision"
+    ],
+    "length": "8:00",
+    "image": "night_vision"
+  },
+  "Potion of Invisibility": {
+    "aliases": [
+      "Invisibility Potion"
+    ],
+    "recipe": [
+      [
+        "Potion of Night Vision",
+        ["fermented_spider_eye", "Potion of Invisibility"]
+      ]
+    ],
+    "effects": [
+      "Invisibility"
+    ],
+    "length": "3:00",
+    "image": "invisibility"
+  },
+  "Potion of Invisibility +": {
+    "aliases": [
+      "Invisibility Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Night Vision +",
+        ["fermented_spider_eye", "Potion of Invisibility +"]
+      ]
+    ],
+    "effects": [
+      "Invisibility"
+    ],
+    "length": "8:00",
+    "image": "invisibility"
+  },
+  "Potion of the Turtle Master": {
+    "aliases": [
+      "Turtle Master Potion",
+      "Potion of Turtle Master"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["turtle_shell", "Potion of the Turtle Master"]
+      ]
+    ],
+    "effects": [
+      "Slowness IV | Resistance III"
+    ],
+    "length": "0:20",
+    "image": "the_turtle_master"
+  },
+  "Potion of the Turtle Master +": {
+    "aliases": [
+      "Turtle Master Potion +",
+      "Potion of Turtle Master +"
+    ],
+    "recipe": [
+      [
+        "Potion of the Turtle Master",
+        ["redstone", "Potion of the Turtle Master +"]
+      ]
+    ],
+    "effects": [
+      "Slowness IV | Resistance III"
+    ],
+    "length": "0:40",
+    "image": "the_turtle_master"
+  },
+  "Potion of the Turtle Master II": {
+    "aliases": [
+      "Turtle Master Potion II",
+      "Potion of Turtle Master II"
+    ],
+    "recipe": [
+      [
+        "Potion of the Turtle Master",
+        ["glowstone", "Potion of the Turtle Master II"]
+      ]
+    ],
+    "effects": [
+      "Slowness VI | Resistance IV"
+    ],
+    "length": "0:20",
+    "image": "the_turtle_master"
+  },
+  "Potion of Slow Falling": {
+    "aliases": [
+      "Slow Falling Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["phantom_membrane", "Potion of Slow Falling"]
+      ]
+    ],
+    "effects": [
+      "Slow Falling"
+    ],
+    "length": "1:30",
+    "image": "slow_falling"
+  },
+  "Potion of Slow Falling +": {
+    "aliases": [
+      "Slow Falling Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Slow Falling",
+        ["redstone", "Potion of Slow Falling +"]
+      ]
+    ],
+    "effects": [
+      "Slow Falling"
+    ],
+    "length": "4:00",
+    "image": "slow_falling"
+  },
+  "Potion of Wind Charging": {
+    "aliases": [
+      "Wind Charging Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["breeze_rod", "Potion of Wind Charging"]
+      ]
+    ],
+    "effects": [
+      "Wind Charging"
+    ],
+    "length": "3:00",
+    "image": "wind_charging"
+  },
+  "Potion of Weaving": {
+    "aliases": [
+      "Weaving Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["cobweb", "Potion of Weaving"]
+      ]
+    ],
+    "effects": [
+      "Weaving"
+    ],
+    "length": "3:00",
+    "image": "weaving"
+  },
+  "Potion of Oozing": {
+    "aliases": [
+      "Oozing Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["slime_block", "Potion of Oozing"]
+      ]
+    ],
+    "effects": [
+      "Oozing"
+    ],
+    "length": "3:00",
+    "image": "oozing"
+  },
+  "Potion of Infestation": {
+    "aliases": [
+      "Infestation Potion"
+    ],
+    "recipe": [
+      [
+        "Awkward Potion",
+        ["stone", "Potion of Infestation"]
+      ]
+    ],
+    "effects": [
+      "Infestation"
+    ],
+    "length": "3:00",
+    "image": "infestation"
+  },
+  "Awkward Potion": {
+    "aliases": [],
+    "recipe": [
+      [
+        "Water Bottle",
+        ["nether_wart", "Awkward Potion"]
+      ]
+    ],
+    "effects": [
+      "N/A"
+    ],
+    "length": "N/A",
+    "image": "water_bottle"
+  },
+  "Potion of Weakness": {
+    "aliases": [
+      "Weakness Potion"
+    ],
+    "recipe": [
+      [
+        "Water Bottle",
+        ["fermented_spider_eye", "Potion of Weakness"]
+      ]
+    ],
+    "effects": [
+      "-4 hp"
+    ],
+    "length": "1:30",
+    "image": "weakness"
+  },
+  "Potion of Weakness +": {
+    "aliases": [
+      "Weakness Potion +"
+    ],
+    "recipe": [
+      [
+        "Potion of Weakness",
+        ["redstone", "Potion of Weakness +"]
+      ]
+    ],
+    "effects": [
+      "-4 hp"
+    ],
+    "length": "4:00",
+    "image": "weakness"
+  },
+  "Mundane Potion": {
+    "aliases": [
+      "Potion of Mundane"
+    ],
+    "recipe": [
+      [
+        "Water Bottle",
+        ["redstone", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["breeze_rod", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["stone", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["slime_block", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["cobweb", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["magma_cream", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["rabbit_foot", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["sugar", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["glistering_melon_slice", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["spider_eye", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["ghast_tear", "Mundane Potion"]
+      ],
+      [
+        "Water Bottle",
+        ["blaze_powder", "Mundane Potion"]
+      ]
+    ],
+    "effects": [
+      "N/A"
+    ],
+    "length": "N/A",
+    "image": "water_bottle"
+  },
+  "Thick Potion": {
+    "aliases": [
+      "Potion of Thick"
+    ],
+    "recipe": [
+      [
+        "Water Bottle",
+        ["glowstone", "Thick Potion"]
+      ]
+    ],
+    "effects": [
+      "N/A"
+    ],
+    "length": "N/A",
+    "image": "water_bottle"
+  }
+}

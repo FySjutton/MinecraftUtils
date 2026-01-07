@@ -32,7 +32,7 @@ export function toInternalName(display?: string) {
 }
 
 export default function GlassToBeaconColorEditor() {
-    const initialValue = '#00eb76'
+    const initialValue = '#3263B7'
 
     const [stack, setStack] = useState<string[]>([])
     const [targetHex, setTargetHex] = useState(initialValue)
