@@ -68,7 +68,7 @@ function getImage(name: string) {
           alt={name}
           width={32}
           height={32}
-          className="object-contain"
+          className="object-contain image-pixelated"
         />
     </span>
 }

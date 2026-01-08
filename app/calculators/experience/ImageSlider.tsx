@@ -129,7 +129,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
                     width={0}
                     height={0}
                     sizes="100vw"
-                    style={{ imageRendering: "pixelated", width: "100%", height: "auto" }}
+                    className="image-pixelated w-full h-auto"
                 />
 
                 <div className="absolute left-0 top-0 h-full w-full overflow-hidden pointer-events-none">

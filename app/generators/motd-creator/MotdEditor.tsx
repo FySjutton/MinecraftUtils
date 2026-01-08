@@ -199,8 +199,7 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
                                     <img
                                         src="/assets/tool/motd/ping_5.png"
                                         alt="icon"
-                                        className="w-[10px] h-[10px] object-contain"
-                                        style={{ imageRendering: 'pixelated' }}
+                                        className="w-[10px] h-[10px] object-contain image-pixelated"
                                     />
                                 </div>
                             </div>

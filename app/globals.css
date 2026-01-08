@@ -238,4 +238,8 @@ input[type="time"]::-webkit-calendar-picker-indicator {
                 -1px  1px 0 #000,
                 1px  1px 0 #000;
     }
+
+    .image-pixelated {
+        image-rendering: pixelated;
+    }
 }

@@ -43,9 +43,9 @@ export function AppSidebar() {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <div className="text-sm rounded-md p-2 bg-muted">
                             <Link href="/" className="flex items-center gap-2">
-                                <div className="bg-sidebar-accent text-sidebar-primary-foreground relative flex w-8 h-8 items-center justify-center rounded-lg">
+                                <div className="relative flex w-8 h-8 items-center justify-center rounded-lg">
                                     <Image
                                         src="/logo_high.png"
                                         alt="Logo"
@@ -58,7 +58,7 @@ export function AppSidebar() {
                                     <span>Useful utilities for minecraft</span>
                                 </div>
                             </Link>
-                        </SidebarMenuButton>
+                        </div>
                     </SidebarMenuItem>
                 </SidebarMenu>
                 <NavMain items={navMain} activeCategory={activeCategory}/>

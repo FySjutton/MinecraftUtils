@@ -79,7 +79,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                     style={{ backgroundColor: "#ba2727", color: "#FFFFFF" }}
                                 >
                                     <BannerIcon icon={IconAlertOctagon} className={"bg-white/20 text-white"} />
-                                    <BannerTitle>WARNING! | This utility is in the alpha phase! Try to avoid using it, it is only here in order for testers/developers to test it!</BannerTitle>
+                                    <BannerTitle>WARNING! | This utility is in the alpha phase! Avoid using it, it is only here in order for testers/developers to test it publicly!</BannerTitle>
                                 </Banner>
                             )}
                             {currentPage?.type == "beta" && (
@@ -89,7 +89,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                     style={{ backgroundColor: "#2773ba", color: "#FFFFFF" }}
                                 >
                                     <BannerIcon icon={IconAlertOctagon} className={"bg-white/20 text-white"} />
-                                    <BannerTitle>This utility is still in beta, please report any bugs on github!</BannerTitle>
+                                    <BannerTitle>This utility is in beta, please report any bugs on github!</BannerTitle>
                                     <BannerAction variant="default" onClick={(e: React.MouseEvent) => {
                                         e.stopPropagation();
                                         window.open("https://github.com/FySjutton/MinecraftUtils/issues", "_blank");

@@ -8,6 +8,7 @@ import { ComboBox } from "@/components/ComboBox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toTitleCase } from "@/app/generators/beacon-color/ResultCard"
+import {Separator} from "@/components/ui/separator";
 
 type PotionName = string
 type IngredientName = string
@@ -86,7 +87,7 @@ function RowView({icon, label, size, right}: { icon: string, label: string, size
                 alt={label}
                 width={size === "large" ? 36 : 24}
                 height={size === "large" ? 36 : 24}
-                className={`${size === "small" ? "mr-[14]" : "mr-[2]"}`}
+                className={`${size === "small" ? "mr-[14]" : "mr-[2]"} image-pixelated`}
             />
             <div className="flex-1 flex items-center justify-between">
                 <span className={`text-sm ${size === "large" ? "font-semibold" : "text-xs"}`}>
@@ -100,26 +101,21 @@ function RowView({icon, label, size, right}: { icon: string, label: string, size
 
 function InlineIngredientList({items}: { items: { type: "potion" | "ingredient"; name: string }[] }) {
     return (
-        <div className="sticky top-[64] z-10 backdrop-blur border-b py-2 px-[24] items-center">
+        <div className="sticky top-[55] z-10 backdrop-blur border-b py-2  items-center">
+            <Separator className="mb-[4]"/>
             <div className="flex gap-3 flex-wrap justify-center px-1">
                 {items.map((item, i) => (
                     <div key={i} className="flex flex-col items-center text-xs shrink-0">
                         <Image
-                            src={
-                                item.type === "potion"
-                                    ? potionIcon(
-                                        item.name.replace(/^(Splash |Lingering )/, ""),
-                                        "normal"
-                                    )
-                                    : ingredientIcon(item.name)
-                            }
+                            src={item.type === "potion" ? potionIcon(item.name.replace(/^(Splash |Lingering )/, ""), "normal") : ingredientIcon(item.name)}
                             alt={item.name}
                             width={28}
                             height={28}
+                            className="image-pixelated"
                         />
                         <span className="mt-1 text-muted-foreground whitespace-nowrap">
-                            {toTitleCase(item.name.replaceAll("_", " "))}
-                        </span>
+                        {toTitleCase(item.name.replaceAll("_", " "))}
+                    </span>
                     </div>
                 ))}
             </div>
@@ -148,7 +144,7 @@ function PotionCard({ selectedPotion, potionType }: { selectedPotion: PotionName
                 alt={selectedPotion}
                 width={160}
                 height={160}
-                className="w-30 border mr-3"
+                className="w-30 border mr-3 image-pixelated"
             />
             <div className="mr-3">
                 <p><span className="font-bold">Name:</span> {potionType !== "normal" ? `${toTitleCase(potionType)} ` : ""}{selectedPotion}</p>
@@ -267,7 +263,7 @@ export default function PotionBrewingTool() {
                                 alt={item}
                                 width={20}
                                 height={20}
-                                className="w-6 h-6"
+                                className="w-6 h-6 image-pixelated"
                             />
                         )}
                         renderItem={item => (
