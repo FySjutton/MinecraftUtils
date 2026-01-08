@@ -119,7 +119,7 @@ export const tools: ToolCategory[] = [
         defaultOpen: true,
         pages: [
             { name: "Daylight Cycle", url: "daylight-cycle", icon: <Sun />, description: "Interactive daylight cycle viewer, with video, daylight detector output, and time converter." },
-            { name: "Potion Brewing", url: "potion-brewing", icon: <GlassWater />, description: "View instructions how to brew a specific potion.", type: "alpha" },
+            { name: "Potion Brewing", url: "potion-brewing", icon: <GlassWater />, description: "View instructions how to brew a specific potion.", type: "beta" },
             { name: "Inventory Slots", url: "inventory-slots", icon: <IconCircleNumber0 />, description: "Visual guide to inventory slot positions." },
             { name: "Color Codes", url: "color-codes", icon: <IconPalette />, description: "A list of all formatting codes in Minecraft." },
         ],

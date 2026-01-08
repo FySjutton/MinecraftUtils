@@ -18,8 +18,12 @@ import {
 } from "@/components/ui/popover"
 import { IconCheck, IconSelector } from "@tabler/icons-react"
 
+type ItemsInput =
+    | string[]
+    | Record<string, string[]>
+
 interface ComboBoxProps {
-    items: string[]
+    items: ItemsInput
     value: string
     onChange: (value: string) => void
     placeholder?: string
@@ -32,6 +36,20 @@ interface ComboBoxProps {
 export function ComboBox({items, value, onChange, placeholder = "Select...", placeholderSearch = "Search...", className, renderItem, renderIcon}: ComboBoxProps) {
     const [open, setOpen] = React.useState(false)
 
+    const normalizedItems = React.useMemo(() => {
+        if (Array.isArray(items)) {
+            return items.map(item => ({
+                value: item,
+                aliases: [] as string[],
+            }))
+        }
+
+        return Object.entries(items).map(([key, aliases]) => ({
+            value: key,
+            aliases,
+        }))
+    }, [items])
+
     return (
         <Popover open={open} onOpenChange={setOpen}>
             <PopoverTrigger asChild>
@@ -42,18 +60,30 @@ export function ComboBox({items, value, onChange, placeholder = "Select...", pla
                     className={cn("flex items-center justify-between w-full", className)}
                 >
                     <div className="flex items-center gap-2 truncate">
-                        {renderIcon && <span className="flex-shrink-0">{renderIcon(value)}</span>}
-                        <span className="truncate">{value || placeholder}</span>
+                        {renderIcon && value && (
+                            <span className="flex-shrink-0">
+                {renderIcon(value)}
+              </span>
+                        )}
+                        <span className="truncate">
+              {value || placeholder}
+            </span>
                     </div>
 
                     <div className="flex items-center gap-2 ml-2 shrink-0">
-                        {renderItem?.(value)}
+                        {value && renderItem?.(value)}
                         <IconSelector className="opacity-50" />
                     </div>
                 </Button>
             </PopoverTrigger>
 
-            <PopoverContent className={cn("p-0", className)}>
+            <PopoverContent
+                align="start"
+                side="bottom"
+                sideOffset={4}
+                avoidCollisions={false}
+                className={cn("p-0", className)}
+            >
                 <Command>
                     <CommandInput
                         placeholder={placeholderSearch}
@@ -62,10 +92,11 @@ export function ComboBox({items, value, onChange, placeholder = "Select...", pla
                     <CommandList>
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup>
-                            {items.map((item) => (
+                            {normalizedItems.map(({ value: item, aliases }) => (
                                 <CommandItem
                                     key={item}
                                     value={item}
+                                    keywords={[item, ...aliases]}
                                     onSelect={() => {
                                         onChange(item)
                                         setOpen(false)
@@ -74,11 +105,13 @@ export function ComboBox({items, value, onChange, placeholder = "Select...", pla
                                 >
                                     {renderIcon && (
                                         <span className="flex-shrink-0">
-                                            {renderIcon(item)}
+                                          {renderIcon(item)}
                                         </span>
                                     )}
 
-                                    <span className="flex-1 truncate">{item}</span>
+                                    <span className="flex-1 truncate">
+                                        {item}
+                                    </span>
 
                                     {renderItem?.(item)}
 
