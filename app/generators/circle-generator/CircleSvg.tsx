@@ -29,8 +29,6 @@ export function InteractiveCircleGroups({ options }: Props) {
     const [hoveredGroup, setHoveredGroup] = useState<Group | null>(null);
     const [hoveredCell, setHoveredCell] = useState<Cell | null>(null);
 
-    /* ---------------- groups ---------------- */
-
     const groups = useMemo<Group[]>(() => {
         if (options.mode === "filled") return [];
         const out: Group[] = [];
@@ -64,8 +62,6 @@ export function InteractiveCircleGroups({ options }: Props) {
         return out;
     }, [options, width, height]);
 
-    /* ---------- cell → longest group ---------- */
-
     const cellToGroup = useMemo(() => {
         const map = new Map<string, Group>();
         for (const g of groups) {
@@ -79,19 +75,6 @@ export function InteractiveCircleGroups({ options }: Props) {
         }
         return map;
     }, [groups]);
-
-    const groupBounds = (g: Group) => {
-        const xs = g.cells.map(c => c.x);
-        const ys = g.cells.map(c => c.y);
-        return {
-            minX: Math.min(...xs),
-            maxX: Math.max(...xs),
-            minY: Math.min(...ys),
-            maxY: Math.max(...ys),
-        };
-    };
-
-    /* ---------------- toggles ---------------- */
 
     const toggleCell = (x: number, y: number) => {
         setBuilt(b => {
@@ -110,19 +93,15 @@ export function InteractiveCircleGroups({ options }: Props) {
         });
     };
 
-    /* ---------------- render ---------------- */
-
     return (
         <svg
             viewBox={`${-PADDING} ${-PADDING} ${(CELL + GAP) * width + 2 * PADDING} ${(CELL + GAP) * height + 2 * PADDING}`}
-            width={(CELL + GAP) * width + 2 * PADDING}
-            height={(CELL + GAP) * height + 2 * PADDING}
+            width="100%"
+            height="100%"
             style={{ userSelect: "none" }}
-            onContextMenu={e => e.preventDefault()}
         >
             <g transform={`translate(${PADDING},${PADDING})`}>
 
-                {/* cells */}
                 {Array.from({ length: height }).map((_, y) =>
                     Array.from({ length: width }).map((_, x) => {
                         if (!isCircleFilled(x, y, options)) return null;
@@ -131,6 +110,7 @@ export function InteractiveCircleGroups({ options }: Props) {
                         const g = hoveredGroup;
                         const inGroup = g?.cells.some(c => c.x === x && c.y === y);
                         const isHoveredCell = hoveredCell?.x === x && hoveredCell?.y === y;
+                        const cellGroup = cellToGroup.get(`${x},${y}`) ?? null;
 
                         return (
                             <g key={`cell-${x}-${y}`}>
@@ -140,25 +120,43 @@ export function InteractiveCircleGroups({ options }: Props) {
                                     width={CELL}
                                     height={CELL}
                                     rx={3}
-                                    className={
-                                        isHoveredCell
-                                            ? "fill-black"
-                                            : inGroup
-                                                ? "fill-neutral-800"
-                                                : isBuilt
-                                                    ? "fill-purple-600"
-                                                    : "fill-red-500"
-                                    }
+                                    className={isBuilt ? "fill-purple-600" : "fill-red-500"}
                                     onClick={() => toggleCell(x, y)}
                                     onMouseEnter={() => {
                                         setHoveredCell({ x, y });
-                                        setHoveredGroup(cellToGroup.get(`${x},${y}`) ?? null);
+                                        setHoveredGroup(cellGroup);
                                     }}
                                     onMouseLeave={() => {
                                         setHoveredCell(null);
                                         setHoveredGroup(null);
                                     }}
+                                    onContextMenu={e => {
+                                        e.preventDefault();
+                                        if (cellGroup) toggleGroup(cellGroup);
+                                    }}
                                 />
+
+                                {inGroup && (
+                                    <rect
+                                        x={x * (CELL + GAP)}
+                                        y={y * (CELL + GAP)}
+                                        width={CELL}
+                                        height={CELL}
+                                        rx={3}
+                                        className="fill-black/30 pointer-events-none"
+                                    />
+                                )}
+
+                                {isHoveredCell && (
+                                    <rect
+                                        x={x * (CELL + GAP)}
+                                        y={y * (CELL + GAP)}
+                                        width={CELL}
+                                        height={CELL}
+                                        rx={3}
+                                        className="fill-black/30 pointer-events-none"
+                                    />
+                                )}
 
                                 {inGroup && (
                                     <text
@@ -176,27 +174,6 @@ export function InteractiveCircleGroups({ options }: Props) {
                         );
                     })
                 )}
-
-                {/* group hit areas (covers gaps) */}
-                {groups.map((g, i) => {
-                    const { minX, minY, maxX, maxY } = groupBounds(g);
-                    return (
-                        <rect
-                            key={`hit-${i}`}
-                            x={minX * (CELL + GAP)}
-                            y={minY * (CELL + GAP)}
-                            width={(maxX - minX + 1) * (CELL + GAP) - GAP}
-                            height={(maxY - minY + 1) * (CELL + GAP) - GAP}
-                            fill="transparent"
-                            onMouseEnter={() => setHoveredGroup(g)}
-                            onMouseLeave={() => setHoveredGroup(null)}
-                            onContextMenu={e => {
-                                e.preventDefault();
-                                toggleGroup(g);
-                            }}
-                        />
-                    );
-                })}
             </g>
         </svg>
     );

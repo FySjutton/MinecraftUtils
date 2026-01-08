@@ -113,6 +113,7 @@ export const tools: ToolCategory[] = [
         defaultOpen: true,
         pages: [
             { name: "Beacon Generator", url: "beacon-color", icon: getImage("beacon"), description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
+            { name: "Circle Generator", url: "circle-generator", icon: getImage("circle-generator"), description: "Generate pixel perfect circles for minecraft.", type: "alpha" },
             { name: "Sign Generator", url: "sign-generator", icon: getImage("sign"), description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
             { name: "Motd Creator", url: "motd-creator", icon: getImage("motd"), description: "Generate server motds through an interactive editor." },
         ],

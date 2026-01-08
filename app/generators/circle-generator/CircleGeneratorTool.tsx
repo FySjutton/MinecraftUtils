@@ -40,7 +40,7 @@ export default function CircleGeneratorPage() {
     const isHeightInvalid = parseInt(heightInput, 10) < MIN_VALUE || parseInt(heightInput, 10) > MAX_VALUE || isNaN(parseInt(heightInput, 10));
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6">
+        <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Circle / Ellipse Generator</CardTitle>
@@ -80,8 +80,8 @@ export default function CircleGeneratorPage() {
             </Card>
 
             <Card>
-                <CardContent className="p-4">
-                    <ZoomViewport>
+                <CardContent className="p-4 w-full">
+                    <ZoomViewport width={width} height={height}>
                         <InteractiveCircleGroups options={{ width, height, mode }} />
                     </ZoomViewport>
                 </CardContent>
