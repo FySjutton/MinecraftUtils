@@ -5,151 +5,198 @@ import { CircleOptions, isCircleFilled } from "./CircleGenerator";
 
 const CELL = 14;
 const GAP = 2;
-const PADDING = 5;
+const PADDING = 6;
 
 interface Cell { x: number; y: number; }
-type Orientation = "horizontal" | "vertical" | "single";
+type Orientation = "horizontal" | "vertical";
 
-interface Group { cells: Cell[]; orientation: Orientation; }
+interface Group {
+    cells: Cell[];
+    orientation: Orientation;
+}
 
-interface InteractiveCircleGroupsProps { options: CircleOptions; }
+interface Props {
+    options: CircleOptions;
+}
 
-export function InteractiveCircleGroups({ options }: InteractiveCircleGroupsProps) {
-    const width = options.width;
-    const height = options.height;
+export function InteractiveCircleGroups({ options }: Props) {
+    const { width, height } = options;
 
     const [built, setBuilt] = useState<boolean[][]>(
         Array.from({ length: height }, () => Array.from({ length: width }, () => false))
     );
+
     const [hoveredGroup, setHoveredGroup] = useState<Group | null>(null);
+    const [hoveredCell, setHoveredCell] = useState<Cell | null>(null);
 
-    const groups: Group[] = useMemo(() => {
+    /* ---------------- groups ---------------- */
+
+    const groups = useMemo<Group[]>(() => {
         if (options.mode === "filled") return [];
-        const result: Group[] = [];
+        const out: Group[] = [];
 
+        // horizontal
         for (let y = 0; y < height; y++) {
-            let group: Cell[] = [];
+            let run: Cell[] = [];
             for (let x = 0; x < width; x++) {
-                if (isCircleFilled(x, y, options)) group.push({ x, y });
-                else if (group.length) { result.push({ cells: group, orientation: "horizontal" }); group = []; }
+                if (isCircleFilled(x, y, options)) run.push({ x, y });
+                else if (run.length >= 2) {
+                    out.push({ cells: run, orientation: "horizontal" });
+                    run = [];
+                } else run = [];
             }
-            if (group.length) result.push({ cells: group, orientation: "horizontal" });
+            if (run.length >= 2) out.push({ cells: run, orientation: "horizontal" });
         }
 
+        // vertical
         for (let x = 0; x < width; x++) {
-            let group: Cell[] = [];
+            let run: Cell[] = [];
             for (let y = 0; y < height; y++) {
-                if (isCircleFilled(x, y, options)) group.push({ x, y });
-                else if (group.length) { result.push({ cells: group, orientation: "vertical" }); group = []; }
+                if (isCircleFilled(x, y, options)) run.push({ x, y });
+                else if (run.length >= 2) {
+                    out.push({ cells: run, orientation: "vertical" });
+                    run = [];
+                } else run = [];
             }
-            if (group.length) result.push({ cells: group, orientation: "vertical" });
+            if (run.length >= 2) out.push({ cells: run, orientation: "vertical" });
         }
 
-        return result;
+        return out;
     }, [options, width, height]);
 
-    const cellToGroups = useMemo(() => {
-        const map = new Map<string, { horizontal?: Group; vertical?: Group }>();
-        groups.forEach(g => {
-            g.cells.forEach(c => {
-                const key = `${c.x},${c.y}`;
-                const existing = map.get(key) || {};
-                if (g.orientation === "horizontal") {
-                    if (!existing.horizontal || existing.horizontal.cells.length < g.cells.length) existing.horizontal = g;
-                } else {
-                    if (!existing.vertical || existing.vertical.cells.length < g.cells.length) existing.vertical = g;
+    /* ---------- cell → longest group ---------- */
+
+    const cellToGroup = useMemo(() => {
+        const map = new Map<string, Group>();
+        for (const g of groups) {
+            for (const c of g.cells) {
+                const k = `${c.x},${c.y}`;
+                const prev = map.get(k);
+                if (!prev || prev.cells.length < g.cells.length) {
+                    map.set(k, g);
                 }
-                map.set(key, existing);
-            });
-        });
+            }
+        }
         return map;
     }, [groups]);
 
-    const chooseLongestGroupForCell = (x: number, y: number): Group | null => {
-        if (!isCircleFilled(x, y, options)) return null;
-        const g = cellToGroups.get(`${x},${y}`);
-        const h = g?.horizontal, v = g?.vertical;
-        const hOK = h?.cells.length >= 2;
-        const vOK = v?.cells.length >= 2;
-
-        if (hOK && vOK) return h!.cells.length >= v!.cells.length ? h! : v!;
-        if (hOK) return h!;
-        if (vOK) return v!;
-        return { cells: [{ x, y }], orientation: "single" }; // isolated
-    };
-
-    const groupBounds = (group: Group) => {
-        const xs = group.cells.map(c => c.x);
-        const ys = group.cells.map(c => c.y);
+    const groupBounds = (g: Group) => {
+        const xs = g.cells.map(c => c.x);
+        const ys = g.cells.map(c => c.y);
         return {
-            minX: Math.min(...xs), maxX: Math.max(...xs),
-            minY: Math.min(...ys), maxY: Math.max(...ys),
-            centerX: group.cells.reduce((s,c)=>s+c.x,0)/group.cells.length,
-            centerY: group.cells.reduce((s,c)=>s+c.y,0)/group.cells.length
+            minX: Math.min(...xs),
+            maxX: Math.max(...xs),
+            minY: Math.min(...ys),
+            maxY: Math.max(...ys),
         };
     };
 
-    const toggleCell = (x: number, y: number) => {
-        setBuilt(prev => { const copy = prev.map(r=>[...r]); copy[y][x]=!copy[y][x]; return copy; });
-    };
+    /* ---------------- toggles ---------------- */
 
-    const toggleGroup = (group: Group) => {
-        setBuilt(prev => {
-            const copy = prev.map(r=>[...r]);
-            const anyBuilt = group.cells.some(c=>copy[c.y][c.x]);
-            group.cells.forEach(c=>copy[c.y][c.x]=!anyBuilt);
-            return copy;
+    const toggleCell = (x: number, y: number) => {
+        setBuilt(b => {
+            const n = b.map(r => [...r]);
+            n[y][x] = !n[y][x];
+            return n;
         });
     };
 
+    const toggleGroup = (g: Group) => {
+        setBuilt(b => {
+            const n = b.map(r => [...r]);
+            const any = g.cells.some(c => n[c.y][c.x]);
+            g.cells.forEach(c => (n[c.y][c.x] = !any));
+            return n;
+        });
+    };
+
+    /* ---------------- render ---------------- */
+
     return (
         <svg
-            viewBox={`${-PADDING} ${-PADDING} ${(CELL+GAP)*width+2*PADDING} ${(CELL+GAP)*height+2*PADDING}`}
-            width={(CELL+GAP)*width+2*PADDING}
-            height={(CELL+GAP)*height+2*PADDING}
-            style={{ userSelect:"none" }}
-            onContextMenu={e=>e.preventDefault()}
+            viewBox={`${-PADDING} ${-PADDING} ${(CELL + GAP) * width + 2 * PADDING} ${(CELL + GAP) * height + 2 * PADDING}`}
+            width={(CELL + GAP) * width + 2 * PADDING}
+            height={(CELL + GAP) * height + 2 * PADDING}
+            style={{ userSelect: "none" }}
+            onContextMenu={e => e.preventDefault()}
         >
             <g transform={`translate(${PADDING},${PADDING})`}>
-                {Array.from({length:height}).map((_,y)=>
-                    Array.from({length:width}).map((_,x)=>{
-                        if(!isCircleFilled(x,y,options)) return null;
-                        const isBuilt = built[y][x];
+
+                {/* cells */}
+                {Array.from({ length: height }).map((_, y) =>
+                    Array.from({ length: width }).map((_, x) => {
+                        if (!isCircleFilled(x, y, options)) return null;
+
+                        const isBuilt = built[y]?.[x] ?? false;
+                        const g = hoveredGroup;
+                        const inGroup = g?.cells.some(c => c.x === x && c.y === y);
+                        const isHoveredCell = hoveredCell?.x === x && hoveredCell?.y === y;
+
                         return (
-                            <rect
-                                key={`cell-${x}-${y}`}
-                                x={x*(CELL+GAP)}
-                                y={y*(CELL+GAP)}
-                                width={CELL} height={CELL} rx={2}
-                                className={`cursor-pointer transition ${isBuilt?"fill-purple-600":"fill-red-500"}`}
-                                onClick={e=>{if(e.button===0) toggleCell(x,y);}}
-                                onContextMenu={e=>{e.preventDefault(); const g = chooseLongestGroupForCell(x,y); if(g) toggleGroup(g);}}
-                                onMouseEnter={()=>setHoveredGroup(chooseLongestGroupForCell(x,y))}
-                                onMouseLeave={()=>setHoveredGroup(null)}
-                            />
+                            <g key={`cell-${x}-${y}`}>
+                                <rect
+                                    x={x * (CELL + GAP)}
+                                    y={y * (CELL + GAP)}
+                                    width={CELL}
+                                    height={CELL}
+                                    rx={3}
+                                    className={
+                                        isHoveredCell
+                                            ? "fill-black"
+                                            : inGroup
+                                                ? "fill-neutral-800"
+                                                : isBuilt
+                                                    ? "fill-purple-600"
+                                                    : "fill-red-500"
+                                    }
+                                    onClick={() => toggleCell(x, y)}
+                                    onMouseEnter={() => {
+                                        setHoveredCell({ x, y });
+                                        setHoveredGroup(cellToGroup.get(`${x},${y}`) ?? null);
+                                    }}
+                                    onMouseLeave={() => {
+                                        setHoveredCell(null);
+                                        setHoveredGroup(null);
+                                    }}
+                                />
+
+                                {inGroup && (
+                                    <text
+                                        x={x * (CELL + GAP) + CELL / 2}
+                                        y={y * (CELL + GAP) + CELL / 2 + 4}
+                                        textAnchor="middle"
+                                        fontSize={9}
+                                        fill="yellow"
+                                        pointerEvents="none"
+                                    >
+                                        {g!.cells.length}
+                                    </text>
+                                )}
+                            </g>
                         );
                     })
                 )}
 
-                {hoveredGroup && hoveredGroup.cells.length>=2 && (()=>{
-                    const {minX,minY,maxX,maxY,centerX,centerY} = groupBounds(hoveredGroup);
+                {/* group hit areas (covers gaps) */}
+                {groups.map((g, i) => {
+                    const { minX, minY, maxX, maxY } = groupBounds(g);
                     return (
-                        <g key={`hover-${minX}-${minY}`}>
-                            <rect
-                                x={minX*(CELL+GAP)-2} y={minY*(CELL+GAP)-2}
-                                width={(maxX-minX+1)*(CELL+GAP)-GAP+4}
-                                height={(maxY-minY+1)*(CELL+GAP)-GAP+4}
-                                fill="none" stroke="yellow" strokeWidth={1.6} rx={0} pointerEvents="none"
-                            />
-                            <text
-                                x={centerX*(CELL+GAP)+CELL/2} y={centerY*(CELL+GAP)+CELL/2+4}
-                                textAnchor="middle" fontSize={10} fontWeight="bold" fill="yellow" pointerEvents="none"
-                            >
-                                {hoveredGroup.cells.length}
-                            </text>
-                        </g>
+                        <rect
+                            key={`hit-${i}`}
+                            x={minX * (CELL + GAP)}
+                            y={minY * (CELL + GAP)}
+                            width={(maxX - minX + 1) * (CELL + GAP) - GAP}
+                            height={(maxY - minY + 1) * (CELL + GAP) - GAP}
+                            fill="transparent"
+                            onMouseEnter={() => setHoveredGroup(g)}
+                            onMouseLeave={() => setHoveredGroup(null)}
+                            onContextMenu={e => {
+                                e.preventDefault();
+                                toggleGroup(g);
+                            }}
+                        />
                     );
-                })()}
+                })}
             </g>
         </svg>
     );
