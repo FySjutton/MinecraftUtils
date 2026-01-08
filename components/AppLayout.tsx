@@ -17,7 +17,7 @@ import {
 import {usePathname} from "next/navigation";
 import RandomBanner from "@/components/banners/RandomBanner";
 import {getCurrentPage} from "@/app/AppStructure";
-import {Banner, BannerIcon, BannerTitle} from "./ui/banner";
+import {Banner, BannerAction, BannerIcon, BannerTitle} from "./ui/banner";
 import {IconAlertOctagon} from "@tabler/icons-react";
 
 function toTitleCase(str: string) {
@@ -79,7 +79,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                     style={{ backgroundColor: "#ba2727", color: "#FFFFFF" }}
                                 >
                                     <BannerIcon icon={IconAlertOctagon} className={"bg-white/20 text-white"} />
-                                    <BannerTitle>{"WARNING! | This utility is in the alpha phase! Try to avoid using it, it is only here in order for testers/developers to test it!"}</BannerTitle>
+                                    <BannerTitle>WARNING! | This utility is in the alpha phase! Try to avoid using it, it is only here in order for testers/developers to test it!</BannerTitle>
                                 </Banner>
                             )}
                             {currentPage?.type == "beta" && (
@@ -89,7 +89,13 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                     style={{ backgroundColor: "#2773ba", color: "#FFFFFF" }}
                                 >
                                     <BannerIcon icon={IconAlertOctagon} className={"bg-white/20 text-white"} />
-                                    <BannerTitle>{"This utility is still in beta, please report any bugs on github!"}</BannerTitle>
+                                    <BannerTitle>This utility is still in beta, please report any bugs on github!</BannerTitle>
+                                    <BannerAction variant="default" onClick={(e: React.MouseEvent) => {
+                                        e.stopPropagation();
+                                        window.open("https://github.com/FySjutton/MinecraftUtils/issues", "_blank");
+                                    }} className="cursor-pointer ml-auto max-[610px]:ml-0">
+                                        Report
+                                    </BannerAction>
                                 </Banner>
                             )}
 

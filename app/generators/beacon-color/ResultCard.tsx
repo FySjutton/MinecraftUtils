@@ -32,7 +32,6 @@ export const ResultCard = memo(function ResultCard({result, index, show3D, onTog
                 .join("")}`,
             findColorName(result.stack[i])
         ])
-    console.log(segmentsFor3D)
 
     return (
         <Card>
@@ -52,9 +51,9 @@ export const ResultCard = memo(function ResultCard({result, index, show3D, onTog
                         />
                     ) : (
                         <>
-                            <p className="text-xs text-gray-400 mb-2">Bottom to top</p>
+                            <p className="text-xs text-gray-400 mb-2">Top to bottom</p>
                             <ul className="flex flex-col gap-2">
-                                {segmentsFor3D.map(([, glass], i) => (
+                                {segmentsFor3D.reverse().map(([, glass], i) => (
                                     <li key={i} className="flex items-center gap-2">
                                         <Image
                                             src={`/assets/tool/beacon/glass/${glass}.png`}

@@ -87,38 +87,43 @@ export function NavTools({tools, activeCategory, activePage, title}: {
                                     {tool.pages.length > 0 && (
                                         <CollapsibleContent>
                                             <SidebarMenuSub>
-                                                {tool.pages.map((page) => {
-                                                    const isPageActive = activePage === page.url;
-                                                    const url = tool.external ? page.url : `${tool.url}/${page.url}`;
+                                                {tool.pages
+                                                    .slice()
+                                                    .sort((a, b) => {
+                                                        const order = { undefined: 0, released: 0, beta: 1, alpha: 2 };
+                                                        return (order[a.type as keyof typeof order] ?? 0) - (order[b.type as keyof typeof order] ?? 0);
+                                                    }).map((page) => {
+                                                        const isPageActive = activePage === page.url;
+                                                        const url = tool.external ? page.url : `${tool.url}/${page.url}`;
 
-                                                    return (
-                                                        <SidebarMenuSubItem key={page.url}>
-                                                            <SidebarMenuSubButton
-                                                                asChild
-                                                                isActive={isPageActive}
-                                                                className="!h-auto py-1"
-                                                            >
-                                                                <Link
-                                                                    href={url}
-                                                                    target={tool.external ? "_blank" : undefined}
-                                                                    rel={tool.external ? "noopener noreferrer" : undefined}
-                                                                    className="flex items-center gap-2 flex-1 whitespace-normal leading-snug"
+                                                        return (
+                                                            <SidebarMenuSubItem key={page.url}>
+                                                                <SidebarMenuSubButton
+                                                                    asChild
+                                                                    isActive={isPageActive}
+                                                                    className="!h-auto py-1"
                                                                 >
-                                                                    <span className="flex items-center shrink-0 size-4">{renderIcon(page.icon)}</span>
-                                                                    <span className="flex-1">{page.name}</span>
-                                                                    {page.type == "beta" && (
-                                                                        <Badge variant="secondary" className="bg-blue-500">Beta</Badge>
-                                                                    )}
-                                                                    {page.type == "alpha" && (
-                                                                        <Badge variant="destructive">Alpha</Badge>
-                                                                    )}
-                                                                    {tool.external && (
-                                                                        <IconExternalLink className="w-4 h-4 shrink-0 ml-auto" />
-                                                                    )}
-                                                                </Link>
-                                                            </SidebarMenuSubButton>
-                                                        </SidebarMenuSubItem>
-                                                    );
+                                                                    <Link
+                                                                        href={url}
+                                                                        target={tool.external ? "_blank" : undefined}
+                                                                        rel={tool.external ? "noopener noreferrer" : undefined}
+                                                                        className="flex items-center gap-2 flex-1 whitespace-normal leading-snug"
+                                                                    >
+                                                                        {renderIcon(page.icon)}
+                                                                        <span className="flex-1">{page.name}</span>
+                                                                        {page.type == "beta" && (
+                                                                            <Badge variant="secondary" className="bg-blue-500">Beta</Badge>
+                                                                        )}
+                                                                        {page.type == "alpha" && (
+                                                                            <Badge variant="destructive">Alpha</Badge>
+                                                                        )}
+                                                                        {tool.external && (
+                                                                            <IconExternalLink className="w-4 h-4 shrink-0 ml-auto" />
+                                                                        )}
+                                                                    </Link>
+                                                                </SidebarMenuSubButton>
+                                                            </SidebarMenuSubItem>
+                                                        );
                                                 })}
                                             </SidebarMenuSub>
                                         </CollapsibleContent>

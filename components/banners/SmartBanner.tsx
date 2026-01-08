@@ -56,7 +56,7 @@ export default function SmartBanner({id, title, icon: IconComp, iconClassName = 
             <BannerTitle className="flex flex-wrap items-center">
                 <span className="pr-2">{title}</span>
                 {actionLabel && actionUrl && (
-                    <BannerAction variant="default" onClick={handleAction} className="ml-auto max-[610px]:ml-0">
+                    <BannerAction variant="default" onClick={handleAction} className="cursor-pointer ml-auto max-[610px]:ml-0">
                         {actionLabel}
                     </BannerAction>
                 )}

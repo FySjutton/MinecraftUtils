@@ -1,194 +1,203 @@
 {
-  "Potion of Swiftness": {
+  "Swiftness Potion": {
     "aliases": [
-      "Speed Potion"
+      "Speed Potion",
+      "Potion of Swiftness"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["sugar", "Potion of Swiftness"]
+        ["sugar", "Swiftness Potion"]
       ]
     ],
     "effect": "+20% Speed",
     "length": 180,
     "image": "swiftness"
   },
-  "Potion of Swiftness II": {
+  "Swiftness II Potion": {
     "aliases": [
-      "Speed Potion II"
+      "Speed Potion II",
+      "Potion of Swiftness II"
     ],
     "recipe": [
       [
-        "Potion of Swiftness",
-        ["glowstone", "Potion of Swiftness II"]
+        "Swiftness Potion",
+        ["glowstone", "Swiftness II Potion"]
       ]
     ],
     "effect": "+40% Speed",
     "length": 90,
     "image": "swiftness"
   },
-  "Potion of Swiftness +": {
+  "Swiftness + Potion": {
     "aliases": [
-      "Speed Potion +"
+      "Speed Potion +",
+      "Potion of Swiftness +"
     ],
     "recipe": [
       [
-        "Potion of Swiftness",
-        ["redstone", "Potion of Swiftness +"]
+        "Swiftness Potion",
+        ["redstone", "Swiftness + Potion"]
       ]
     ],
     "effect": "+20% Speed",
     "length": 480,
     "image": "swiftness"
   },
-  "Potion of Slowness": {
+  "Slowness Potion": {
     "aliases": [
-      "Slowness Potion"
+      "Potion of Slowness"
     ],
     "recipe": [
       [
-        "Potion of Swiftness",
-        ["fermented_spider_eye", "Potion of Slowness"]
+        "Swiftness Potion",
+        ["fermented_spider_eye", "Slowness Potion"]
       ],
       [
-        "Potion of Leaping",
-        ["fermented_spider_eye", "Potion of Slowness"]
+        "Leaping Potion",
+        ["fermented_spider_eye", "Slowness Potion"]
       ]
     ],
     "effect": "-15% Speed",
     "length": 90,
     "image": "slowness"
   },
-  "Potion of Slowness +": {
+  "Slowness + Potion": {
     "aliases": [
-      "Slowness Potion +"
+      "Slowness Potion +",
+      "Potion of Slowness +"
     ],
     "recipe": [
       [
-        "Potion of Slowness",
-        ["redstone", "Potion of Slowness +"]
+        "Slowness Potion",
+        ["redstone", "Slowness + Potion"]
       ],
       [
-        "Potion of Swiftness +",
-        ["fermented_spider_eye", "Potion of Slowness +"]
+        "Swiftness + Potion",
+        ["fermented_spider_eye", "Slowness + Potion"]
       ],
       [
-        "Potion of Leaping +",
-        ["fermented_spider_eye", "Potion of Slowness +"]
+        "Leaping + Potion",
+        ["fermented_spider_eye", "Slowness + Potion"]
       ]
     ],
     "effect": "-15% Speed",
     "length": 240,
     "image": "slowness"
   },
-  "Potion of Slowness IV": {
+  "Slowness IV Potion": {
     "aliases": [
       "Slowness Potion IV",
-      "Slowness Potion II"
+      "Potion of Slowness IV"
     ],
     "recipe": [
       [
-        "Potion of Slowness",
-        ["glowstone", "Potion of Slowness IV"]
+        "Slowness Potion",
+        ["glowstone", "Slowness IV Potion"]
       ]
     ],
     "effect": "-60% Speed",
     "length": 20,
     "image": "slowness"
   },
-  "Potion of Leaping": {
+  "Leaping Potion": {
     "aliases": [
-      "Jump Boost Potion"
+      "Jump Boost Potion",
+      "Potion of Leaping"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["rabbit_foot", "Potion of Leaping"]
+        ["rabbit_foot", "Leaping Potion"]
       ]
     ],
     "effect": "+0.5 Blocks",
     "length": 180,
     "image": "leaping"
   },
-  "Potion of Leaping +": {
+  "Leaping + Potion": {
     "aliases": [
-      "Jump Boost Potion +"
+      "Jump Boost Potion +",
+      "Potion of Leaping +"
     ],
     "recipe": [
       [
-        "Potion of Leaping",
-        ["redstone", "Potion of Leaping +"]
+        "Leaping Potion",
+        ["redstone", "Leaping + Potion"]
       ]
     ],
     "effect": "+0.5 Blocks",
     "length": 480,
     "image": "leaping"
   },
-  "Potion of Leaping II": {
+  "Leaping II Potion": {
     "aliases": [
-      "Jump Boost Potion II"
+      "Jump Boost Potion II",
+      "Potion of Leaping II"
     ],
     "recipe": [
       [
-        "Potion of Leaping",
-        ["glowstone", "Potion of Leaping II"]
+        "Leaping Potion",
+        ["glowstone", "Leaping II Potion"]
       ]
     ],
     "effect": "+1.25 Blocks",
     "length": 90,
     "image": "leaping"
   },
-  "Potion of Strength": {
+  "Strength Potion": {
     "aliases": [
-      "Strength Potion"
+      "Potion of Strength"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["blaze_powder", "Potion of Strength"]
+        ["blaze_powder", "Strength Potion"]
       ]
     ],
     "effect": "+3 hp",
     "length": 180,
     "image": "strength"
   },
-  "Potion of Strength +": {
+  "Strength + Potion": {
     "aliases": [
-      "Strength Potion +"
+      "Strength Potion +",
+      "Potion of Strength +"
     ],
     "recipe": [
       [
-        "Potion of Strength",
-        ["redstone", "Potion of Strength +"]
+        "Strength Potion",
+        ["redstone", "Strength + Potion"]
       ]
     ],
     "effect": "+1.5 hp",
     "length": 480,
     "image": "strength"
   },
-  "Potion of Strength II": {
+  "Strength II Potion": {
     "aliases": [
-      "Strength Potion II"
+      "Strength Potion II",
+      "Potion of Strength II"
     ],
     "recipe": [
       [
-        "Potion of Strength",
-        ["glowstone", "Potion of Strength II"]
+        "Strength Potion",
+        ["glowstone", "Strength II Potion"]
       ]
     ],
     "effect": "+6 hp",
     "length": 90,
     "image": "strength"
   },
-  "Potion of Healing": {
+  "Healing Potion": {
     "aliases": [
-      "Healing Potion",
-      "Health Potion"
+      "Health Potion",
+      "Potion of Healing"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["glistering_melon_slice", "Potion of Healing"]
+        ["glistering_melon_slice", "Healing Potion"]
       ]
     ],
     "effect": "%d hp",
@@ -196,15 +205,16 @@
     "length": 0,
     "image": "healing"
   },
-  "Potion of Healing II": {
+  "Healing II Potion": {
     "aliases": [
       "Healing Potion II",
-      "Health Potion"
+      "Health Potion",
+      "Potion of Healing II"
     ],
     "recipe": [
       [
-        "Potion of Healing",
-        ["glowstone", "Potion of Healing II"]
+        "Healing Potion",
+        ["glowstone", "Healing II Potion"]
       ]
     ],
     "effect": "%d hp",
@@ -212,19 +222,19 @@
     "length": 0,
     "image": "healing"
   },
-  "Potion of Harming": {
+  "Harming Potion": {
     "aliases": [
-      "Harming Potion",
-      "Instant Damage"
+      "Instant Damage",
+      "Potion of Harming"
     ],
     "recipe": [
       [
-        "Potion of Poison",
-        ["fermented_spider_eye", "Potion of Harming"]
+        "Poison Potion",
+        ["fermented_spider_eye", "Harming Potion"]
       ],
       [
-        "Potion of Healing",
-        ["fermented_spider_eye", "Potion of Harming"]
+        "Healing Potion",
+        ["fermented_spider_eye", "Harming Potion"]
       ]
     ],
     "effect": "%d hp",
@@ -232,23 +242,24 @@
     "length": 0,
     "image": "harming"
   },
-  "Potion of Harming II": {
+  "Harming II Potion": {
     "aliases": [
       "Harming Potion II",
-      "Instant Damage II"
+      "Instant Damage II",
+      "Potion of Harming II"
     ],
     "recipe": [
       [
-        "Potion of Harming",
-        ["glowstone", "Potion of Harming II"]
+        "Harming Potion",
+        ["glowstone", "Harming II Potion"]
       ],
       [
-        "Potion of Poison II",
-        ["fermented_spider_eye", "Potion of Harming II"]
+        "Poison II Potion",
+        ["fermented_spider_eye", "Harming II Potion"]
       ],
       [
-        "Potion of Healing II",
-        ["fermented_spider_eye", "Potion of Harming II"]
+        "Healing II Potion",
+        ["fermented_spider_eye", "Harming II Potion"]
       ]
     ],
     "effect": "%d hp",
@@ -256,325 +267,339 @@
     "length": 0,
     "image": "harming"
   },
-  "Potion of Poison": {
+  "Poison Potion": {
     "aliases": [
-      "Poison Potion"
+      "Potion of Poison"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["spider_eye", "Potion of Poison"]
+        ["spider_eye", "Poison Potion"]
       ]
     ],
     "effect": "-0.5 hp/1.25s",
     "length": 45,
     "image": "poison"
   },
-  "Potion of Poison II": {
+  "Poison II Potion": {
     "aliases": [
-      "Poison Potion II"
+      "Poison Potion II",
+      "Potion of Poison II"
     ],
     "recipe": [
       [
-        "Potion of Poison",
-        ["glowstone", "Potion of Poison II"]
+        "Poison Potion",
+        ["glowstone", "Poison II Potion"]
       ]
     ],
     "effect": "-0.5 hp/0.6s",
     "length": 21,
     "image": "poison"
   },
-  "Potion of Poison +": {
+  "Poison + Potion": {
     "aliases": [
-      "Poison Potion +"
+      "Poison Potion +",
+      "Potion of Poison +"
     ],
     "recipe": [
       [
-        "Potion of Poison",
-        ["redstone", "Potion of Poison +"]
+        "Poison Potion",
+        ["redstone", "Poison + Potion"]
       ]
     ],
     "effect": "-0.5 hp/1.25s",
     "length": 90,
     "image": "poison"
   },
-  "Potion of Regeneration": {
+  "Regeneration Potion": {
     "aliases": [
-      "Regeneration Potion"
+      "Potion of Regeneration"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["ghast_tear", "Potion of Regeneration"]
+        ["ghast_tear", "Regeneration Potion"]
       ]
     ],
     "effect": "+0.5 hp/2.5s",
     "length": 45,
     "image": "regeneration"
   },
-  "Potion of Regeneration +": {
+  "Regeneration + Potion": {
     "aliases": [
-      "Regeneration Potion +"
+      "Regeneration Potion +",
+      "Potion of Regeneration +"
     ],
     "recipe": [
       [
-        "Potion of Regeneration",
-        ["redstone", "Potion of Regeneration +"]
+        "Regeneration Potion",
+        ["redstone", "Regeneration + Potion"]
       ]
     ],
     "effect": "+0.5 hp/2.5s",
     "length": 90,
     "image": "regeneration"
   },
-  "Potion of Regeneration II": {
+  "Regeneration II Potion": {
     "aliases": [
-      "Regeneration Potion II"
+      "Regeneration Potion II",
+      "Potion of Regeneration II"
     ],
     "recipe": [
       [
-        "Potion of Regeneration",
-        ["glowstone", "Potion of Regeneration II"]
+        "Regeneration Potion",
+        ["glowstone", "Regeneration II Potion"]
       ]
     ],
     "effect": "+0.5 hp/1.2s",
     "length": 22,
     "image": "regeneration"
   },
-  "Potion of Water Breathing": {
+  "Water Breathing Potion": {
     "aliases": [
-      "Water Breathing Potion"
+      "Potion of Water Breathing"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["pufferfish", "Potion of Water Breathing"]
+        ["pufferfish", "Water Breathing Potion"]
       ]
     ],
     "effect": "Water Breathing",
     "length": 180,
     "image": "water_breathing"
   },
-  "Potion of Water Breathing +": {
+  "Water Breathing + Potion": {
     "aliases": [
-      "Water Breathing Potion +"
+      "Water Breathing Potion +",
+      "Potion of Water Breathing +"
     ],
     "recipe": [
       [
-        "Potion of Water Breathing",
-        ["redstone", "Potion of Water Breathing +"]
+        "Water Breathing Potion",
+        ["redstone", "Water Breathing + Potion"]
       ]
     ],
     "effect": "Water Breathing",
     "length": 480,
     "image": "water_breathing"
   },
-  "Potion of Fire Resistance": {
+  "Fire Resistance Potion": {
     "aliases": [
-      "Fire Resistance Potion"
+      "Potion of Fire Resistance"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["magma_cream", "Potion of Fire Resistance"]
+        ["magma_cream", "Fire Resistance Potion"]
       ]
     ],
     "effect": "Fire Resistance",
     "length": 180,
     "image": "fire_resistance"
   },
-  "Potion of Fire Resistance +": {
+  "Fire Resistance + Potion": {
     "aliases": [
-      "Fire Resistance Potion +"
+      "Fire Resistance Potion +",
+      "Potion of Fire Resistance +"
     ],
     "recipe": [
       [
-        "Potion of Fire Resistance",
-        ["redstone", "Potion of Fire Resistance +"]
+        "Fire Resistance Potion",
+        ["redstone", "Fire Resistance + Potion"]
       ]
     ],
     "effect": "Fire Resistance",
     "length": 480,
     "image": "fire_resistance"
   },
-  "Potion of Night Vision": {
+  "Night Vision Potion": {
     "aliases": [
-      "Night Vision Potion"
+      "Potion of Night Vision"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["golden_carrot", "Potion of Night Vision"]
+        ["golden_carrot", "Night Vision Potion"]
       ]
     ],
     "effect": "Night Vision",
     "length": 180,
     "image": "night_vision"
   },
-  "Potion of Night Vision +": {
+  "Night Vision + Potion": {
     "aliases": [
-      "Night Vision Potion +"
+      "Night Vision Potion +",
+      "Potion of Night Vision +"
     ],
     "recipe": [
       [
-        "Potion of Night Vision",
-        ["redstone", "Potion of Night Vision +"]
+        "Night Vision Potion",
+        ["redstone", "Night Vision + Potion"]
       ]
     ],
     "effect": "Night Vision",
     "length": 480,
     "image": "night_vision"
   },
-  "Potion of Invisibility": {
+  "Invisibility Potion": {
     "aliases": [
-      "Invisibility Potion"
+      "Potion of Invisibility"
     ],
     "recipe": [
       [
-        "Potion of Night Vision",
-        ["fermented_spider_eye", "Potion of Invisibility"]
+        "Night Vision Potion",
+        ["fermented_spider_eye", "Invisibility Potion"]
       ]
     ],
     "effect": "Invisibility",
     "length": 180,
     "image": "invisibility"
   },
-  "Potion of Invisibility +": {
+  "Invisibility + Potion": {
     "aliases": [
-      "Invisibility Potion +"
+      "Invisibility Potion +",
+      "Potion of Invisibility +"
     ],
     "recipe": [
       [
-        "Potion of Night Vision +",
-        ["fermented_spider_eye", "Potion of Invisibility +"]
+        "Night Vision + Potion",
+        ["fermented_spider_eye", "Invisibility + Potion"]
       ]
     ],
     "effect": "Invisibility",
     "length": 480,
     "image": "invisibility"
   },
-  "Potion of the Turtle Master": {
+  "Turtle Master Potion": {
     "aliases": [
-      "Turtle Master Potion",
-      "Potion of Turtle Master"
+      "Potion of Turtle Master",
+      "Potion of the Turtle Master",
+      "the Turtle Master Potion"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["turtle_shell", "Potion of the Turtle Master"]
+        ["turtle_shell", "Turtle Master Potion"]
       ]
     ],
     "effect": "Slowness IV | Resistance III",
     "length": 20,
     "image": "the_turtle_master"
   },
-  "Potion of the Turtle Master +": {
+  "Turtle Master + Potion": {
     "aliases": [
       "Turtle Master Potion +",
-      "Potion of Turtle Master +"
+      "Potion of Turtle Master +",
+      "the Turtle Master Potion +",
+      "Potion of the Turtle Master +"
     ],
     "recipe": [
       [
-        "Potion of the Turtle Master",
-        ["redstone", "Potion of the Turtle Master +"]
+        "Turtle Master Potion",
+        ["redstone", "Turtle Master + Potion"]
       ]
     ],
     "effect": "Slowness IV | Resistance III",
     "length": 40,
     "image": "the_turtle_master"
   },
-  "Potion of the Turtle Master II": {
+  "Turtle Master II Potion": {
     "aliases": [
       "Turtle Master Potion II",
-      "Potion of Turtle Master II"
+      "Potion of Turtle Master II",
+      "the Turtle Master Potion",
+      "Potion of the Turtle Master II"
     ],
     "recipe": [
       [
-        "Potion of the Turtle Master",
-        ["glowstone", "Potion of the Turtle Master II"]
+        "Turtle Master Potion",
+        ["glowstone", "Turtle Master II Potion"]
       ]
     ],
     "effect": "Slowness VI | Resistance IV",
     "length": 20,
     "image": "the_turtle_master"
   },
-  "Potion of Slow Falling": {
+  "Slow Falling Potion": {
     "aliases": [
-      "Slow Falling Potion"
+      "Potion of Slow Falling"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["phantom_membrane", "Potion of Slow Falling"]
+        ["phantom_membrane", "Slow Falling Potion"]
       ]
     ],
     "effect": "Slow Falling",
     "length": 90,
     "image": "slow_falling"
   },
-  "Potion of Slow Falling +": {
+  "Slow Falling + Potion": {
     "aliases": [
-      "Slow Falling Potion +"
+      "Slow Falling Potion +",
+      "Potion of Slow Falling +"
     ],
     "recipe": [
       [
-        "Potion of Slow Falling",
-        ["redstone", "Potion of Slow Falling +"]
+        "Slow Falling Potion",
+        ["redstone", "Slow Falling + Potion"]
       ]
     ],
     "effect": "Slow Falling",
     "length": 240,
     "image": "slow_falling"
   },
-  "Potion of Wind Charging": {
+  "Wind Charging Potion": {
     "aliases": [
-      "Wind Charging Potion"
+      "Potion of Wind Charging"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["breeze_rod", "Potion of Wind Charging"]
+        ["breeze_rod", "Wind Charging Potion"]
       ]
     ],
     "effect": "Wind Charging",
     "length": 180,
     "image": "wind_charging"
   },
-  "Potion of Weaving": {
+  "Weaving Potion": {
     "aliases": [
-      "Weaving Potion"
+      "Potion of Weaving"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["cobweb", "Potion of Weaving"]
+        ["cobweb", "Weaving Potion"]
       ]
     ],
     "effect": "Weaving",
     "length": 180,
     "image": "weaving"
   },
-  "Potion of Oozing": {
+  "Oozing Potion": {
     "aliases": [
-      "Oozing Potion"
+      "Potion of Oozing"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["slime_block", "Potion of Oozing"]
+        ["slime_block", "Oozing Potion"]
       ]
     ],
     "effect": "Oozing",
     "length": 180,
     "image": "oozing"
   },
-  "Potion of Infestation": {
+  "Infestation Potion": {
     "aliases": [
-      "Infestation Potion"
+      "Potion of Infestation"
     ],
     "recipe": [
       [
         "Awkward Potion",
-        ["stone", "Potion of Infestation"]
+        ["stone", "Infestation Potion"]
       ]
     ],
     "effect": "Infestation",
@@ -593,28 +618,29 @@
     "length": 0,
     "image": "water_bottle"
   },
-  "Potion of Weakness": {
+  "Weakness Potion": {
     "aliases": [
-      "Weakness Potion"
+      "Potion of Weakness"
     ],
     "recipe": [
       [
         "Water Bottle",
-        ["fermented_spider_eye", "Potion of Weakness"]
+        ["fermented_spider_eye", "Weakness Potion"]
       ]
     ],
     "effect": "-4 hp",
     "length": 90,
     "image": "weakness"
   },
-  "Potion of Weakness +": {
+  "Weakness + Potion": {
     "aliases": [
-      "Weakness Potion +"
+      "Weakness Potion +",
+      "Potion of Weakness +"
     ],
     "recipe": [
       [
-        "Potion of Weakness",
-        ["redstone", "Potion of Weakness +"]
+        "Weakness Potion",
+        ["redstone", "Weakness + Potion"]
       ]
     ],
     "effect": "-4 hp",

@@ -55,7 +55,7 @@ export function AppSidebar() {
                                 </div>
                                 <div className="flex flex-col gap-0.5 leading-none">
                                     <span className="font-medium">MinecraftUtils</span>
-                                    <span>Useful tools for minecraft</span>
+                                    <span>Useful utilities for minecraft</span>
                                 </div>
                             </Link>
                         </SidebarMenuButton>

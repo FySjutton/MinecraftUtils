@@ -129,11 +129,11 @@ function InlineIngredientList({items}: { items: { type: "potion" | "ingredient";
 
 function PotionCard({ selectedPotion, potionType }: { selectedPotion: PotionName, potionType: "normal" | "splash" | "lingering" }) {
     const potion = POTIONS[selectedPotion];
-    const lengthSeconds = potionType === "lingering"
+    const lengthSeconds = Math.floor(potionType === "lingering"
         ? potion.length === 0
             ? potion.length / 2
             : potion.length / 4
-        : potion.length;
+        : potion.length);
 
     const displayLength = formatTime(lengthSeconds);
     let effect = potion.effect
@@ -267,7 +267,7 @@ export default function PotionBrewingTool() {
                                 alt={item}
                                 width={20}
                                 height={20}
-                                className="w-6 h-6 border"
+                                className="w-6 h-6"
                             />
                         )}
                         renderItem={item => (

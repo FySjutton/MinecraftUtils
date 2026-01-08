@@ -29,4 +29,16 @@ export const bannerPool: PoolEntry[] = [
         expireDays: 7,
         weight: 1,
     },
+    {
+        id: "suggestions",
+        title: "Suggest new utilities on GitHub!",
+        bgColor: "#3bb343",
+        textColor: "white",
+        iconClassName: "bg-green-400 text-white p-2",
+        icon: IconStar,
+        actionLabel: "Open",
+        actionUrl: "https://github.com/FySjutton/MinecraftUtils/issues",
+        expireDays: 7,
+        weight: 1,
+    }
 ];

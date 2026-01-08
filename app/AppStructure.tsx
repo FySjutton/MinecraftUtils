@@ -1,33 +1,26 @@
 import React, { JSX } from "react"
 import {
-    IconAlignBoxLeftBottom,
     IconBackpack,
     IconBellRingingFilled,
-    IconBlob,
-    IconBook, IconBottle,
+    IconBook,
     IconBraces,
     IconBubbleTea2, IconBuildingFactory2,
-    IconBuildingLighthouse,
     IconCalculator,
-    IconCircleNumber0,
     IconCode,
     IconH1,
     IconHanger2,
     IconHome,
     IconLibraryPhoto,
     IconMap,
-    IconMapPins, IconPalette,
     IconPaw,
     IconRocket,
     IconSettings,
     IconSettingsUp, IconShield,
     IconTerminal2,
-    IconTransform,
-    IconUser,
-    IconWand,
-    IconWorld
+    IconUser, IconWand
 } from "@tabler/icons-react";
-import {Captions, GlassWater, Milestone, SlidersVertical, Sun} from "lucide-react";
+import {SlidersVertical} from "lucide-react";
+import Image from "next/image";
 
 export interface PageItem {
     name: string
@@ -68,6 +61,18 @@ function getPage(categories: ToolCategory[], pageName: string): PageItem {
     throw new Error(`Page "${pageName}" not found in any category`)
 }
 
+function getImage(name: string) {
+    return <span className="flex items-center shrink-0 h-[28] w-[28]">
+        <Image
+          src={`/assets/icons/${name}.png`}
+          alt={name}
+          width={32}
+          height={32}
+          className="object-contain"
+        />
+    </span>
+}
+
 interface PageWithCategory extends PageItem {
     categoryUrl: string
 }
@@ -96,9 +101,9 @@ export const tools: ToolCategory[] = [
         url: "/calculators",
         defaultOpen: true,
         pages: [
-            { name: "Unit Calculator", url: "units", icon: <IconTransform />, description: "Convert units and measurements quickly." },
-            { name: "XP to Level Calculator", url: "experience", icon: <IconBlob />, description: "Calculate how much XP each level is through an interactive experience bar." },
-            { name: "Nether Calculator", url: "nether-cords", icon: <IconWorld />, description: "Convert coordinates between Overworld and Nether." },
+            { name: "Unit Calculator", url: "units", icon: getImage("shulkerbox"), description: "Convert units and measurements quickly." },
+            { name: "XP to Level Calculator", url: "experience", icon: getImage("xp-bottle"), description: "Calculate how much XP each level is through an interactive experience bar." },
+            { name: "Nether Calculator", url: "nether-cords", icon: getImage("netherrack"), description: "Convert coordinates between Overworld and Nether." },
         ],
     },
     {
@@ -107,9 +112,9 @@ export const tools: ToolCategory[] = [
         url: "/generators",
         defaultOpen: true,
         pages: [
-            { name: "Beacon Generator", url: "beacon-color", icon: <Milestone />, description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
-            { name: "Sign Generator", url: "sign-generator", icon: <Milestone />, description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
-            { name: "Motd Creator", url: "motd-creator", icon: <Captions />, description: "Generate server motds through an interactive editor." },
+            { name: "Beacon Generator", url: "beacon-color", icon: getImage("beacon"), description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
+            { name: "Sign Generator", url: "sign-generator", icon: getImage("sign"), description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
+            { name: "Motd Creator", url: "motd-creator", icon: getImage("motd"), description: "Generate server motds through an interactive editor." },
         ],
     },
     {
@@ -118,10 +123,10 @@ export const tools: ToolCategory[] = [
         url: "/references",
         defaultOpen: true,
         pages: [
-            { name: "Daylight Cycle", url: "daylight-cycle", icon: <Sun />, description: "Interactive daylight cycle viewer, with video, daylight detector output, and time converter." },
-            { name: "Potion Brewing", url: "potion-brewing", icon: <GlassWater />, description: "View instructions how to brew a specific potion.", type: "beta" },
-            { name: "Inventory Slots", url: "inventory-slots", icon: <IconCircleNumber0 />, description: "Visual guide to inventory slot positions." },
-            { name: "Color Codes", url: "color-codes", icon: <IconPalette />, description: "A list of all formatting codes in Minecraft." },
+            { name: "Daylight Cycle", url: "daylight-cycle", icon: getImage("sun"), description: "Interactive daylight cycle viewer, with video, daylight detector output, and time converter." },
+            { name: "Potion Brewing", url: "potion-brewing", icon: getImage("potion"), description: "View instructions how to brew a specific potion.", type: "beta" },
+            { name: "Inventory Slots", url: "inventory-slots", icon: getImage("chest"), description: "Visual guide to inventory slot positions." },
+            { name: "Color Codes", url: "color-codes", icon: getImage("colors"), description: "A list of all formatting codes in Minecraft." },
         ],
     },
 ]
@@ -138,7 +143,6 @@ export const externals: ToolCategory[] = [
             { name: "Skin Stealer", url: "https://minecraft.tools/en/skin.php", icon: <IconUser />, description: "Download and view player skins." },
             { name: "Armor Color Crafting", url: "https://minecraft.tools/en/armor.php", icon: <IconHanger2 />, description: "Mix and match armor colors." },
             { name: "Custom Potions", url: "https://minecraft.tools/en/potion.php", icon: <IconBubbleTea2 />, description: "Create potion recipes." },
-            { name: "Coordinate Calculator", url: "https://minecraft.tools/en/coordinate-calculator.php", icon: <IconMapPins />, description: "Calculate positions and distances." },
         ],
     },
     {
