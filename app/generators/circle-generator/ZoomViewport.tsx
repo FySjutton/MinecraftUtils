@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useRef, useState, useLayoutEffect } from "react";
-import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import React, {useLayoutEffect, useMemo, useRef, useState} from "react";
+import {TransformComponent, TransformWrapper} from "react-zoom-pan-pinch";
 
 const CELL = 14;
 const GAP = 2;
@@ -9,68 +9,59 @@ const CELL_TOTAL = CELL + GAP;
 
 interface Props {
     children: React.ReactNode;
-    width: number;  // cell count
-    height: number; // cell count
+    width: number;
+    height: number;
 }
 
 export function ZoomViewport({ children, width, height }: Props) {
-    const viewportRef = useRef<HTMLDivElement>(null);
-    const [vp, setVp] = useState({ w: 500, h: 500 });
+    const ref = useRef<HTMLDivElement>(null);
+    const [wrapperWidth, setWrapperWidth] = useState(0);
 
     useLayoutEffect(() => {
-        if (!viewportRef.current) return;
+        if (!ref.current) return;
 
-        const ro = new ResizeObserver(entries => {
-            const r = entries[0].contentRect;
-            if (r.width > 0 && r.height > 0) {
-                setVp({ w: r.width, h: r.height });
-            }
-        });
+        const update = () => {
+            setWrapperWidth(ref.current!.getBoundingClientRect().width);
+        };
 
-        ro.observe(viewportRef.current);
+        update();
+        const ro = new ResizeObserver(update);
+        ro.observe(ref.current);
         return () => ro.disconnect();
     }, []);
 
-    const { minScale, maxScale } = useMemo(() => {
-        const canvasW = width * CELL_TOTAL - GAP;
-        const canvasH = height * CELL_TOTAL - GAP;
+    const canvasW = width * CELL_TOTAL - GAP;
+    const canvasH = height * CELL_TOTAL - GAP;
 
-        const fitScale = Math.min(
-            vp.w / canvasW,
-            vp.h / canvasH
-        );
+    const scale = useMemo(() => {
+        if (!wrapperWidth) return 1;
+        return Math.min(wrapperWidth / canvasW, wrapperWidth / canvasH);
+    }, [wrapperWidth, canvasW, canvasH]);
 
-        const cellFillScale = Math.min(
-            vp.w / CELL,
-            vp.h / CELL
-        );
-
-        return {
-            minScale: Math.max(0.05, fitScale),
-            maxScale: Math.max(fitScale * 5, cellFillScale),
-        };
-    }, [vp, width, height]);
+    const wrapperHeight = canvasH * scale;
 
     return (
         <div
-            ref={viewportRef}
-            className="relative w-full h-[500px] border rounded-lg bg-background overflow-hidden"
+            ref={ref}
+            className="w-full overflow-hidden"
+            style={{ height: `${wrapperHeight}px`, maxHeight: `${wrapperWidth}px` }}
         >
             <TransformWrapper
-                minScale={minScale}
-                maxScale={maxScale}
-                initialScale={minScale}
-                wheel={{ step: 1 }}
-                doubleClick={{ disabled: true }}
-                panning={{ velocityDisabled: true }}
+                key={`${width}x${height}x${scale}`}
+                initialScale={scale}
+                minScale={scale}
+                maxScale={scale * 50}
+                centerOnInit
                 limitToBounds={true}
+                wheel={{ step: 0.15 }}
                 smooth={false}
-                centerOnInit={true}
+                panning={{ velocityDisabled: true }}
+                zoomAnimation={{ disabled: true } }
             >
-                <TransformComponent
-                    wrapperClass="!w-full !h-full"
-                >
-                    {children}
+                <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+                    <div style={{ width: canvasW, height: canvasH }}>
+                        {children}
+                    </div>
                 </TransformComponent>
             </TransformWrapper>
         </div>

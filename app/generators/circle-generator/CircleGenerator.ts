@@ -1,10 +1,13 @@
+// CircleGenerator.ts
 export type CircleMode = "filled" | "thin" | "thick";
 
 export interface CircleOptions {
     width: number;
     height: number;
     mode: CircleMode;
+    thickness?: number; // only used for thick mode, default = 1
 }
+
 
 function insideEllipse(
     x: number,
@@ -29,23 +32,51 @@ export function isCircleFilled(
     const inside = insideEllipse(cx, cy, rx, ry);
     if (!inside) return false;
 
-    if (opts.mode === "filled") return true;
+    if (opts.mode === "filled") {
+        return true;
+    }
 
-    const neighbors = [
+    // neighbors for thin border: only cardinal directions
+    const thinNeighbors = [
+        [1, 0], [-1, 0],
+        [0, 1], [0, -1],
+    ];
+
+    // neighbors for thick border: cardinal + diagonals (for corners)
+    const thickNeighbors = [
         [1, 0], [-1, 0],
         [0, 1], [0, -1],
         [1, 1], [-1, -1],
         [1, -1], [-1, 1],
     ];
 
-    const surrounded = neighbors.every(([dx, dy]) =>
-        insideEllipse(cx + dx, cy + dy, rx, ry)
-    );
-
     if (opts.mode === "thin") {
-        return !surrounded;
+        // pixel is thin border if at least one cardinal neighbor is outside
+        const surrounded = thinNeighbors.every(([dx, dy]) =>
+            insideEllipse(cx + dx, cy + dy, rx, ry)
+        );
+        return inside && !surrounded;
     }
 
-    // thick = one-block shell
-    return inside && !surrounded;
+    if (opts.mode === "thick") {
+        const t = opts.thickness ?? 1; // default 1
+
+        // generate neighbors up to distance t in all directions
+        const neighbors: [number, number][] = [];
+        for (let dx = -t; dx <= t; dx++) {
+            for (let dy = -t; dy <= t; dy++) {
+                if (dx === 0 && dy === 0) continue; // skip center
+                neighbors.push([dx, dy]);
+            }
+        }
+
+        const surrounded = neighbors.every(([dx, dy]) =>
+            insideEllipse(cx + dx, cy + dy, rx, ry)
+        );
+
+        return inside && !surrounded;
+    }
+
+
+    return false;
 }

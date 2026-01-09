@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { CircleOptions, isCircleFilled } from "./CircleGenerator";
+import { CircleGridBackground } from "./CircleGridBackground";
 
 const CELL = 14;
 const GAP = 2;
@@ -17,9 +18,10 @@ interface Group {
 
 interface Props {
     options: CircleOptions;
+    theme: "default" | "arcade" | "blueprint";
 }
 
-export function InteractiveCircleGroups({ options }: Props) {
+export function InteractiveCircleGroups({ options, theme }: Props) {
     const { width, height } = options;
 
     const [built, setBuilt] = useState<boolean[][]>(
@@ -33,28 +35,22 @@ export function InteractiveCircleGroups({ options }: Props) {
         if (options.mode === "filled") return [];
         const out: Group[] = [];
 
-        // horizontal
         for (let y = 0; y < height; y++) {
             let run: Cell[] = [];
             for (let x = 0; x < width; x++) {
                 if (isCircleFilled(x, y, options)) run.push({ x, y });
-                else if (run.length >= 2) {
-                    out.push({ cells: run, orientation: "horizontal" });
-                    run = [];
-                } else run = [];
+                else if (run.length >= 2) { out.push({ cells: run, orientation: "horizontal" }); run = []; }
+                else run = [];
             }
             if (run.length >= 2) out.push({ cells: run, orientation: "horizontal" });
         }
 
-        // vertical
         for (let x = 0; x < width; x++) {
             let run: Cell[] = [];
             for (let y = 0; y < height; y++) {
                 if (isCircleFilled(x, y, options)) run.push({ x, y });
-                else if (run.length >= 2) {
-                    out.push({ cells: run, orientation: "vertical" });
-                    run = [];
-                } else run = [];
+                else if (run.length >= 2) { out.push({ cells: run, orientation: "vertical" }); run = []; }
+                else run = [];
             }
             if (run.length >= 2) out.push({ cells: run, orientation: "vertical" });
         }
@@ -68,9 +64,7 @@ export function InteractiveCircleGroups({ options }: Props) {
             for (const c of g.cells) {
                 const k = `${c.x},${c.y}`;
                 const prev = map.get(k);
-                if (!prev || prev.cells.length < g.cells.length) {
-                    map.set(k, g);
-                }
+                if (!prev || prev.cells.length < g.cells.length) map.set(k, g);
             }
         }
         return map;
@@ -93,15 +87,34 @@ export function InteractiveCircleGroups({ options }: Props) {
         });
     };
 
+    const getBuiltColor = () => {
+        switch (theme) {
+            case "default": return "#9810fa";
+            case "arcade": return "#013303";
+            case "blueprint": return "#153796";
+        }
+    };
+
+    const getEmptyColor = () => {
+        switch (theme) {
+            case "default": return "#fb2c36";
+            case "arcade": return "#005400";
+            case "blueprint": return "#386dff";
+        }
+    };
+
     return (
         <svg
-            viewBox={`${-PADDING} ${-PADDING} ${(CELL + GAP) * width + 2 * PADDING} ${(CELL + GAP) * height + 2 * PADDING}`}
+            viewBox={`0 0 ${(CELL + GAP) * width + 2 * PADDING} ${(CELL + GAP) * height + 2 * PADDING}`}
             width="100%"
             height="100%"
-            style={{ userSelect: "none" }}
+            preserveAspectRatio="none"
         >
-            <g transform={`translate(${PADDING},${PADDING})`}>
+            {/* Background grid */}
+            <CircleGridBackground width={width} height={height} cellSize={CELL} gap={GAP} theme={theme} options={options} padding={PADDING} />
 
+            {/* Interactive cells */}
+            <g>
                 {Array.from({ length: height }).map((_, y) =>
                     Array.from({ length: width }).map((_, x) => {
                         if (!isCircleFilled(x, y, options)) return null;
@@ -115,31 +128,22 @@ export function InteractiveCircleGroups({ options }: Props) {
                         return (
                             <g key={`cell-${x}-${y}`}>
                                 <rect
-                                    x={x * (CELL + GAP)}
-                                    y={y * (CELL + GAP)}
+                                    x={x * (CELL + GAP) + PADDING + 1}
+                                    y={y * (CELL + GAP) + PADDING + 1}
                                     width={CELL}
                                     height={CELL}
                                     rx={3}
-                                    className={isBuilt ? "fill-purple-600" : "fill-red-500"}
+                                    fill={isBuilt ? getBuiltColor() : getEmptyColor()}
                                     onClick={() => toggleCell(x, y)}
-                                    onMouseEnter={() => {
-                                        setHoveredCell({ x, y });
-                                        setHoveredGroup(cellGroup);
-                                    }}
-                                    onMouseLeave={() => {
-                                        setHoveredCell(null);
-                                        setHoveredGroup(null);
-                                    }}
-                                    onContextMenu={e => {
-                                        e.preventDefault();
-                                        if (cellGroup) toggleGroup(cellGroup);
-                                    }}
+                                    onMouseEnter={() => { setHoveredCell({ x, y }); setHoveredGroup(cellGroup); }}
+                                    onMouseLeave={() => { setHoveredCell(null); setHoveredGroup(null); }}
+                                    onContextMenu={e => { e.preventDefault(); if (cellGroup) toggleGroup(cellGroup); }}
                                 />
 
                                 {inGroup && (
                                     <rect
-                                        x={x * (CELL + GAP)}
-                                        y={y * (CELL + GAP)}
+                                        x={x * (CELL + GAP) + PADDING + 1}
+                                        y={y * (CELL + GAP) + PADDING + 1}
                                         width={CELL}
                                         height={CELL}
                                         rx={3}
@@ -149,8 +153,8 @@ export function InteractiveCircleGroups({ options }: Props) {
 
                                 {isHoveredCell && (
                                     <rect
-                                        x={x * (CELL + GAP)}
-                                        y={y * (CELL + GAP)}
+                                        x={x * (CELL + GAP) + PADDING + 1}
+                                        y={y * (CELL + GAP) + PADDING + 1}
                                         width={CELL}
                                         height={CELL}
                                         rx={3}
@@ -160,8 +164,8 @@ export function InteractiveCircleGroups({ options }: Props) {
 
                                 {inGroup && (
                                     <text
-                                        x={x * (CELL + GAP) + CELL / 2}
-                                        y={y * (CELL + GAP) + CELL / 2 + 4}
+                                        x={x * (CELL + GAP) + CELL / 2 + PADDING + 0.5}
+                                        y={y * (CELL + GAP) + CELL / 2 + PADDING + 4.5}
                                         textAnchor="middle"
                                         fontSize={9}
                                         fill="yellow"

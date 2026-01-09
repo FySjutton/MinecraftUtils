@@ -1,74 +1,75 @@
 "use client";
 
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import React, { useState } from "react";
+import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 import { InteractiveCircleGroups } from "./CircleSvg";
-import { CircleMode } from "./CircleGenerator";
+import { CircleMode, CircleOptions } from "./CircleGenerator";
 import { ZoomViewport } from "@/app/generators/circle-generator/ZoomViewport";
 
 export default function CircleGeneratorPage() {
-    const [width, setWidth] = useState(31);
-    const [height, setHeight] = useState(21);
+    const [width, setWidth] = useState(15);
+    const [height, setHeight] = useState(15);
     const [widthInput, setWidthInput] = useState(`${width}`);
     const [heightInput, setHeightInput] = useState(`${height}`);
     const [mode, setMode] = useState<CircleMode>("thick");
+    const [thickness, setThickness] = useState(1);
+    const [theme, setTheme] = useState<"default" | "arcade" | "blueprint">("default");
 
     const MIN_VALUE = 3;
     const MAX_VALUE = 200;
+    const MIN_THICKNESS = 1;
+    const MAX_THICKNESS = 10;
 
     const handleWidthChange = (val: string) => {
-        setWidthInput(val); // always update string
+        setWidthInput(val);
         const num = parseInt(val, 10);
-        if (!isNaN(num) && num >= MIN_VALUE && num <= MAX_VALUE) {
-            setWidth(num);
-        }
+        if (!isNaN(num) && num >= MIN_VALUE && num <= MAX_VALUE) setWidth(num);
     };
 
     const handleHeightChange = (val: string) => {
         setHeightInput(val);
         const num = parseInt(val, 10);
-        if (!isNaN(num) && num >= MIN_VALUE && num <= MAX_VALUE) {
-            setHeight(num);
-        }
+        if (!isNaN(num) && num >= MIN_VALUE && num <= MAX_VALUE) setHeight(num);
     };
 
-    const isWidthInvalid = parseInt(widthInput, 10) < MIN_VALUE || parseInt(widthInput, 10) > MAX_VALUE || isNaN(parseInt(widthInput, 10));
-    const isHeightInvalid = parseInt(heightInput, 10) < MIN_VALUE || parseInt(heightInput, 10) > MAX_VALUE || isNaN(parseInt(heightInput, 10));
+    const handleThicknessChange = (val: string) => {
+        const num = parseInt(val, 10);
+        if (!isNaN(num) && num >= MIN_THICKNESS && num <= MAX_THICKNESS) setThickness(num);
+    };
+
+    const circleOptions: CircleOptions = {
+        width,
+        height,
+        mode,
+        thickness: mode === "thick" ? thickness : undefined,
+    };
+
+    const reset = () => {
+        setWidth(15); setHeight(15); setWidthInput("15"); setHeightInput("15");
+        setMode("thick"); setThickness(1); setTheme("default");
+    };
 
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Circle / Ellipse Generator</CardTitle>
+                    <CardAction><Button variant="outline" onClick={reset}>Reset</Button></CardAction>
                 </CardHeader>
-
                 <CardContent className="space-y-4">
                     <div>
                         <Label>Width</Label>
-                        <Input
-                            type="text"
-                            value={widthInput}
-                            onChange={(e) => handleWidthChange(e.target.value)}
-                            placeholder={`${MIN_VALUE}-${MAX_VALUE}`}
-                            className={`mt-2 outline-none ${isWidthInvalid ? "border-red-400" : ""}`}
-                        />
+                        <Input type="text" value={widthInput} onChange={(e) => handleWidthChange(e.target.value)} placeholder={`${MIN_VALUE}-${MAX_VALUE}`} className="mt-2 outline-none"/>
                     </div>
-
                     <div>
                         <Label>Height</Label>
-                        <Input
-                            type="text"
-                            value={heightInput}
-                            onChange={(e) => handleHeightChange(e.target.value)}
-                            placeholder={`${MIN_VALUE}-${MAX_VALUE}`}
-                            className={`mt-2 outline-none ${isHeightInvalid ? "border-red-400" : ""}`}
-                        />
+                        <Input type="text" value={heightInput} onChange={(e) => handleHeightChange(e.target.value)} placeholder={`${MIN_VALUE}-${MAX_VALUE}`} className="mt-2 outline-none"/>
                     </div>
-
                     <Tabs value={mode} onValueChange={(v) => setMode(v as CircleMode)}>
                         <TabsList>
                             <TabsTrigger value="filled">Filled</TabsTrigger>
@@ -76,13 +77,27 @@ export default function CircleGeneratorPage() {
                             <TabsTrigger value="thick">Thick</TabsTrigger>
                         </TabsList>
                     </Tabs>
+                    {mode === "thick" && (
+                        <div>
+                            <Label>Thickness</Label>
+                            <Input type="number" value={thickness} onChange={(e) => handleThicknessChange(e.target.value)} min={1} max={10} className="mt-2 outline-none"/>
+                        </div>
+                    )}
+                    <div>
+                        <Label>Theme</Label>
+                        <select value={theme} onChange={(e) => setTheme(e.target.value as any)} className="mt-2 outline-none p-1 border rounded">
+                            <option value="default">Default</option>
+                            <option value="arcade">Arcade</option>
+                            <option value="blueprint">Blueprint</option>
+                        </select>
+                    </div>
                 </CardContent>
             </Card>
 
             <Card>
                 <CardContent className="p-4 w-full">
                     <ZoomViewport width={width} height={height}>
-                        <InteractiveCircleGroups options={{ width, height, mode }} />
+                        <InteractiveCircleGroups options={circleOptions} theme={theme} />
                     </ZoomViewport>
                 </CardContent>
             </Card>
