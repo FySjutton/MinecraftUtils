@@ -2,8 +2,8 @@
 
 import React, { useState, useMemo } from "react";
 import { CircleOptions, isCircleFilled } from "./CircleGenerator";
-import {ThemeName, themes} from "@/app/generators/circle-generator/styling/themes";
-import {CircleGridBackground} from "@/app/generators/circle-generator/styling/CircleGridBackground";
+import { ThemeName, themes } from "@/app/generators/circle-generator/styling/themes";
+import { CircleGridBackground } from "@/app/generators/circle-generator/styling/CircleGridBackground";
 
 const CELL = 14;
 const GAP = 2;
@@ -20,8 +20,8 @@ interface Group {
 interface Props {
     options: CircleOptions;
     theme: ThemeName;
-    checks: boolean[][];
-    setChecks: React.Dispatch<React.SetStateAction<boolean[][]>>;
+    checks: Map<string, boolean>;
+    setChecks: React.Dispatch<React.SetStateAction<Map<string, boolean>>>;
 }
 
 export function InteractiveCircleGroups({ options, theme, checks, setChecks }: Props) {
@@ -30,13 +30,14 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
     const [hoveredGroup, setHoveredGroup] = useState<Group | null>(null);
     const [hoveredCell, setHoveredCell] = useState<Cell | null>(null);
 
-    const getColors = (theme: ThemeName) => themes[theme];
-    const { backgroundColor, checkedColor, cellColor, borderColor, textColor, pattern } = getColors(theme);
+    const { backgroundColor, checkedColor, cellColor, borderColor, textColor, pattern } = themes[theme];
 
+    // Precompute groups for “thin” / “thick” modes
     const groups = useMemo<Group[]>(() => {
         if (options.mode === "filled") return [];
         const out: Group[] = [];
 
+        // horizontal runs
         for (let y = 0; y < height; y++) {
             let run: Cell[] = [];
             for (let x = 0; x < width; x++) {
@@ -47,6 +48,7 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
             if (run.length >= 2) out.push({ cells: run, orientation: "horizontal" });
         }
 
+        // vertical runs
         for (let x = 0; x < width; x++) {
             let run: Cell[] = [];
             for (let y = 0; y < height; y++) {
@@ -73,30 +75,23 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
     }, [groups]);
 
     const toggleCell = (x: number, y: number) => {
-        setChecks(b => {
-            const n = b.map(r => [...r]);
-            n[y][x] = !n[y][x];
-            return n;
+        setChecks(prev => {
+            const newMap = new Map(prev);
+            const key = `${x},${y}`;
+            newMap.set(key, !newMap.get(key));
+            return newMap;
         });
     };
 
     const toggleGroup = (g: Group) => {
-        setChecks(b => {
-            const n = b.map(r => [...r]);
-
-            let trueCount = 0;
-            for (const c of g.cells) {
-                if (n[c.y][c.x]) trueCount++;
-            }
-
+        setChecks(prev => {
+            const newMap = new Map(prev);
+            const trueCount = g.cells.filter(c => newMap.get(`${c.x},${c.y}`)).length;
             const majorityIsTrue = trueCount > g.cells.length / 2;
             const nextValue = !majorityIsTrue;
 
-            g.cells.forEach(c => {
-                n[c.y][c.x] = nextValue;
-            });
-
-            return n;
+            g.cells.forEach(c => newMap.set(`${c.x},${c.y}`, nextValue));
+            return newMap;
         });
     };
 
@@ -108,9 +103,8 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
             preserveAspectRatio="none"
             className="rounded-sm"
         >
-            <defs>
-                {pattern}
-            </defs>
+            <defs>{pattern}</defs>
+
             <rect
                 x={0}
                 y={0}
@@ -119,24 +113,30 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
                 fill={backgroundColor}
             />
 
-            {/* Background grid */}
-            <CircleGridBackground width={width} height={height} cellSize={CELL} gap={GAP} theme={theme} options={options} padding={PADDING} />
+            <CircleGridBackground
+                width={width}
+                height={height}
+                cellSize={CELL}
+                gap={GAP}
+                theme={theme}
+                options={options}
+                padding={PADDING}
+            />
 
-            {/* Interactive cells */}
             <g>
                 {Array.from({ length: height }).map((_, y) =>
                     Array.from({ length: width }).map((_, x) => {
                         if (!isCircleFilled(x, y, options)) return null;
 
-                        const isBuilt = checks[y]?.[x] ?? false;
-                        const g = hoveredGroup;
-                        const inGroup = g?.cells.some(c => c.x === x && c.y === y);
+                        const key = `${x},${y}`;
+                        const isBuilt = checks.get(key) ?? false;
+
+                        const gGroup = cellToGroup.get(key) ?? null;
+                        const inGroup = hoveredGroup?.cells.some(c => c.x === x && c.y === y);
                         const isHoveredCell = hoveredCell?.x === x && hoveredCell?.y === y;
-                        const cellGroup = cellToGroup.get(`${x},${y}`) ?? null;
 
                         return (
                             <g key={`cell-${x}-${y}`}>
-                                {/* base color */}
                                 <rect
                                     x={x * (CELL + GAP) + PADDING + 1}
                                     y={y * (CELL + GAP) + PADDING + 1}
@@ -147,10 +147,11 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
                                     stroke={borderColor ?? "transparent"}
                                     strokeWidth={borderColor ? 1 : 0}
                                     onClick={() => toggleCell(x, y)}
-                                    onMouseEnter={() => { setHoveredCell({ x, y }); setHoveredGroup(cellGroup); }}
+                                    onMouseEnter={() => { setHoveredCell({ x, y }); setHoveredGroup(gGroup); }}
                                     onMouseLeave={() => { setHoveredCell(null); setHoveredGroup(null); }}
-                                    onContextMenu={e => { e.preventDefault(); if (cellGroup) toggleGroup(cellGroup); }}
+                                    onContextMenu={e => { e.preventDefault(); if (gGroup) toggleGroup(gGroup); }}
                                 />
+
                                 {pattern && (
                                     <rect
                                         x={x * (CELL + GAP) + PADDING + 1}
@@ -163,18 +164,7 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
                                     />
                                 )}
 
-                                {inGroup && (
-                                    <rect
-                                        x={x * (CELL + GAP) + PADDING + 1}
-                                        y={y * (CELL + GAP) + PADDING + 1}
-                                        width={CELL}
-                                        height={CELL}
-                                        rx={3}
-                                        className="fill-black/30 pointer-events-none"
-                                    />
-                                )}
-
-                                {isHoveredCell && (
+                                {(inGroup || isHoveredCell) && (
                                     <rect
                                         x={x * (CELL + GAP) + PADDING + 1}
                                         y={y * (CELL + GAP) + PADDING + 1}
@@ -194,7 +184,7 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
                                         fill={textColor}
                                         pointerEvents="none"
                                     >
-                                        {g!.cells.length}
+                                        {hoveredGroup!.cells.length}
                                     </text>
                                 )}
                             </g>

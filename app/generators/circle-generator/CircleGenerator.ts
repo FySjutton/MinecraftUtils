@@ -1,10 +1,12 @@
+"use client";
+
 export type CircleMode = "filled" | "thin" | "thick";
 
 export interface CircleOptions {
     width: number;
     height: number;
     mode: CircleMode;
-    thickness?: number; // only used for thick mode, default = 1
+    thickness?: number;
 }
 
 function insideEllipse(x: number, y: number, rx: number, ry: number) {
@@ -21,37 +23,30 @@ export function isCircleFilled(x: number, y: number, opts: CircleOptions): boole
     const inside = insideEllipse(cx, cy, rx, ry);
     if (!inside) return false;
 
-    if (opts.mode === "filled") {
-        return true;
-    }
+    if (opts.mode === "filled") return true;
 
-    const thinNeighbors = [
-        [1, 0], [-1, 0],
-        [0, 1], [0, -1],
-    ];
+    const t = opts.thickness ?? 1;
 
     if (opts.mode === "thin") {
-        const surrounded = thinNeighbors.every(([dx, dy]) =>
-            insideEllipse(cx + dx, cy + dy, rx, ry)
-        );
+        const surrounded =
+            Array.from({ length: t }, (_, i) => i + 1).every(d =>
+                insideEllipse(cx + d, cy, rx, ry) && insideEllipse(cx - d, cy, rx, ry)
+            ) &&
+            Array.from({ length: t }, (_, i) => i + 1).every(d =>
+                insideEllipse(cx, cy + d, rx, ry) && insideEllipse(cx, cy - d, rx, ry)
+            );
         return inside && !surrounded;
     }
 
     if (opts.mode === "thick") {
-        const t = opts.thickness ?? 1; // default 1
-
         const neighbors: [number, number][] = [];
         for (let dx = -t; dx <= t; dx++) {
             for (let dy = -t; dy <= t; dy++) {
-                if (dx === 0 && dy === 0) continue; // skip center
+                if (dx === 0 && dy === 0) continue;
                 neighbors.push([dx, dy]);
             }
         }
-
-        const surrounded = neighbors.every(([dx, dy]) =>
-            insideEllipse(cx + dx, cy + dy, rx, ry)
-        );
-
+        const surrounded = neighbors.every(([dx, dy]) => insideEllipse(cx + dx, cy + dy, rx, ry));
         return inside && !surrounded;
     }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -8,11 +8,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 import { InteractiveCircleGroups } from "./CircleSvg";
-import { CircleMode, CircleOptions } from "./CircleGenerator";
+import { CircleMode, CircleOptions, isCircleFilled } from "./CircleGenerator";
 import { ZoomViewport } from "@/app/generators/circle-generator/ZoomViewport";
-import {ComboBox} from "@/components/ComboBox";
-import {defaultTheme, ThemeName, themeNames} from "@/app/generators/circle-generator/styling/themes";
-import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
+import { ComboBox } from "@/components/ComboBox";
+import { defaultTheme, ThemeName, themeNames } from "@/app/generators/circle-generator/styling/themes";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 
 export default function CircleGeneratorPage() {
     const [width, setWidth] = useState(15);
@@ -21,42 +21,44 @@ export default function CircleGeneratorPage() {
     const [heightInput, setHeightInput] = useState(`${height}`);
     const [mode, setMode] = useState<CircleMode>("thick");
     const [thickness, setThickness] = useState(1);
+    const [thicknessInput, setThicknessInput] = useState(`${thickness}`);
+    const [isThicknessValid, setIsThicknessValid] = useState(true);
     const [theme, setTheme] = useState<ThemeName>(defaultTheme);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const MIN_VALUE = 3;
-    const MAX_VALUE = 200;
-    const MIN_THICKNESS = 1;
-    const MAX_THICKNESS = 20;
 
-    const emptyChecks = (): boolean[][] => {
-        return Array.from({ length: height }, () => Array.from({ length: width }, () => false))
-    }
-
-    const [checks, setChecks] = useState<boolean[][]>(emptyChecks());
-
-    const handleWidthChange = (val: string) => {
-        setWidthInput(val);
-        const num = parseInt(val, 10);
-        if (!isNaN(num) && num >= MIN_VALUE && num <= MAX_VALUE) setWidth(num);
-    };
-
-    const handleHeightChange = (val: string) => {
-        setHeightInput(val);
-        const num = parseInt(val, 10);
-        if (!isNaN(num) && num >= MIN_VALUE && num <= MAX_VALUE) setHeight(num);
-    };
-
-    const handleThicknessChange = (val: string) => {
-        const num = parseInt(val, 10);
-        if (!isNaN(num) && num >= MIN_THICKNESS && num <= MAX_THICKNESS) setThickness(num);
-    };
+    const [checks, setChecks] = useState<Map<string, boolean>>(new Map());
 
     const circleOptions: CircleOptions = {
         width,
         height,
         mode,
-        thickness: mode === "thick" ? thickness : undefined,
+        thickness: mode !== "filled" ? thickness : undefined,
     };
+
+    const circleMap = useMemo(() => {
+        const newMap = new Map<string, boolean>();
+        const oldChecks = new Map(checks);
+
+        const options: CircleOptions = {
+            width,
+            height,
+            mode,
+            thickness: mode !== "filled" ? thickness : undefined,
+        };
+
+        for (let y = 0; y < height; y++) {
+            for (let x = 0; x < width; x++) {
+                if (isCircleFilled(x, y, options)) {
+                    const key = `${x},${y}`;
+                    newMap.set(key, oldChecks.get(key) ?? false);
+                }
+            }
+        }
+
+        return newMap;
+    }, [width, height, mode, thickness, checks]);
 
     const reset = () => {
         setWidth(15);
@@ -65,37 +67,73 @@ export default function CircleGeneratorPage() {
         setHeightInput("15");
         setMode("thick");
         setThickness(1);
-        setTheme(defaultTheme);
-        setChecks(emptyChecks());
+        setThicknessInput("1");
+        setIsThicknessValid(true);
+        setChecks(new Map());
     };
+
+    const totalSlots = circleMap.size;
+    const checkedSlots = Array.from(circleMap.values()).filter(v => v).length;
 
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Circle / Ellipse Generator</CardTitle>
-                    <CardAction><Button variant="outline" onClick={reset}>Reset</Button></CardAction>
+                    <CardAction>
+                        <Button variant="outline" onClick={reset}>Reset</Button>
+                    </CardAction>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <div>
                         <Label>Width</Label>
-                        <Input type="text" value={widthInput} onChange={(e) => handleWidthChange(e.target.value)} placeholder={`${MIN_VALUE}-${MAX_VALUE}`} className="mt-2 outline-none"/>
+                        <Input
+                            type="text"
+                            value={widthInput}
+                            onChange={(e) => {
+                                setWidthInput(e.target.value);
+                                const num = parseInt(e.target.value, 10);
+                                if (!isNaN(num) && num >= MIN_VALUE) setWidth(num);
+                            }}
+                            placeholder={`${MIN_VALUE}+`}
+                            className="mt-2 outline-none"
+                        />
                     </div>
                     <div>
                         <Label>Height</Label>
-                        <Input type="text" value={heightInput} onChange={(e) => handleHeightChange(e.target.value)} placeholder={`${MIN_VALUE}-${MAX_VALUE}`} className="mt-2 outline-none"/>
+                        <Input
+                            type="text"
+                            value={heightInput}
+                            onChange={(e) => {
+                                setHeightInput(e.target.value);
+                                const num = parseInt(e.target.value, 10);
+                                if (!isNaN(num) && num >= MIN_VALUE) setHeight(num);
+                            }}
+                            placeholder={`${MIN_VALUE}+`}
+                            className="mt-2 outline-none"
+                        />
                     </div>
-                    <div className="flex items-center">
-                        <Tabs value={mode} onValueChange={(v) => setMode(v as CircleMode)}>
-                            <TabsList>
+                    <div className="flex items-center max-[450]:block">
+                        <Tabs value={mode} onValueChange={(v) => setMode(v as CircleMode)} className="mr-2">
+                            <TabsList className="max-[450]:w-full">
                                 <TabsTrigger value="thick">Thick</TabsTrigger>
                                 <TabsTrigger value="thin">Thin</TabsTrigger>
                                 <TabsTrigger value="filled">Filled</TabsTrigger>
                             </TabsList>
                         </Tabs>
-                        {mode === "thick" && (
-                            <InputGroup className="ml-2">
-                                <InputGroupInput type="number" value={thickness} onChange={(e) => handleThicknessChange(e.target.value)} min={1} max={10}/>
+                        {mode !== "filled" && (
+                            <InputGroup className="max-[450]:mt-2">
+                                <InputGroupInput
+                                    type="text"
+                                    value={thicknessInput}
+                                    onChange={(e) => {
+                                        setThicknessInput(e.target.value);
+                                        const num = parseInt(e.target.value, 10);
+                                        if (!isNaN(num) && num >= MIN_VALUE) setThickness(num);
+                                    }}
+                                    placeholder="1+"
+                                    className={`outline-none ${isThicknessValid ? "" : "border-red-500 border-2"}`}
+                                />
                                 <InputGroupAddon align="inline-end">Border Thickness</InputGroupAddon>
                             </InputGroup>
                         )}
@@ -114,10 +152,36 @@ export default function CircleGeneratorPage() {
                 </CardContent>
             </Card>
 
-            <Card>
+            <Card className="gap-0 pb-0">
+                <CardHeader>
+                    <CardTitle>Circle Output</CardTitle>
+                    <CardAction>
+                        <Button variant="outline" onClick={() => setIsFullscreen(true)}>Fullscreen</Button>
+                    </CardAction>
+                </CardHeader>
                 <CardContent className="p-4 w-full">
-                    <ZoomViewport cellWidth={width} cellHeight={height}>
-                        <InteractiveCircleGroups options={circleOptions} theme={theme} checks={checks} setChecks={setChecks} />
+                    <Card className="gap-0 mb-4">
+                        <CardHeader>
+                            <CardTitle>Circle Stats</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p>
+                                <span className="font-bold">Blocks:</span>
+                                {` ${totalSlots} (${totalSlots >= 64 ? `${Math.floor(totalSlots / 64)} stack${totalSlots / 64 < 2 ? "" : "s"}` : ""}${totalSlots % 64 != 0 && totalSlots >= 64 ? " and " : ""}${totalSlots % 64 != 0 ? `${totalSlots % 64} blocks` : ""})`}
+                            </p>
+                            <p>
+                                <span className="font-bold">Progress:</span>
+                                {` ${checkedSlots} / ${totalSlots} (${Math.round(checkedSlots / totalSlots * 10000) / 100}%)`}
+                            </p>
+                        </CardContent>
+                    </Card>
+                    <ZoomViewport cellWidth={width} cellHeight={height} isFullscreen={isFullscreen} setIsFullscreen={setIsFullscreen}>
+                        <InteractiveCircleGroups
+                            options={circleOptions}
+                            theme={theme}
+                            checks={circleMap}
+                            setChecks={setChecks}
+                        />
                     </ZoomViewport>
                 </CardContent>
             </Card>
