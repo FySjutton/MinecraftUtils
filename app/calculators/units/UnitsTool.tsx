@@ -1,10 +1,12 @@
 "use client"
 
-import { useState } from "react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { ComboBox } from "@/components/ComboBox"
-import { Separator } from "@/components/ui/separator"
-import { InputField } from "@/components/InputField"
+import {useEffect, useState} from "react"
+import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card"
+import {ComboBox} from "@/components/ComboBox"
+import {Separator} from "@/components/ui/separator"
+import {InputField} from "@/components/InputField"
+import {getShareManager} from "@/lib/share/shareManagerPool"
+import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 const typeOptions = ["Items", "Stacks (16)", "Stacks (64)", "Shulker Boxes (27 slots)"]
 
@@ -31,28 +33,45 @@ export default function UnitsTool() {
     const totalStacks = Math.floor(totalItems / 64)
     const remainingItems = totalItems % 64
 
+    const share = getShareManager("units");
+
+    share.registerString("input", [inputValue, setInputValue]);
+    share.registerString("type", [inputType, setInputType]);
+
+    useEffect(() => {
+        share.hydrate();
+
+        return share.startAutoUrlSync({
+            debounceMs: 300,
+            replace: true,
+        });
+    }, []);
+
     return (
         <div className="flex flex-col md:flex-row gap-6">
             <Card className="w-full md:w-1/2">
                 <CardHeader>
                     <CardTitle>Input</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-4">
-                    <ComboBox
-                        items={typeOptions}
-                        value={inputType}
-                        onChange={setInputType}
-                        placeholder="Select type"
-                        placeholderSearch="Search type..."
-                        className="w-full"
-                    />
-                    <InputField
-                        variant="number"
-                        maxLength={10}
-                        value={inputValue}
-                        label="Enter amount"
-                        onChange={setInputValue}
-                    />
+                <CardContent className="h-full flex flex-wrap w-full">
+                    <div className="flex flex-col gap-4 w-full">
+                        <ComboBox
+                            items={typeOptions}
+                            value={inputType}
+                            onChange={setInputType}
+                            placeholder="Select type"
+                            placeholderSearch="Search type..."
+                            className="w-full"
+                        />
+                        <InputField
+                            variant="number"
+                            maxLength={10}
+                            value={inputValue}
+                            label="Enter amount"
+                            onChange={setInputValue}
+                        />
+                    </div>
+                    <CopyShareLinkInput className="mx-auto mt-2 md:mt-auto"></CopyShareLinkInput>
                 </CardContent>
             </Card>
 

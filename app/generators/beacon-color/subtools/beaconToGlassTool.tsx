@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useState, useRef } from 'react'
+import React, {useMemo, useState, useRef, useEffect} from 'react'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -14,6 +14,7 @@ import {MultiSelectDropdown} from "@/components/MultiSelectDropdown";
 import Image from "next/image";
 import {toDisplayName, toInternalName} from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
 import {ColorPicker} from "@/components/ColorPicker";
+import {getShareManager} from "@/lib/share/shareManagerPool";
 
 const COLOR_ENTRIES = Object.entries(GLASS_COLORS)
 
@@ -47,9 +48,16 @@ export function findColorName(rgb: RGB): string {
 
 export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab: 'tool' | 'verify') => void }) {
     const initialValue = "#3263B7"
+    const share = getShareManager("beacon");
 
     const [hex, setHex] = useState(initialValue)
+    share.registerString("hex", [hex, setHex])
+
     const [preset, setPreset] = useState(presets[2].name)
+    share.registerEnum("preset", [preset, setPreset], presets.map((s) => s.name))
+
+    // TODO: add some of the rest
+
     const [results, setResults] = useState<Candidate[]>([])
     const [colorsChecked, setColorsChecked] = useState(0)
     const [percentFinished, setPercentFinished] = useState(0)

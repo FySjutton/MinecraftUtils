@@ -15,8 +15,6 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
     const [value, setValue] = React.useState(0) // % bar
     const [level, setLevel] = React.useState(0)
 
-    const [decreaseBtnDisabled, setDecreaseBtnDisabled] = React.useState<true | false>(false)
-
     const xpToLevel = (exp: number) => {
         if (exp >= 1508) {
             return ((325 / 18) + Math.sqrt((2 / 9) * (exp - (54215 / 72))))
@@ -89,10 +87,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
     return (
         <div className="relative select-none overflow-visible mx-auto flex flex-col items-center">
             <div className="flex items-center pb-0 max-[700px]:pb-2">
-                <Button variant="outline" size="icon" disabled={decreaseBtnDisabled} onClick={() => {
-                    if (level == 1) {
-                        setDecreaseBtnDisabled(true)
-                    }
+                <Button variant="outline" size="icon" disabled={level <= 1} onClick={() => {
                     handleInputChange((level - 1).toString())
                 }}><IconArrowBigLeftLine /></Button>
                 <input
@@ -115,9 +110,6 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
                     }}
                 />
                 <Button variant="outline" size="icon" onClick={() => {
-                    if (decreaseBtnDisabled && level >= 0) {
-                        setDecreaseBtnDisabled(false)
-                    }
                     handleInputChange((level + 1).toString())
                 }}><IconArrowBigRightLine /></Button>
             </div>

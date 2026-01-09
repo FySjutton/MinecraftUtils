@@ -4,8 +4,7 @@ import {useEffect, useState} from "react"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { InputField } from "@/components/InputField"
-import {useShareManager} from "@/lib/share/useShareManager";
-import {useShareSync} from "@/lib/share/useShareSync";
+import {getShareManager} from "@/lib/share/shareManagerPool";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 export default function CoordinateCalculatorTool() {
@@ -65,7 +64,7 @@ export default function CoordinateCalculatorTool() {
 
     const reset = () => setOwCoords({ x: "0", y: "63", z: "0" })
 
-    const share = useShareManager();
+    const share = getShareManager("coords");
 
     share.register<{ x: string, y: string, z: string }>(
         "cords",
@@ -79,8 +78,6 @@ export default function CoordinateCalculatorTool() {
             return { x: "0", y: "63", z: "0" };
         }
     );
-
-    useShareSync(share, "cords", owCoords);
 
     useEffect(() => {
         share.hydrate();
@@ -140,7 +137,7 @@ export default function CoordinateCalculatorTool() {
                                 if (axis === "z") updateOw({ z: intVal * 16 + (owZ % 16) })
                             }
                         )}
-                        <CardDescription>
+                        <CardDescription className="mt-2">
                             This chunk goes from X: {chunk.startX}, Y: {chunk.startY}, Z: {chunk.startZ} to X: {chunk.endX}, Y: {chunk.endY}, Z: {chunk.endZ}
                         </CardDescription>
                     </div>
@@ -213,7 +210,7 @@ export default function CoordinateCalculatorTool() {
             {/* Copy share link */}
             <Card className="mt-6">
                 <CardContent>
-                    <CopyShareLinkInput label="Copy Share Link:" className="w-full"></CopyShareLinkInput>
+                    <CopyShareLinkInput />
                 </CardContent>
             </Card>
         </div>

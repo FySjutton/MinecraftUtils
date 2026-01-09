@@ -1,10 +1,12 @@
 "use client"
 
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import ImageSlider from "@/app/calculators/experience/ImageSlider";
 import {InputField} from "@/components/InputField";
+import {getShareManager} from "@/lib/share/shareManagerPool";
+import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 export default function ExperienceTool() {
     // Set initial xp to 9 for a nice look, equals 1 level and about 22% progress.
@@ -13,6 +15,20 @@ export default function ExperienceTool() {
     const [progress, setProgress] = useState(22)
 
     const [lastSource, setLastSource] = useState<"slider" | "input" | null>(null)
+
+    const share = getShareManager("xp");
+
+    share.registerNumber("xp", [xp, setXp]);
+    share.registerNumber("level", [level, setLevel]);
+
+    useEffect(() => {
+        share.hydrate();
+
+        return share.startAutoUrlSync({
+            debounceMs: 300,
+            replace: true,
+        });
+    }, []);
 
     return (
         <div className="w-[100%] lg:w-[80%] md:w-[90%] mx-auto">
@@ -38,7 +54,7 @@ export default function ExperienceTool() {
                         lastSource={lastSource}
                         onSliderAction={(total, barLevel, barProgress) => {
                             setLastSource("slider")
-                            setXp(total)
+                            setXp(Math.floor(total))
                             setLevel(barLevel)
                             setProgress(Math.floor(barProgress))
                         }}
@@ -62,6 +78,12 @@ export default function ExperienceTool() {
                             XP
                         </span>
                     </div>
+                </CardContent>
+            </Card>
+
+            <Card className="my-6">
+                <CardContent>
+                    <CopyShareLinkInput className="mx-auto mt-2 md:mt-auto"></CopyShareLinkInput>
                 </CardContent>
             </Card>
         </div>
