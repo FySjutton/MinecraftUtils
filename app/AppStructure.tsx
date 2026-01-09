@@ -103,7 +103,7 @@ export const tools: ToolCategory[] = [
         pages: [
             { name: "Unit Calculator", url: "units", icon: getImage("shulkerbox"), description: "Convert units and measurements quickly." },
             { name: "XP to Level Calculator", url: "experience", icon: getImage("xp-bottle"), description: "Calculate how much XP each level is through an interactive experience bar." },
-            { name: "Nether Calculator", url: "nether-cords", icon: getImage("netherrack"), description: "Convert coordinates between Overworld and Nether." },
+            { name: "Coordinate Calculator", url: "coordinate-calculator", icon: getImage("filled_map"), description: "Convert coordinates between the overworld, chunks, regions as well as nether coordinates." },
         ],
     },
     {
@@ -181,7 +181,7 @@ export const featuredHomePage: PageItem[] = [
     getPage(tools, "XP to Level Calculator"),
     getPage(tools, "Beacon Generator"),
     getPage(tools, "Sign Generator"),
-    getPage(tools, "Nether Calculator"),
+    getPage(tools, "Coordinate Calculator"),
     getPage(tools, "Daylight Cycle"),
     getPage(tools, "Motd Creator"),
     getPage(tools, "Inventory Slots"),
@@ -191,7 +191,7 @@ export const featuredHomePage: PageItem[] = [
 export const featuredCalculators: PageItem[] = [
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
-    getPage(tools, "Nether Calculator")
+    getPage(tools, "Coordinate Calculator")
 ]
 
 export const featuredGenerators: PageItem[] = [
