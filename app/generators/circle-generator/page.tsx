@@ -3,11 +3,15 @@ import CircleGeneratorPage from "@/app/generators/circle-generator/CircleGenerat
 
 export default function Page() {
     return (
-        <CircleGeneratorPage />
+        <>
+            <h1 className="text-3xl font-bold mb-2 mx-auto mt-2 text-center">Minecraft Circle Generator</h1>
+            <p className="px-5 mx-auto w-full text-center">Generate pixel perfect circles for minecraft, with many options and utilities.</p>
+            <CircleGeneratorPage />
+        </>
     )
 }
 
 export const metadata: Metadata = {
     title: "Circle Generator",
-    description: "Generate circles for minecraft",
+    description: "Generate pixel perfect circles for minecraft, with many options and utilities.",
 };

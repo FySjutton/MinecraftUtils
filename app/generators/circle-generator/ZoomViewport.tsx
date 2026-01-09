@@ -9,11 +9,11 @@ const CELL_TOTAL = CELL + GAP;
 
 interface Props {
     children: React.ReactNode;
-    width: number;
-    height: number;
+    cellWidth: number;
+    cellHeight: number;
 }
 
-export function ZoomViewport({ children, width, height }: Props) {
+export function ZoomViewport({ children, cellWidth, cellHeight }: Props) {
     const ref = useRef<HTMLDivElement>(null);
     const [wrapperWidth, setWrapperWidth] = useState(0);
 
@@ -30,8 +30,8 @@ export function ZoomViewport({ children, width, height }: Props) {
         return () => ro.disconnect();
     }, []);
 
-    const canvasW = width * CELL_TOTAL - GAP;
-    const canvasH = height * CELL_TOTAL - GAP;
+    const canvasW = cellWidth * CELL_TOTAL - GAP;
+    const canvasH = cellHeight * CELL_TOTAL - GAP;
 
     const scale = useMemo(() => {
         if (!wrapperWidth) return 1;
@@ -47,7 +47,7 @@ export function ZoomViewport({ children, width, height }: Props) {
             style={{ height: `${wrapperHeight}px`, maxHeight: `${wrapperWidth}px` }}
         >
             <TransformWrapper
-                key={`${width}x${height}x${scale}`}
+                key={`${cellWidth}x${cellHeight}x${scale}`}
                 initialScale={scale}
                 minScale={scale}
                 maxScale={scale * 50}

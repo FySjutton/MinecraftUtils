@@ -1,39 +1,30 @@
 import {CircleOptions, isCircleFilled} from "@/app/generators/circle-generator/CircleGenerator";
 import React from "react";
+import {ThemeName, themes} from "@/app/generators/circle-generator/styling/themes";
 
 interface Props {
     width: number;
     height: number;
     cellSize: number;
     gap: number;
-    theme: "default" | "arcade" | "blueprint";
+    theme: ThemeName;
     padding?: number;
-    options: CircleOptions; // add this
+    options: CircleOptions;
 }
 
 export function CircleGridBackground({ width, height, cellSize, gap, theme, padding = 6, options }: Props) {
     const totalWidth = width * (cellSize + gap);
     const totalHeight = height * (cellSize + gap);
 
-    const gridColor = () => {
-        switch (theme) {
-            case "default": return "rgb(41,41,41)";
-            case "arcade": return "#112612";
-            case "blueprint": return "#566670";
-        }
-    };
-    const centerColor = () => {
-        switch (theme) {
-            case "default": return "rgb(166,166,166)";
-            case "arcade": return "#6aa66c";
-            case "blueprint": return "#1a2c96";
-        }
-    };
+    const getColors = (theme: ThemeName) => themes[theme];
+    const { gridLineColor, gridCellColor } = getColors(theme);
+
     const elements: React.ReactNode[] = [];
 
     const centerX = Math.floor(width / 2);
     const centerY = Math.floor(height / 2);
 
+    // vertical center line
     if (width % 2 === 1) {
         for (let y = 0; y < height; y++) {
             if (!isCircleFilled(centerX, y, options)) {
@@ -44,18 +35,31 @@ export function CircleGridBackground({ width, height, cellSize, gap, theme, padd
                         y={y * (cellSize + gap) + padding + 1}
                         width={cellSize}
                         height={cellSize}
-                        fill={centerColor()}
+                        fill={gridCellColor}
                         opacity={0.5}
                     />
                 );
             }
         }
+    } else {
+        const cx = width / 2;
+        elements.push(
+            <line
+                key="center-vertical-even"
+                x1={cx * (cellSize + gap) - gap / 2 + padding + 1}
+                y1={padding}
+                x2={cx * (cellSize + gap) - gap / 2 + padding + 1}
+                y2={totalHeight + padding}
+                stroke={gridCellColor}
+                strokeWidth={2}
+                opacity={0.5}
+            />
+        );
     }
 
-    // horizontal center row
     if (height % 2 === 1) {
         for (let x = 0; x < width; x++) {
-            if (!isCircleFilled(x, centerY, options)) { // only draw if no circle
+            if (!isCircleFilled(x, centerY, options)) {
                 elements.push(
                     <rect
                         key={`center-row-${centerY}-${x}`}
@@ -63,13 +67,28 @@ export function CircleGridBackground({ width, height, cellSize, gap, theme, padd
                         y={centerY * (cellSize + gap) + padding + 1}
                         width={cellSize}
                         height={cellSize}
-                        fill={centerColor()}
+                        fill={gridCellColor}
                         opacity={0.5}
                     />
                 );
             }
         }
+    } else {
+        const cy = height / 2;
+        elements.push(
+            <line
+                key="center-horizontal-even"
+                x1={padding}
+                y1={cy * (cellSize + gap) - gap / 2 + padding + 1}
+                x2={totalWidth + padding}
+                y2={cy * (cellSize + gap) - gap / 2 + padding + 1}
+                stroke={gridCellColor}
+                strokeWidth={2}
+                opacity={0.5}
+            />
+        );
     }
+
 
     // regular grid lines
     for (let x = 0; x <= width; x++) {
@@ -80,7 +99,7 @@ export function CircleGridBackground({ width, height, cellSize, gap, theme, padd
                 y1={padding}
                 x2={x * (cellSize + gap) + padding}
                 y2={totalHeight + padding}
-                stroke={gridColor()}
+                stroke={gridLineColor}
                 strokeWidth={0.5}
             />
         );
@@ -93,7 +112,7 @@ export function CircleGridBackground({ width, height, cellSize, gap, theme, padd
                 y1={y * (cellSize + gap) + padding}
                 x2={totalWidth + padding}
                 y2={y * (cellSize + gap) + padding}
-                stroke={gridColor()}
+                stroke={gridLineColor}
                 strokeWidth={0.5}
             />
         );
