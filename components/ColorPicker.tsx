@@ -15,7 +15,8 @@ type Mode = "hex" | "rgb";
 
 interface ColorPickerProps {
     initialValue?: string;
-    onChange?: (hex: string) => void;
+    hex: string;
+    setHex: React.Dispatch<React.SetStateAction<string>>;
 }
 
 function isValidHex(hex: string): boolean {
@@ -49,10 +50,9 @@ function rgbToHex(rgb: RGB): string {
     return "#" + r + g + b;
 }
 
-export function ColorPicker(props: ColorPickerProps) {
-    const initial = props.initialValue && isValidHex(normalizeToHashHex(props.initialValue)) ? normalizeToHashHex(props.initialValue) : "#6366f1";
+export function ColorPicker({initialValue, hex, setHex}: ColorPickerProps) {
+    const initial = initialValue && isValidHex(normalizeToHashHex(initialValue)) ? normalizeToHashHex(initialValue) : "#6366f1";
 
-    const [hex, setHex] = useState(initial);
     const [hexDraft, setHexDraft] = useState(initial);
     const [mode, setMode] = useState<Mode>("hex");
 
@@ -60,31 +60,20 @@ export function ColorPicker(props: ColorPickerProps) {
 
     const rgb = hexToRgb(hex);
 
+    React.useEffect(() => {
+        setHexDraft(hex);
+    }, [hex]);
+
     function onHexChangeFromPicker(newHex: string) {
         setHex(newHex);
-        setHexDraft(function(prevDraft) {
-            if (prevDraft === hex) {
-                return newHex;
-            }
-            return prevDraft;
-        });
-
-        if (props.onChange) {
-            props.onChange(newHex);
-        }
+        setHexDraft(newHex);
     }
 
     function commitHex(): void {
         const trimmed = hexDraft.trim();
         const normalized = normalizeToHashHex(trimmed);
-
         if (isValidHex(normalized)) {
             setHex(normalized);
-            if (props.onChange) {
-                props.onChange(normalized);
-            }
-        } else {
-            setHexDraft(hex);
         }
     }
 
@@ -185,10 +174,7 @@ export function ColorPicker(props: ColorPickerProps) {
             </PopoverTrigger>
 
             <PopoverContent className="w-80 space-y-4 p-4">
-                <div
-                    className="h-8 w-full rounded-md border"
-                    style={{ backgroundColor: hex }}
-                />
+                <div className="h-8 w-full rounded-md border" style={{ backgroundColor: hex }}/>
 
                 <div className="w-full">
                     <HexColorPicker

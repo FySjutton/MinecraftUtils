@@ -11,6 +11,8 @@ import Image from "next/image"
 import {BeaconPreview} from "@/app/generators/beacon-color/preview/BeaconBeam";
 import {ColorPicker} from "@/components/ColorPicker";
 import {Trash2} from "lucide-react";
+import {getShareManager} from "@/lib/share/shareManagerPool";
+import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 const COLOR_NAMES = Object.keys(GLASS_COLORS)
 
@@ -33,9 +35,38 @@ export function toInternalName(display?: string) {
 
 export default function GlassToBeaconColorEditor() {
     const initialValue = '#3263B7'
+    const share = getShareManager("beacon");
 
-    const [stack, setStack] = useState<string[]>([])
-    const [targetHex, setTargetHex] = useState(initialValue)
+    const [stack, setStack] = useState<string[]>([]);
+    const [targetHex, setTargetHex] = useState(initialValue);
+
+    share.register(
+        "stack",
+        [stack, setStack],
+        (stackArray) => {
+            const indices = stackArray
+                .map(color => COLOR_NAMES.indexOf(color))
+                .filter(idx => idx >= 0)
+                .join(".");
+
+            return `${targetHex}^${indices}`;
+        },
+        (raw) => {
+            if (!raw) return [];
+
+            const [loadedTargetHex, stackStr] = raw.split("^");
+            setTargetHex(loadedTargetHex);
+
+            if (!stackStr) return [];
+            return stackStr
+                .split(".")
+                .map(idxStr => {
+                    const idx = Number(idxStr);
+                    return COLOR_NAMES[idx] ?? null;
+                })
+                .filter(Boolean) as string[];
+        }
+    );
 
     const targetRgb: RGB = useMemo(() => {
         const h = targetHex.startsWith('#') ? targetHex.slice(1) : targetHex
@@ -93,7 +124,7 @@ export default function GlassToBeaconColorEditor() {
 
                     <div className="flex w-full items-center">
                         <div className="mt-2">
-                            <ColorPicker onChange={setTargetHex} initialValue={initialValue}/>
+                            <ColorPicker hex={targetHex} setHex={setTargetHex} initialValue={initialValue}/>
                             <div className="mt-2 h-16 w-full rounded-lg border" style={{ backgroundColor: targetHex }}/>
                         </div>
 
@@ -176,6 +207,11 @@ export default function GlassToBeaconColorEditor() {
                             </div>
                         </div>
                     </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardContent>
+                    <CopyShareLinkInput />
                 </CardContent>
             </Card>
             <Card>

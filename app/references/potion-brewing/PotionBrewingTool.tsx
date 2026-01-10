@@ -1,6 +1,6 @@
 "use client"
 
-import React, { SetStateAction } from "react"
+import React, {SetStateAction, useEffect} from "react"
 import Image from "next/image"
 import potionsRaw from "./potions.json"
 
@@ -9,6 +9,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toTitleCase } from "@/app/generators/beacon-color/ResultCard"
 import {Separator} from "@/components/ui/separator";
+import {getShareManager} from "@/lib/share/shareManagerPool";
+import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 type PotionName = string
 type IngredientName = string
@@ -156,10 +158,45 @@ function PotionCard({ selectedPotion, potionType }: { selectedPotion: PotionName
 }
 
 export default function PotionBrewingTool() {
+    const share = getShareManager("potion");
+
     const potionNames = Object.keys(POTIONS)
     const [selectedPotion, setSelectedPotion] = React.useState<PotionName>(potionNames[0])
+    share.registerString("potion", [selectedPotion, setSelectedPotion], {defaultValue: potionNames[0]})
+
     const [options, setOptions] = React.useState<Record<PotionName, number>>({})
+    share.register("options", [options, setOptions],
+        (opts) => Object.entries(opts)
+            .map(([p, n]) => `${encodeURIComponent(p)}=${n}`)
+            .join(","),
+        (raw) => {
+            if (!raw) return {};
+            try {
+                const result: Record<PotionName, number> = {};
+                raw.split(",").forEach((chunk) => {
+                    const [p, n] = chunk.split("=");
+                    if (!p) return;
+                    result[decodeURIComponent(p)] = parseInt(n) || 0;
+                });
+                return result;
+            } catch (e) {
+                console.warn("Failed to deserialize potion options", e);
+                return {};
+            }
+        }
+    );
+
     const [potionType, setPotionType] = React.useState<"normal" | "splash" | "lingering">("normal")
+    share.registerEnum("type", [potionType, setPotionType], ["normal", "splash", "lingering"], {defaultValue: "normal"})
+
+    useEffect(() => {
+        share.hydrate();
+
+        return share.startAutoUrlSync({
+            debounceMs: 300,
+            replace: true,
+        });
+    }, []);
 
     const rows = React.useMemo(() => {
         const out: Row[] = []
@@ -366,6 +403,11 @@ export default function PotionBrewingTool() {
                             </div>
                         )
                     })}
+                </CardContent>
+            </Card>
+            <Card>
+                <CardContent>
+                    <CopyShareLinkInput />
                 </CardContent>
             </Card>
         </div>

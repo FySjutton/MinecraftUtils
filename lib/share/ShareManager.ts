@@ -7,6 +7,8 @@ type Entry<T> = {
     set: Dispatch<SetStateAction<T>>;
     serialize: (v: T) => string;
     deserialize: (s: string) => T | null;
+    defaultValue?: T;
+    equals: (a: T, b: T) => boolean;
 };
 
 export class ShareManager {
@@ -16,7 +18,7 @@ export class ShareManager {
 
     private scheduleNotify() {
         Promise.resolve().then(() => {
-            if (this.notifyFn) this.notifyFn();
+            this.notifyFn?.();
         });
     }
 
@@ -25,23 +27,21 @@ export class ShareManager {
         tuple: StateTuple<T>,
         serialize: (v: T) => string,
         deserialize: (s: string) => T | null,
-        autoSync = true
+        options?: {
+            defaultValue?: T;
+            equals?: (a: T, b: T) => boolean;
+            autoSync?: boolean;
+        }
     ) {
         const [value, set] = tuple;
-        const existing = this.entries.get(key) as Entry<T> | undefined;
-        if (existing) {
-            existing.ref.current = value;
-            existing.set = set;
-            existing.serialize = serialize;
-            existing.deserialize = deserialize;
-        } else {
-            this.entries.set(key, { ref: { current: value }, set, serialize, deserialize });
-        }
-        if (autoSync) this.scheduleNotify();
-    }
 
-    private notifyChange() {
-        this.notifyFn?.();
+        const entry: Entry<T> = {ref: { current: value }, set, serialize, deserialize, defaultValue: options?.defaultValue, equals: options?.equals ?? Object.is,};
+
+        this.entries.set(key, entry);
+
+        if (options?.autoSync !== false) {
+            this.scheduleNotify();
+        }
     }
 
     register<T>(
@@ -49,16 +49,24 @@ export class ShareManager {
         tuple: StateTuple<T>,
         serialize: (v: T) => string,
         deserialize: (s: string) => T | null,
-        autoSync = true
+        options?: {
+            defaultValue?: T;
+            equals?: (a: T, b: T) => boolean;
+            autoSync?: boolean;
+        }
     ) {
-        this.registerInternal(key, tuple, serialize, deserialize, autoSync);
+        this.registerInternal(key, tuple, serialize, deserialize, options);
     }
 
-    registerString(key: string, tuple: StateTuple<string>, autoSync = true) {
-        this.registerInternal(key, tuple, v => v, s => s, autoSync);
+    registerString(key: string, tuple: StateTuple<string>, options?: { defaultValue?: string; autoSync?: boolean }) {
+        this.registerInternal(key, tuple, v => v, s => s, options);
     }
 
-    registerNumber(key: string, tuple: StateTuple<number>, autoSync = true) {
+    registerNumber(
+        key: string,
+        tuple: StateTuple<number>,
+        options?: { defaultValue?: number; autoSync?: boolean }
+    ) {
         this.registerInternal(
             key,
             tuple,
@@ -67,63 +75,73 @@ export class ShareManager {
                 const n = Number(s);
                 return Number.isFinite(n) ? n : null;
             },
-            autoSync
+            options
         );
     }
 
-    registerBoolean(key: string, tuple: StateTuple<boolean>, autoSync = true) {
+    registerBoolean(
+        key: string,
+        tuple: StateTuple<boolean>,
+        options?: { defaultValue?: boolean; autoSync?: boolean }
+    ) {
         this.registerInternal(
             key,
             tuple,
             v => (v ? "1" : "0"),
             s => (s === "1" ? true : s === "0" ? false : null),
-            autoSync
+            options
         );
     }
 
-    registerEnum<T extends string>(key: string, tuple: StateTuple<T>, allowed: readonly T[], autoSync = true) {
+    registerEnum<T extends string>(
+        key: string,
+        tuple: StateTuple<T>,
+        allowed: readonly T[],
+        options?: { defaultValue?: T; autoSync?: boolean }
+    ) {
         this.registerInternal(
             key,
             tuple,
             v => v,
-            s => (allowed.includes(s as T) ? (s as T) : tuple[0]),
-            autoSync
+            s => (allowed.includes(s as T) ? (s as T) : options?.defaultValue ?? null),
+            options
         );
-    }
-
-    registerWithoutSync<T>(
-        key: string,
-        tuple: StateTuple<T>,
-        serialize: (v: T) => string,
-        deserialize: (s: string) => T | null
-    ) {
-        this.registerInternal(key, tuple, serialize, deserialize, false);
-    }
-
-    useShareSync<T>(key: string, value: T, overwrite = false) {
-        const entry = this.entries.get(key);
-        if (!entry) throw new Error(`Key ${key} not registered`);
-        entry.ref.current = value;
-        if (overwrite) entry.set(entry.ref.current);
-        this.notifyChange();
-        return [entry.ref.current, entry.set] as StateTuple<T>;
     }
 
     toQueryString(): string {
         const params = new URLSearchParams();
+
         for (const [key, entry] of this.entries) {
-            params.set(key, entry.serialize(entry.ref.current));
+            const value = entry.ref.current;
+
+            if (
+                entry.defaultValue !== undefined &&
+                entry.equals(value, entry.defaultValue)
+            ) {
+                continue;
+            }
+
+            const serialized = entry.serialize(value);
+
+            if (!serialized) continue;
+
+            params.set(key, serialized);
         }
-        return params.toString() ? `?${params.toString()}` : "";
+
+        const qs = params.toString();
+        return qs ? `?${qs}` : "";
     }
 
     hydrate(search = window.location.search) {
         if (this.hydrated) return;
         this.hydrated = true;
+
         const params = new URLSearchParams(search);
+
         for (const [key, entry] of this.entries) {
             const raw = params.get(key);
             if (raw == null) continue;
+
             const value = entry.deserialize(raw);
             if (value != null) entry.set(value);
         }
@@ -148,6 +166,7 @@ export class ShareManager {
 
         this.notifyFn = schedule;
         schedule();
+
         return () => {
             if (timeout !== null) clearTimeout(timeout);
             this.notifyFn = null;

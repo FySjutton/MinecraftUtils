@@ -1,6 +1,6 @@
 'use client'
 
-import { EditorContent, useEditor } from '@tiptap/react'
+import {EditorContent, useEditor} from '@tiptap/react'
 import Document from '@tiptap/extension-document'
 import Paragraph from '@tiptap/extension-paragraph'
 import Text from '@tiptap/extension-text'
@@ -12,7 +12,7 @@ import History from '@tiptap/extension-history'
 import {Color, TextStyle} from "@tiptap/extension-text-style";
 
 import FormattingToolbar from '@/components/editor/FormattingToolbar'
-import { ToolbarProvider } from '@/components/editor/toolbar-provider'
+import {ToolbarProvider} from '@/components/editor/toolbar-provider'
 import {Obfuscated} from "@/components/editor/Obfuscated";
 
 import "@/components/editor/editor.css"
@@ -23,6 +23,10 @@ import {MaxLines} from "@/components/editor/MaxLines";
 import {Upload} from "lucide-react";
 import {tiptapToMinecraftText} from "@/lib/converters/tiptapToMinecraftText";
 import {minecraftTextToString} from "@/lib/converters/minecraftTextToString";
+import {getShareManager} from "@/lib/share/shareManagerPool";
+import {minecraftTextToTiptap} from "@/lib/converters/minecraftTextToTiptap";
+import {JSONContent} from "@tiptap/core";
+import Image from "next/image";
 
 export default function MotdEditor({ output, setOutputAction }: { output: string, setOutputAction: React.Dispatch<React.SetStateAction<string>> }) {
     const editor = useEditor({
@@ -92,6 +96,71 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
         immediatelyRender: false
     })
 
+    const share = getShareManager("motd");
+
+    const DEFAULT_CONTENT = {
+        type: 'doc',
+        content: [
+            {
+                type: 'paragraph',
+                content: [
+                    {
+                        type: 'text',
+                        text: 'Click here and type to edit!',
+                        marks: [{ type: 'textStyle', attrs: { color: Colors.GRAY } }],
+                    },
+                ],
+            },
+        ],
+    };
+
+    const [editorContent, setEditorContent] = useState<JSONContent>(() => editor?.getJSON() ?? DEFAULT_CONTENT);
+
+    share.register(
+        "motd",
+        [editorContent, setEditorContent],
+        (json) => {
+            const minecraftLines = tiptapToMinecraftText(json, 4);
+            return minecraftTextToString(minecraftLines, "\u00a7");
+        },
+        (raw) => {
+            if (!raw) return DEFAULT_CONTENT;
+            return minecraftTextToTiptap(raw);
+        }
+    );
+
+    useEffect(() => {
+        share.hydrate();
+
+        return share.startAutoUrlSync({
+            debounceMs: 300,
+            replace: true,
+        });
+    }, []);
+
+    useEffect(() => {
+        if (!editor) return;
+
+        const updateListener = () => {
+            const json = editor.getJSON();
+            setEditorContent(json);
+        };
+
+        editor.on('update', updateListener);
+
+        return () => {
+            editor.off('update', updateListener);
+        };
+    }, [editor]);
+
+    useEffect(() => {
+        if (!editor) return;
+
+        if (JSON.stringify(editor.getJSON()) !== JSON.stringify(editorContent)) {
+            editor.commands.setContent(editorContent);
+        }
+    }, [editorContent, editor]);
+
     useEffect(() => {
         if (!editor) return;
 
@@ -103,7 +172,6 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
 
         editor.on('update', updateListener);
 
-        // initialize
         updateListener();
 
         return () => {
@@ -150,7 +218,7 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
 
     return (
         <div className="border w-full relative rounded-md font-minecraft pb-3" style={{ height: `${height}px` }}>
-            <div className="relative flex overflow-x-auto overflow-y-hidden w-full items-center py-2 px-2 justify-between border-b sticky top-0 left-0 z-20">
+            <div className="relative flex overflow-x-auto overflow-y-hidden w-full items-center py-2 px-2 justify-between border-b top-0 left-0 z-20">
                 <ToolbarProvider editor={editor}>
                     <div className="flex items-center gap-2">
                         <FormattingToolbar initialColor={Colors.GRAY}/>
@@ -160,68 +228,66 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
 
             <div className="w-[90%] h-[90%] m-auto mt-5">
                 <div ref={containerRef} className="w-full h-full">
-                <div className="origin-top-left w-fit" style={{ transform: `scale(${scale})` }}>
-                    <div className="w-[307px] h-[34px] bg-black border-1 border-white flex">
-                        {/* Left icon */}
-                        <div className="w-[32px] h-[32px] relative flex-shrink-0 p-px cursor-pointer" onClick={handleClick}>
-                            <img
-                                src={preview ?? "/assets/tool/motd/unknown_server.png"}
-                                alt="icon"
-                                className="w-full h-full object-cover"
-                            />
+                    <div className="origin-top-left w-fit" style={{ transform: `scale(${scale})` }}>
+                        <div className="w-[307px] h-[34px] bg-black border-1 border-white flex">
+                            {/* Left icon */}
+                            <div className="w-[32px] h-[32px] relative flex-shrink-0 p-px cursor-pointer" onClick={handleClick}>
+                                <Image
+                                    src={preview ?? "/assets/tool/motd/unknown_server.png"}
+                                    alt="icon"
+                                    width={64}
+                                    height={64}
+                                    className="w-full h-full object-cover"
+                                />
 
-                            <div className="absolute inset-0 flex justify-center items-center">
-                                <Upload strokeWidth={3} className="w-full h-full bg-opacity-90 bg-black opacity-0 hover:opacity-100"/>
+                                <div className="absolute inset-0 flex justify-center items-center">
+                                    <Upload strokeWidth={3} className="w-full h-full bg-opacity-90 bg-black opacity-0 hover:opacity-100"/>
+                                </div>
+
+                                {/* Hidden input (for uploading image) */}
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    ref={fileInputRef}
+                                    onChange={handleFileChange}
+                                />
                             </div>
 
-                            {/* Hidden input (for uploading image) */}
-                            <input
-                                type="file"
-                                accept="image/*"
-                                className="hidden"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
-                            />
-                        </div>
+                            {/* Right content */}
+                            <div className="flex-1 flex flex-col ml-[2px] mr-[4px] overflow-hidden">
+                                {/* Top bar split left/right */}
+                                <div className="h-[10px] w-full flex items-center justify-between mt-0.5 overflow-hidden">
+                                    {/* Left section */}
+                                    <span className="text-white text-[9px] truncate">
+                                      Minecraft Server
+                                    </span>
 
-                        {/* Right content */}
-                        <div className="flex-1 flex flex-col ml-[2px] mr-[4px] overflow-hidden">
-                            {/* Top bar split left/right */}
-                            <div className="h-[10px] w-full flex items-center justify-between mt-0.5 overflow-hidden">
-                                {/* Left section */}
-                                <span className="text-white text-[9px] truncate">
-                                  Minecraft Server
-                                </span>
+                                    {/* Right section */}
+                                    <div className="flex items-center gap-[2px]">
+                                        <span className="text-white text-[9px]" style={{color: Colors.GRAY}}>17/20</span>
+                                        <Image
+                                            src="/assets/tool/motd/ping_5.png"
+                                            alt="icon"
+                                            width={16}
+                                            height={16}
+                                            className="w-[10px] h-[10px] object-contain image-pixelated"
+                                        />
+                                    </div>
+                                </div>
 
-                                {/* Right section */}
-                                <div className="flex items-center gap-[2px]">
-                                    <span className="text-white text-[9px]" style={{color: Colors.GRAY}}>17/20</span>
-                                    <img
-                                        src="/assets/tool/motd/ping_5.png"
-                                        alt="icon"
-                                        className="w-[10px] h-[10px] object-contain image-pixelated"
+                                {/* Editor content */}
+                                <div className="flex-1 mt-0.3 cursor-text w-full overflow-hidden">
+                                    <EditorContent
+                                        editor={editor}
+                                        spellCheck={false}
+                                        className="w-full h-full text-[8px] leading-[8px] break-words whitespace-pre-wrap inline"
                                     />
                                 </div>
-                            </div>
-
-                            {/* Editor content */}
-                            <div className="flex-1 mt-0.3 cursor-text w-full overflow-hidden">
-                                <EditorContent
-                                    editor={editor}
-                                    spellCheck={false}
-                                    className="w-full h-full text-[8px] leading-[8px] break-words whitespace-pre-wrap inline"
-                                />
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-
-            {/*<textarea*/}
-            {/*    className="border p-2 w-full min-h-[80px]"*/}
-            {/*    value={mcText}*/}
-            {/*    readOnly*/}
-            {/*/>*/}
             </div>
         </div>
     )

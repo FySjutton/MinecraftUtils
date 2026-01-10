@@ -1,5 +1,5 @@
 import { JSONContent } from '@tiptap/core'
-import {MinecraftText} from "@/lib/MinecraftText";
+import { MinecraftText } from "@/lib/MinecraftText"
 
 type TextFlags = Pick<
     MinecraftText,
@@ -29,7 +29,7 @@ function rgbToHex(rgb: string): string {
 
 function defaultState(): Omit<MinecraftText, 'char'> {
     return {
-        color: null, // allow null
+        color: null,
         bold: false,
         italic: false,
         underline: false,
@@ -45,9 +45,8 @@ export function tiptapToMinecraftText(
 ): MinecraftText[][] {
     const lines: MinecraftText[][] = [[]]
     let lineIndex = 0
-    const baseState = defaultState()
 
-    function walk(node: JSONContent) {
+    function walk(node: JSONContent, parentState: Omit<MinecraftText, 'char'> = defaultState()) {
         if (node.type === 'hardBreak') {
             if (lines.length < maxLines) {
                 lines.push([])
@@ -57,7 +56,7 @@ export function tiptapToMinecraftText(
         }
 
         if ('text' in node && typeof node.text === 'string') {
-            const localState = { ...baseState }
+            const localState = { ...parentState }
 
             for (const mark of node.marks ?? []) {
                 if (mark.type === 'textStyle' && mark.attrs?.color) {
@@ -72,9 +71,22 @@ export function tiptapToMinecraftText(
                 }
             }
 
-            for (const char of node.text) {
-                lines[lineIndex].push({
-                    char,
+            const line = lines[lineIndex]
+            const lastSegment = line[line.length - 1]
+
+            if (
+                lastSegment &&
+                lastSegment.color === (localState.color ?? defaultColor ?? null) &&
+                lastSegment.bold === localState.bold &&
+                lastSegment.italic === localState.italic &&
+                lastSegment.underline === localState.underline &&
+                lastSegment.strike === localState.strike &&
+                lastSegment.obfuscated === localState.obfuscated
+            ) {
+                lastSegment.char += node.text
+            } else {
+                line.push({
+                    char: node.text,
                     ...localState,
                     color: localState.color ?? defaultColor ?? null,
                 })
@@ -84,7 +96,7 @@ export function tiptapToMinecraftText(
 
         if (Array.isArray(node.content)) {
             for (const child of node.content) {
-                walk(child)
+                walk(child, parentState)
             }
 
             if (node.type === 'paragraph') {
@@ -98,5 +110,5 @@ export function tiptapToMinecraftText(
 
     walk(content)
 
-    return lines.slice(0, maxLines)
+    return lines.filter(line => line.length > 0).slice(0, maxLines)
 }

@@ -15,6 +15,7 @@ import Image from "next/image";
 import {toDisplayName, toInternalName} from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
 import {ColorPicker} from "@/components/ColorPicker";
 import {getShareManager} from "@/lib/share/shareManagerPool";
+import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 const COLOR_ENTRIES = Object.entries(GLASS_COLORS)
 
@@ -51,21 +52,92 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
     const share = getShareManager("beacon");
 
     const [hex, setHex] = useState(initialValue)
-    share.registerString("hex", [hex, setHex])
+    share.registerString("hex", [hex, setHex], {defaultValue: initialValue})
 
     const [preset, setPreset] = useState(presets[2].name)
-    share.registerEnum("preset", [preset, setPreset], presets.map((s) => s.name))
+    share.registerEnum("preset", [preset, setPreset], presets.map((s) => s.name), {defaultValue: presets[2].name})
 
-    // TODO: add some of the rest
+    const [results, setResults] = useState<Candidate[]>([]);
+    const [resultTarget, setResultTarget] = useState("");
 
-    const [results, setResults] = useState<Candidate[]>([])
+    share.register("results", [results, setResults],
+        (candidates) => {
+            const packRGB = ([r, g, b]: [number, number, number]) =>
+                ((r << 16) | (g << 8) | b).toString(36);
+
+            const serializedResults = candidates
+                .map(c => {
+                    const stack = c.stack.map(packRGB).join(".");
+                    const merged = c.mergedStackColors
+                        ? c.mergedStackColors.map(packRGB).join(".")
+                        : "";
+                    const color = packRGB(c.color);
+                    const dist = Math.round(c.dist * 1000).toString(36);
+
+                    return `${stack}|${merged}|${color}|${dist}`;
+                })
+                .join("~");
+
+            return `${resultTarget}^${serializedResults}`;
+        },
+        (raw) => {
+            if (!raw) return [];
+
+            const [targetHex, resultsStr] = raw.split("^");
+            setResultTarget(targetHex);
+            console.log("here2")
+
+            const unpackRGB = (s: string): [number, number, number] => {
+                const n = parseInt(s, 36);
+                return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+            };
+
+            return resultsStr
+                ? resultsStr.split("~").map(chunk => {
+                    const [stackS, mergedS, colorS, distS] = chunk.split("|");
+
+                    return {
+                        stack: stackS ? stackS.split(".").map(unpackRGB) : [],
+                        mergedStackColors: mergedS
+                            ? mergedS.split(".").map(unpackRGB)
+                            : undefined,
+                        color: unpackRGB(colorS),
+                        dist: parseInt(distS, 36) / 1000
+                    };
+                })
+                : [];
+        }
+    );
+
     const [colorsChecked, setColorsChecked] = useState(0)
     const [percentFinished, setPercentFinished] = useState(0)
     const [status, setStatus] = useState<string | null>(null)
     const [overrides, setOverrides] = useState<Record<number, boolean>>({})
 
     const [maxHeight, setMaxHeight] = React.useState(6)
-    const [glassColors, setGlassColors] = React.useState(Object.keys(GLASS_COLORS))
+    share.registerNumber("max", [maxHeight, setMaxHeight], {defaultValue: 6})
+
+    const ALL_GLASS_COLORS = Object.keys(GLASS_COLORS).sort();
+    const [glassColors, setGlassColors] = React.useState<string[]>(ALL_GLASS_COLORS);
+    share.register("colors", [glassColors, setGlassColors],
+        (allowed) => {
+            const allowedSet = new Set(allowed);
+            const disabledIndices: number[] = [];
+            for (let i = 0; i < ALL_GLASS_COLORS.length; i++) {
+                if (!allowedSet.has(ALL_GLASS_COLORS[i])) {
+                    disabledIndices.push(i);
+                }
+            }
+
+            return disabledIndices.join(",");
+        },
+        (raw) => {
+            if (!raw) return ALL_GLASS_COLORS;
+            const disabled = new Set(raw.split(",").map(n => Number(n)).filter(n => Number.isInteger(n)));
+            return ALL_GLASS_COLORS.filter((_, i) => !disabled.has(i));
+        }
+    );
+
     const filteredColors = useMemo(() => {
         return COLOR_ENTRIES.filter(([name]) =>
             glassColors.includes(name)
@@ -80,7 +152,6 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
 
     const [searchStartTime, setSearchStartTime] = useState<number | null>(null)
     const [searchEndTime, setSearchEndTime] = useState<number | null>(null)
-
 
     const runBeamSearch = async (beamWidth: number) => {
         setStatus(`Running beam search (width=${beamWidth})`)
@@ -164,6 +235,8 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
 
     const findBest = async () => {
         if (!currentPreset) return
+        console.log("here")
+        setResultTarget(hex);
         setResults([])
         setColorsChecked(0)
         if (currentPreset.beamWidth === null) {
@@ -223,7 +296,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                         <p className="text-xs text-gray-400">Select the color that you want the beacon to be.</p>
                         <div className="flex w-full items-center">
                             <div className="mt-2">
-                                <ColorPicker onChange={setHex} initialValue={initialValue}/>
+                                <ColorPicker hex={hex} setHex={setHex} initialValue={initialValue}/>
                                 <div className="mt-2 h-16 w-full rounded-lg border" style={{ backgroundColor: hex }}/>
                             </div>
 
@@ -309,6 +382,11 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
 
                     {/* Results */}
                     <div className="flex gap-2 flex-wrap justify-center">
+                        {resultTarget && (
+                            <div className="mt-2 h-16 w-full rounded-lg border flex items-center justify-center" style={{ backgroundColor: resultTarget }}>
+                                <p className="text-stroke-black">Target Color: {resultTarget}</p>
+                            </div>
+                        )}
                         {results.slice().reverse().map((r, revIdx) => {
                             const originalIdx = results.length - 1 - revIdx
                             const show3D = overrides[originalIdx] ?? true
@@ -329,6 +407,11 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                             )
                         })}
                     </div>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardContent>
+                    <CopyShareLinkInput />
                 </CardContent>
             </Card>
             <Card>
