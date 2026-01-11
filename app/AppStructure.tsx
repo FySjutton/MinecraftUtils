@@ -9,7 +9,6 @@ import {
     IconCode,
     IconH1,
     IconHanger2,
-    IconHome,
     IconLibraryPhoto,
     IconMap,
     IconPaw,
@@ -98,6 +97,7 @@ export const tools: ToolCategory[] = [
         pages: [
             { name: "Beacon Generator", url: "beacon-color", icon: "beacon", description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
             { name: "Circle Generator", url: "circle-generator", icon: "circle-generator", description: "Generate pixel perfect circles for minecraft.", type: "beta" },
+            { name: "Shape Generator", url: "shape-generator", icon: "circle-generator", description: "Generate pixel perfect shapes for minecraft.", type: "beta" },
             { name: "Sign Generator", url: "sign-generator", icon: "sign", description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
             { name: "Motd Creator", url: "motd-creator", icon: "motd", description: "Generate server motds through an interactive editor." },
         ],
@@ -161,12 +161,13 @@ export const externals: ToolCategory[] = [
 ]
 
 export const featuredHomePage: PageItem[] = [
-    getPage(tools, "Circle Generator"),
+    getPage(tools, "Shape Generator"),
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
     getPage(tools, "Beacon Generator"),
     getPage(tools, "Potion Brewing"),
     getPage(tools, "Sign Generator"),
+    getPage(tools, "Circle Generator"),
     getPage(tools, "Coordinate Calculator"),
     getPage(tools, "Daylight Cycle"),
     getPage(tools, "Motd Creator"),
@@ -182,7 +183,7 @@ export const featuredCalculators: PageItem[] = [
 
 export const featuredGenerators: PageItem[] = [
     getPage(tools, "Beacon Generator"),
-    getPage(tools, "Circle Generator"),
+    getPage(tools, "Shape Generator"),
     getPage(tools, "Sign Generator"),
     getPage(tools, "Motd Creator"),
 ]

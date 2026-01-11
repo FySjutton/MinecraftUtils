@@ -1,12 +1,12 @@
 import {Metadata} from "next";
-import CircleGeneratorPage from "@/app/generators/circle-generator/CircleGeneratorTool";
+import ShapeGeneratorPage from "@/app/generators/shape-generator/ShapeGeneratorTool";
 
 export default function Page() {
     return (
         <>
             <h1 className="text-3xl font-bold mb-2 mx-auto mt-2 text-center">Minecraft Circle Generator</h1>
             <p className="px-5 mx-auto w-full text-center">Generate pixel perfect circles for minecraft, with many options and utilities.</p>
-            <CircleGeneratorPage />
+            <ShapeGeneratorPage circleOnly={true} />
         </>
     )
 }

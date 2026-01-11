@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import { CircleOptions, isCircleFilled } from "./CircleGenerator";
-import { ThemeName, themes } from "@/app/generators/circle-generator/styling/themes";
-import { CircleGridBackground } from "@/app/generators/circle-generator/styling/CircleGridBackground";
+import { ShapeOptions, isShapeFilled } from "./ShapeGenerator";
+import { ThemeName, themes } from "@/app/generators/shape-generator/styling/themes";
+import { ShapeGridBackground } from "@/app/generators/shape-generator/styling/ShapeGridBackground";
 
 const CELL = 14;
 const GAP = 2;
@@ -18,13 +18,13 @@ interface Group {
 }
 
 interface Props {
-    options: CircleOptions;
+    options: ShapeOptions;
     theme: ThemeName;
     checks: Map<string, boolean>;
     setChecks: React.Dispatch<React.SetStateAction<Map<string, boolean>>>;
 }
 
-export function InteractiveCircleGroups({ options, theme, checks, setChecks }: Props) {
+export function InteractiveShapeGroups({ options, theme, checks, setChecks }: Props) {
     const { width, height } = options;
 
     const [hoveredGroup, setHoveredGroup] = useState<Group | null>(null);
@@ -41,7 +41,7 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
         for (let y = 0; y < height; y++) {
             let run: Cell[] = [];
             for (let x = 0; x < width; x++) {
-                if (isCircleFilled(x, y, options)) run.push({ x, y });
+                if (isShapeFilled(x, y, options)) run.push({ x, y });
                 else if (run.length >= 2) { out.push({ cells: run, orientation: "horizontal" }); run = []; }
                 else run = [];
             }
@@ -52,7 +52,7 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
         for (let x = 0; x < width; x++) {
             let run: Cell[] = [];
             for (let y = 0; y < height; y++) {
-                if (isCircleFilled(x, y, options)) run.push({ x, y });
+                if (isShapeFilled(x, y, options)) run.push({ x, y });
                 else if (run.length >= 2) { out.push({ cells: run, orientation: "vertical" }); run = []; }
                 else run = [];
             }
@@ -113,7 +113,7 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
                 fill={backgroundColor}
             />
 
-            <CircleGridBackground
+            <ShapeGridBackground
                 width={width}
                 height={height}
                 cellSize={CELL}
@@ -126,7 +126,7 @@ export function InteractiveCircleGroups({ options, theme, checks, setChecks }: P
             <g>
                 {Array.from({ length: height }).map((_, y) =>
                     Array.from({ length: width }).map((_, x) => {
-                        if (!isCircleFilled(x, y, options)) return null;
+                        if (!isShapeFilled(x, y, options)) return null;
 
                         const key = `${x},${y}`;
                         const isBuilt = checks.get(key) ?? false;

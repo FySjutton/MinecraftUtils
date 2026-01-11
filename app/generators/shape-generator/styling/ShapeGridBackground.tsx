@@ -1,6 +1,6 @@
-import {CircleOptions, isCircleFilled} from "@/app/generators/circle-generator/CircleGenerator";
+import {ShapeOptions, isShapeFilled} from "@/app/generators/shape-generator/ShapeGenerator";
 import React from "react";
-import {ThemeName, themes} from "@/app/generators/circle-generator/styling/themes";
+import {ThemeName, themes} from "@/app/generators/shape-generator/styling/themes";
 
 interface Props {
     width: number;
@@ -9,10 +9,10 @@ interface Props {
     gap: number;
     theme: ThemeName;
     padding?: number;
-    options: CircleOptions;
+    options: ShapeOptions;
 }
 
-export function CircleGridBackground({ width, height, cellSize, gap, theme, padding = 6, options }: Props) {
+export function ShapeGridBackground({ width, height, cellSize, gap, theme, padding = 6, options }: Props) {
     const totalWidth = width * (cellSize + gap);
     const totalHeight = height * (cellSize + gap);
 
@@ -27,7 +27,7 @@ export function CircleGridBackground({ width, height, cellSize, gap, theme, padd
     // vertical center line
     if (width % 2 === 1) {
         for (let y = 0; y < height; y++) {
-            if (!isCircleFilled(centerX, y, options)) {
+            if (!isShapeFilled(centerX, y, options)) {
                 elements.push(
                     <rect
                         key={`center-col-${centerX}-${y}`}
@@ -59,7 +59,7 @@ export function CircleGridBackground({ width, height, cellSize, gap, theme, padd
 
     if (height % 2 === 1) {
         for (let x = 0; x < width; x++) {
-            if (!isCircleFilled(x, centerY, options)) {
+            if (!isShapeFilled(x, centerY, options)) {
                 elements.push(
                     <rect
                         key={`center-row-${centerY}-${x}`}

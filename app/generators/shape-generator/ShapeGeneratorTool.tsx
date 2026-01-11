@@ -7,21 +7,23 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-import { InteractiveCircleGroups } from "./CircleSvg";
-import { CircleMode, CircleOptions, isCircleFilled } from "./CircleGenerator";
-import { ZoomViewport } from "@/app/generators/circle-generator/ZoomViewport";
+import { InteractiveShapeGroups } from "./ShapeSvg";
+import {ShapeMode, ShapeOptions, isShapeFilled, shapes, Shape} from "./ShapeGenerator";
+import { ZoomViewport } from "@/app/generators/shape-generator/ZoomViewport";
 import { ComboBox } from "@/components/ComboBox";
-import { defaultTheme, ThemeName, themeNames } from "@/app/generators/circle-generator/styling/themes";
+import { defaultTheme, ThemeName, themeNames } from "@/app/generators/shape-generator/styling/themes";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { LucideLock, LucideUnlock } from "lucide-react";
 import {download2DSchematic} from "@/lib/schematics/schematic2d";
 
-export default function CircleGeneratorPage() {
+export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean }) {
+    const [shape, setShape] = useState<Shape>(circleOnly ? "Circle" : "Hexagon");
+
     const [width, setWidth] = useState(15);
     const [height, setHeight] = useState(15);
     const [widthInput, setWidthInput] = useState(`${width}`);
     const [heightInput, setHeightInput] = useState(`${height}`);
-    const [mode, setMode] = useState<CircleMode>("thick");
+    const [mode, setMode] = useState<ShapeMode>("thick");
     const [thickness, setThickness] = useState(1);
     const [thicknessInput, setThicknessInput] = useState(`${thickness}`);
     const [isThicknessValid, setIsThicknessValid] = useState(true);
@@ -32,27 +34,17 @@ export default function CircleGeneratorPage() {
     const MIN_VALUE = 3;
     const [checks, setChecks] = useState<Map<string, boolean>>(new Map());
 
-    const circleOptions: CircleOptions = {
-        width,
-        height,
-        mode,
-        thickness: mode == "thick" ? thickness : undefined,
-    };
+    const shapeOptions: ShapeOptions = useMemo(() => {
+        return { shape, width, height, mode, thickness: mode == "thick" ? thickness : undefined };
+    }, [height, mode, shape, thickness, width]);
 
-    const circleMap = useMemo(() => {
+    const shapeMap = useMemo(() => {
         const newMap = new Map<string, boolean>();
         const oldChecks = new Map(checks);
 
-        const options: CircleOptions = {
-            width,
-            height,
-            mode,
-            thickness: mode == "thick" ? thickness : undefined,
-        };
-
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
-                if (isCircleFilled(x, y, options)) {
+                if (isShapeFilled(x, y, shapeOptions)) {
                     const key = `${x},${y}`;
                     newMap.set(key, oldChecks.get(key) ?? false);
                 }
@@ -60,7 +52,7 @@ export default function CircleGeneratorPage() {
         }
 
         return newMap;
-    }, [width, height, mode, thickness, checks]);
+    }, [checks, height, width, shapeOptions]);
 
     const reset = () => {
         setWidth(15);
@@ -73,6 +65,14 @@ export default function CircleGeneratorPage() {
         setIsThicknessValid(true);
         setChecks(new Map());
     };
+
+    const setLock = (newState: boolean) => {
+        if (newState) {
+            setHeight(width)
+            setHeightInput(widthInput)
+        }
+        setLockRatio(newState);
+    }
 
     const handleWidthChange = (value: string) => {
         setWidthInput(value);
@@ -98,8 +98,8 @@ export default function CircleGeneratorPage() {
         }
     };
 
-    const totalSlots = circleMap.size;
-    const checkedSlots = Array.from(circleMap.values()).filter(v => v).length;
+    const totalSlots = shapeMap.size;
+    const checkedSlots = Array.from(shapeMap.values()).filter(v => v).length;
 
     const exportSchematic = () => {
         const grid: boolean[][] = [];
@@ -108,25 +108,38 @@ export default function CircleGeneratorPage() {
             const row: boolean[] = [];
             for (let x = 0; x < width; x++) {
                 const key = `${x},${y}`;
-                row.push(circleMap.has(key));
+                row.push(shapeMap.has(key));
             }
             grid.push(row);
         }
 
-        download2DSchematic(grid, `minecraftutils_circle.schem`);
+        download2DSchematic(grid, circleOnly ? "minecraftutils_circle.schem" : "minecraftutils_shape.schem");
     };
 
     return (
         <div className="space-y-6">
             <Card>
                 <CardHeader>
-                    <CardTitle>Circle / Ellipse Generator</CardTitle>
+                    <CardTitle>{circleOnly ? "Circle / Ellipse" : "Shape"} Generator</CardTitle>
                     <CardAction>
                         <Button variant="outline" onClick={reset}>Reset</Button>
                         <Button variant="outline" onClick={exportSchematic}>Export Schematic</Button>
                     </CardAction>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                    {!circleOnly && (
+                        <div>
+                            <Label>Shape</Label>
+                            <ComboBox
+                                items={shapes}
+                                value={shape as string}
+                                onChange={(value) => setShape(value as Shape)}
+                                placeholder="Select shape"
+                                className="mt-2"
+                            />
+                        </div>
+                    )}
+
                     <div className="flex items-center space-x-2">
                         <div className="flex-1">
                             <Label>Width</Label>
@@ -138,7 +151,7 @@ export default function CircleGeneratorPage() {
                                 className="mt-2 outline-none"
                             />
                         </div>
-                        <Button type="button" onClick={() => setLockRatio(!lockRatio)} className="mt-6" variant="outline">
+                        <Button type="button" onClick={() => setLock(!lockRatio)} className="mt-6" variant="outline">
                             {lockRatio ? <LucideLock /> : <LucideUnlock />}
                         </Button>
                         <div className="flex-1">
@@ -154,7 +167,7 @@ export default function CircleGeneratorPage() {
                     </div>
 
                     <div className="flex items-center max-[450]:block">
-                        <Tabs value={mode} onValueChange={(v) => setMode(v as CircleMode)} className="mr-2">
+                        <Tabs value={mode} onValueChange={(v) => setMode(v as ShapeMode)} className="mr-2">
                             <TabsList className="max-[450]:w-full">
                                 <TabsTrigger value="thick">Thick</TabsTrigger>
                                 <TabsTrigger value="thin">Thin</TabsTrigger>
@@ -194,7 +207,7 @@ export default function CircleGeneratorPage() {
 
             <Card className="gap-0 pb-0">
                 <CardHeader>
-                    <CardTitle>Circle Output</CardTitle>
+                    <CardTitle>{circleOnly ? "Circle" : "Shape"} Output</CardTitle>
                     <CardAction>
                         <Button variant="outline" onClick={() => setIsFullscreen(true)}>Fullscreen</Button>
                     </CardAction>
@@ -202,7 +215,7 @@ export default function CircleGeneratorPage() {
                 <CardContent className="p-4 w-full">
                     <Card className="gap-0 mb-4">
                         <CardHeader>
-                            <CardTitle>Circle Stats</CardTitle>
+                            <CardTitle>{circleOnly ? "Circle" : "Shape"} Stats</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <p>
@@ -216,10 +229,10 @@ export default function CircleGeneratorPage() {
                         </CardContent>
                     </Card>
                     <ZoomViewport cellWidth={width} cellHeight={height} isFullscreen={isFullscreen} setIsFullscreen={setIsFullscreen}>
-                        <InteractiveCircleGroups
-                            options={circleOptions}
+                        <InteractiveShapeGroups
+                            options={shapeOptions}
                             theme={theme}
-                            checks={circleMap}
+                            checks={shapeMap}
                             setChecks={setChecks}
                         />
                     </ZoomViewport>
