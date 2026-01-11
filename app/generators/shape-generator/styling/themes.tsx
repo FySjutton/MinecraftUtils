@@ -17,7 +17,7 @@ export interface Theme {
 
 export const themes: Record<ThemeName, Theme> = {
     Default: {
-        backgroundColor: "transparent",
+        backgroundColor: "#171717",
         checkedColor: "#9810fa",
         cellColor: "#fb2c36",
         gridLineColor: "rgb(41,41,41)",

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, {useState, useMemo, useRef} from "react";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -15,6 +15,7 @@ import { defaultTheme, ThemeName, themeNames } from "@/app/generators/shape-gene
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { LucideLock, LucideUnlock } from "lucide-react";
 import {download2DSchematic} from "@/lib/schematics/schematic2d";
+import {ExportCard} from "@/app/generators/shape-generator/ExportCard";
 
 export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean }) {
     const [shape, setShape] = useState<Shape>(circleOnly ? "Circle" : "Hexagon");
@@ -33,6 +34,8 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
 
     const MIN_VALUE = 3;
     const [checks, setChecks] = useState<Map<string, boolean>>(new Map());
+
+    const svgRef = useRef<SVGSVGElement>(null);
 
     const shapeOptions: ShapeOptions = useMemo(() => {
         return { shape, width, height, mode, thickness: mode == "thick" ? thickness : undefined };
@@ -101,21 +104,6 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     const totalSlots = shapeMap.size;
     const checkedSlots = Array.from(shapeMap.values()).filter(v => v).length;
 
-    const exportSchematic = () => {
-        const grid: boolean[][] = [];
-
-        for (let y = 0; y < height; y++) {
-            const row: boolean[] = [];
-            for (let x = 0; x < width; x++) {
-                const key = `${x},${y}`;
-                row.push(shapeMap.has(key));
-            }
-            grid.push(row);
-        }
-
-        download2DSchematic(grid, circleOnly ? "minecraftutils_circle.schem" : "minecraftutils_shape.schem");
-    };
-
     return (
         <div className="space-y-6">
             <Card>
@@ -123,7 +111,6 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                     <CardTitle>{circleOnly ? "Circle / Ellipse" : "Shape"} Generator</CardTitle>
                     <CardAction>
                         <Button variant="outline" onClick={reset}>Reset</Button>
-                        <Button variant="outline" onClick={exportSchematic}>Export Schematic</Button>
                     </CardAction>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -202,6 +189,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                             className="mt-2"
                         />
                     </div>
+                    <ExportCard shapeMap={shapeMap} width={width} height={height} circleOnly={circleOnly} svgRef={svgRef} />
                 </CardContent>
             </Card>
 
@@ -230,6 +218,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                     </Card>
                     <ZoomViewport cellWidth={width} cellHeight={height} isFullscreen={isFullscreen} setIsFullscreen={setIsFullscreen}>
                         <InteractiveShapeGroups
+                            ref={svgRef}
                             options={shapeOptions}
                             theme={theme}
                             checks={shapeMap}

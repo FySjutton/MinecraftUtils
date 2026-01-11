@@ -1,15 +1,19 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
-import { ShapeOptions, isShapeFilled } from "./ShapeGenerator";
-import { ThemeName, themes } from "@/app/generators/shape-generator/styling/themes";
-import { ShapeGridBackground } from "@/app/generators/shape-generator/styling/ShapeGridBackground";
+import React, {useState, useMemo, forwardRef} from "react";
+import {ShapeOptions, isShapeFilled} from "./ShapeGenerator";
+import {ThemeName, themes} from "@/app/generators/shape-generator/styling/themes";
+import {ShapeGridBackground} from "@/app/generators/shape-generator/styling/ShapeGridBackground";
 
 const CELL = 14;
 const GAP = 2;
 const PADDING = 6;
 
-interface Cell { x: number; y: number; }
+interface Cell {
+    x: number;
+    y: number;
+}
+
 type Orientation = "horizontal" | "vertical";
 
 interface Group {
@@ -18,19 +22,20 @@ interface Group {
 }
 
 interface Props {
-    options: ShapeOptions;
-    theme: ThemeName;
-    checks: Map<string, boolean>;
-    setChecks: React.Dispatch<React.SetStateAction<Map<string, boolean>>>;
+    options: ShapeOptions,
+    theme: ThemeName,
+    checks: Map<string, boolean>,
+    setChecks: React.Dispatch<React.SetStateAction<Map<string, boolean>>>,
+    ref?: React.RefObject<SVGSVGElement>
 }
 
-export function InteractiveShapeGroups({ options, theme, checks, setChecks }: Props) {
-    const { width, height } = options;
+export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ options, theme, checks, setChecks }, ref) => {
+    const {width, height} = options;
 
     const [hoveredGroup, setHoveredGroup] = useState<Group | null>(null);
     const [hoveredCell, setHoveredCell] = useState<Cell | null>(null);
 
-    const { backgroundColor, checkedColor, cellColor, borderColor, textColor, pattern } = themes[theme];
+    const {backgroundColor, checkedColor, cellColor, borderColor, textColor, pattern} = themes[theme];
 
     // Precompute groups for “thin” / “thick” modes
     const groups = useMemo<Group[]>(() => {
@@ -41,22 +46,26 @@ export function InteractiveShapeGroups({ options, theme, checks, setChecks }: Pr
         for (let y = 0; y < height; y++) {
             let run: Cell[] = [];
             for (let x = 0; x < width; x++) {
-                if (isShapeFilled(x, y, options)) run.push({ x, y });
-                else if (run.length >= 2) { out.push({ cells: run, orientation: "horizontal" }); run = []; }
-                else run = [];
+                if (isShapeFilled(x, y, options)) run.push({x, y});
+                else if (run.length >= 2) {
+                    out.push({cells: run, orientation: "horizontal"});
+                    run = [];
+                } else run = [];
             }
-            if (run.length >= 2) out.push({ cells: run, orientation: "horizontal" });
+            if (run.length >= 2) out.push({cells: run, orientation: "horizontal"});
         }
 
         // vertical runs
         for (let x = 0; x < width; x++) {
             let run: Cell[] = [];
             for (let y = 0; y < height; y++) {
-                if (isShapeFilled(x, y, options)) run.push({ x, y });
-                else if (run.length >= 2) { out.push({ cells: run, orientation: "vertical" }); run = []; }
-                else run = [];
+                if (isShapeFilled(x, y, options)) run.push({x, y});
+                else if (run.length >= 2) {
+                    out.push({cells: run, orientation: "vertical"});
+                    run = [];
+                } else run = [];
             }
-            if (run.length >= 2) out.push({ cells: run, orientation: "vertical" });
+            if (run.length >= 2) out.push({cells: run, orientation: "vertical"});
         }
 
         return out;
@@ -97,6 +106,7 @@ export function InteractiveShapeGroups({ options, theme, checks, setChecks }: Pr
 
     return (
         <svg
+            ref={ref}
             viewBox={`0 0 ${(CELL + GAP) * width + 2 * PADDING} ${(CELL + GAP) * height + 2 * PADDING}`}
             width="100%"
             height="100%"
@@ -124,8 +134,8 @@ export function InteractiveShapeGroups({ options, theme, checks, setChecks }: Pr
             />
 
             <g>
-                {Array.from({ length: height }).map((_, y) =>
-                    Array.from({ length: width }).map((_, x) => {
+                {Array.from({length: height}).map((_, y) =>
+                    Array.from({length: width}).map((_, x) => {
                         if (!isShapeFilled(x, y, options)) return null;
 
                         const key = `${x},${y}`;
@@ -147,9 +157,18 @@ export function InteractiveShapeGroups({ options, theme, checks, setChecks }: Pr
                                     stroke={borderColor ?? "transparent"}
                                     strokeWidth={borderColor ? 1 : 0}
                                     onClick={() => toggleCell(x, y)}
-                                    onMouseEnter={() => { setHoveredCell({ x, y }); setHoveredGroup(gGroup); }}
-                                    onMouseLeave={() => { setHoveredCell(null); setHoveredGroup(null); }}
-                                    onContextMenu={e => { e.preventDefault(); if (gGroup) toggleGroup(gGroup); }}
+                                    onMouseEnter={() => {
+                                        setHoveredCell({x, y});
+                                        setHoveredGroup(gGroup);
+                                    }}
+                                    onMouseLeave={() => {
+                                        setHoveredCell(null);
+                                        setHoveredGroup(null);
+                                    }}
+                                    onContextMenu={e => {
+                                        e.preventDefault();
+                                        if (gGroup) toggleGroup(gGroup);
+                                    }}
                                 />
 
                                 {pattern && (
@@ -194,4 +213,6 @@ export function InteractiveShapeGroups({ options, theme, checks, setChecks }: Pr
             </g>
         </svg>
     );
-}
+});
+
+InteractiveShapeGroups.displayName = "InteractiveShapeGroups";

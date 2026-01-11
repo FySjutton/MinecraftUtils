@@ -14,7 +14,8 @@ function encodeVarInt(v: number): Uint8Array {
 
 export function download2DSchematic(
     shape: boolean[][],
-    filename = 'shape.schem'
+    filename = 'shape.schem',
+    block = "minecraft:stone"
 ): void {
     const height = 1;
     const length = shape.length;
@@ -52,7 +53,7 @@ export function download2DSchematic(
 
             Blocks: {
                 Palette: {
-                    'minecraft:stone': 0,
+                    [block]: 0,
                     'minecraft:air': 1
                 },
                 Data: NBT.byteArray(varInts),

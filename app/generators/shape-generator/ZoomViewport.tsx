@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useLayoutEffect, useMemo, useRef, useState } from "react";
+import React, {useEffect, useLayoutEffect, useMemo, useRef, useState} from "react";
 import { TransformComponent, TransformWrapper } from "react-zoom-pan-pinch";
 import { Card, CardHeader, CardTitle, CardContent, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -98,6 +98,21 @@ export function ZoomViewport({ children, cellWidth, cellHeight, isFullscreen, se
         const [fsWidth, setFsWidth] = useState<number>(0);
         const [fsHeight, setFsHeight] = useState<number>(0);
 
+        useEffect(() => {
+            if (!isFullscreen) return;
+
+            const handleKeyDown = (e: KeyboardEvent) => {
+                if (e.key === "Escape") {
+                    setIsFullscreen(false);
+                }
+            };
+
+            window.addEventListener("keydown", handleKeyDown);
+            return () => {
+                window.removeEventListener("keydown", handleKeyDown);
+            };
+        }, []);
+        
         useLayoutEffect(() => {
             const update = () => {
                 if (fullscreenRef.current) {
