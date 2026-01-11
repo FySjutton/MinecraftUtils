@@ -1,9 +1,9 @@
-import {HexagonGenerator} from "@/app/generators/shape-generator/generators/HexagonGenerator";
 import {CircleGenerator} from "@/app/generators/shape-generator/generators/CircleGenerator";
+import {PolygonGenerator} from "@/app/generators/shape-generator/generators/PolygonGenerator";
 
 export type ShapeMode = "filled" | "thin" | "thick";
 
-export const shapes: string[] = ["Circle", "Hexagon"];
+export const shapes: string[] = ["Circle", "Hexagon", "Polygon"];
 export type Shape = (typeof shapes)[number];
 
 export interface ShapeOptions {
@@ -12,6 +12,7 @@ export interface ShapeOptions {
     height: number;
     mode: ShapeMode;
     thickness?: number;
+    sides?: number;
 }
 
 export interface ShapeGenerator {
@@ -20,7 +21,8 @@ export interface ShapeGenerator {
 
 const generators: Record<Shape, ShapeGenerator> = {
     Circle: CircleGenerator,
-    Hexagon: HexagonGenerator,
+    Hexagon: PolygonGenerator,
+    Polygon: PolygonGenerator,
 };
 
 export function isShapeFilled(x: number, y: number, opts: ShapeOptions & { shape: Shape }) {

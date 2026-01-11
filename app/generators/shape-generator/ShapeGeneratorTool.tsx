@@ -14,14 +14,13 @@ import { ComboBox } from "@/components/ComboBox";
 import { defaultTheme, ThemeName, themeNames } from "@/app/generators/shape-generator/styling/themes";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { LucideLock, LucideUnlock } from "lucide-react";
-import {download2DSchematic} from "@/lib/schematics/schematic2d";
 import {ExportCard} from "@/app/generators/shape-generator/ExportCard";
 
 export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean }) {
     const [shape, setShape] = useState<Shape>(circleOnly ? "Circle" : "Hexagon");
-
-    const [width, setWidth] = useState(15);
-    const [height, setHeight] = useState(15);
+    const [sides, setSides] = useState(6);
+    const [width, setWidth] = useState(shape == "Polygon" ? 45 : 15);
+    const [height, setHeight] = useState(shape == "Polygon" ? 45 : 15);
     const [widthInput, setWidthInput] = useState(`${width}`);
     const [heightInput, setHeightInput] = useState(`${height}`);
     const [mode, setMode] = useState<ShapeMode>("thick");
@@ -31,6 +30,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     const [theme, setTheme] = useState<ThemeName>(defaultTheme);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [lockRatio, setLockRatio] = useState(true);
+    const [sidesInput, setSidesInput] = useState(`${sides}`);
 
     const MIN_VALUE = 3;
     const [checks, setChecks] = useState<Map<string, boolean>>(new Map());
@@ -38,8 +38,8 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     const svgRef = useRef<SVGSVGElement>(null);
 
     const shapeOptions: ShapeOptions = useMemo(() => {
-        return { shape, width, height, mode, thickness: mode == "thick" ? thickness : undefined };
-    }, [height, mode, shape, thickness, width]);
+        return { shape, width, height, mode, thickness: mode == "thick" ? thickness : undefined, sides };
+    }, [height, mode, shape, sides, thickness, width]);
 
     const shapeMap = useMemo(() => {
         const newMap = new Map<string, boolean>();
@@ -62,12 +62,20 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
         setHeight(15);
         setWidthInput("15");
         setHeightInput("15");
+        setSidesInput("6");
+        setSides(6);
         setMode("thick");
         setThickness(1);
         setThicknessInput("1");
         setIsThicknessValid(true);
         setChecks(new Map());
     };
+
+    const setShapeAction = (shape: Shape) => {
+        setShape(shape);
+        setHeight(shape == "Polygon" ? 45 : 15);
+        setWidth(shape == "Polygon" ? 45 : 15);
+    }
 
     const setLock = (newState: boolean) => {
         if (newState) {
@@ -101,6 +109,14 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
         }
     };
 
+    const handleSidesChange = (value: string) => {
+        setSidesInput(value);
+        const num = parseInt(value, 10);
+        if (!isNaN(num) && num >= 3) {
+            setSides(num);
+        }
+    };
+
     const totalSlots = shapeMap.size;
     const checkedSlots = Array.from(shapeMap.values()).filter(v => v).length;
 
@@ -120,13 +136,25 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                             <ComboBox
                                 items={shapes}
                                 value={shape as string}
-                                onChange={(value) => setShape(value as Shape)}
+                                onChange={(value) => setShapeAction(value as Shape)}
                                 placeholder="Select shape"
                                 className="mt-2"
                             />
                         </div>
                     )}
 
+                    {shape == "Polygon" && (
+                        <div className="flex-1">
+                            <Label>Sides</Label>
+                            <Input
+                                type="text"
+                                value={sides}
+                                onChange={(e) => handleSidesChange(e.target.value)}
+                                placeholder={`3+`}
+                                className="mt-2 outline-none"
+                            />
+                        </div>
+                    )}
                     <div className="flex items-center space-x-2">
                         <div className="flex-1">
                             <Label>Width</Label>

@@ -26,6 +26,14 @@ export function ExportCard({ shapeMap, width, height, circleOnly, svgRef }: Expo
     const [pngScaleName, setPngScaleName] = useState("Medium");
     const [pngScale, setPngScale] = useState(20);
 
+    const openPopup = () => {
+        setIsOpen(true);
+        setPngScale(20)
+        setPngScaleName("Medium");
+        setExportType(exports[0]);
+        setBlockName("minecraft:stone");
+    }
+
     useEffect(() => {
         if (!isOpen) return;
 
@@ -74,6 +82,8 @@ export function ExportCard({ shapeMap, width, height, circleOnly, svgRef }: Expo
 
             if (exportType === "PNG") {
                 const canvas = document.createElement("canvas");
+                const size = Math.max(width, height)
+                setPngScale(Math.floor(pngScaleName == "Low" ? Math.min(20, 500 / size) : (pngScaleName == "Medium" ? Math.min(45, 1000 / size) : Math.min(70, 2500 / size))));
                 canvas.width = width * pngScale;
                 canvas.height = height * pngScale;
                 const ctx = canvas.getContext("2d");
@@ -103,7 +113,7 @@ export function ExportCard({ shapeMap, width, height, circleOnly, svgRef }: Expo
 
     return (
         <div className="w-full flex justify-center mt-8">
-            <Button variant="outline" onClick={() => setIsOpen(true)} className="w-full max-w-[500]">
+            <Button variant="outline" onClick={() => openPopup()} className="w-full max-w-[500]">
                 Export
             </Button>
 
