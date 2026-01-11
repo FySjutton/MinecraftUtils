@@ -14,8 +14,7 @@ import { ComboBox } from "@/components/ComboBox";
 import { defaultTheme, ThemeName, themeNames } from "@/app/generators/circle-generator/styling/themes";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { LucideLock, LucideUnlock } from "lucide-react";
-import { jsonToNBT } from "json-to-nbt";
-import {downloadSimple1x1Schematic} from "@/app/generators/circle-generator/LitematicGenerator";
+import {download2DSchematic} from "@/lib/schematics/schematic2d";
 
 export default function CircleGeneratorPage() {
     const [width, setWidth] = useState(15);
@@ -102,62 +101,19 @@ export default function CircleGeneratorPage() {
     const totalSlots = circleMap.size;
     const checkedSlots = Array.from(circleMap.values()).filter(v => v).length;
 
-    // ============================
-    // Litematica Export Function
-    // ============================
-    const exportLitematica = () => {
-        // Convert circleMap to 2D array
-        const array2D: boolean[][] = [];
+    const exportSchematic = () => {
+        const grid: boolean[][] = [];
+
         for (let y = 0; y < height; y++) {
             const row: boolean[] = [];
             for (let x = 0; x < width; x++) {
-                row.push(circleMap.get(`${x},${y}`) ?? false);
+                const key = `${x},${y}`;
+                row.push(circleMap.has(key));
             }
-            array2D.push(row);
+            grid.push(row);
         }
 
-        const palette: Record<string, number> = {
-            "minecraft:stone": 0,
-            "minecraft:air": 1,
-        };
-
-        const blockData: number[] = [];
-        for (let z = 0; z < height; z++) {
-            for (let yLayer = 0; yLayer < 1; yLayer++) {
-                for (let x = 0; x < width; x++) {
-                    blockData.push(array2D[z][x] ? 0 : 1);
-                }
-            }
-        }
-
-        const schemNbt = {
-            "": {
-                Version: 2,
-                Width: width,
-                Height: 1,
-                Length: height,
-                Palette: palette,
-                BlockData: blockData,
-            },
-        };
-
-        const nbtData = jsonToNBT(schemNbt);
-
-        // Convert to real ArrayBuffer for Blob
-        let arrayBuffer: ArrayBuffer;
-        if ("buffer" in nbtData) {
-            arrayBuffer = nbtData.buffer as ArrayBuffer;
-        } else {
-            arrayBuffer = nbtData as unknown as ArrayBuffer;
-        }
-
-        const blob = new Blob([arrayBuffer], { type: "application/octet-stream" });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = "circle.schem";
-        a.click();
-        URL.revokeObjectURL(url);
+        download2DSchematic(grid, `minecraftutils_circle.schem`);
     };
 
     return (
@@ -167,8 +123,7 @@ export default function CircleGeneratorPage() {
                     <CardTitle>Circle / Ellipse Generator</CardTitle>
                     <CardAction>
                         <Button variant="outline" onClick={reset}>Reset</Button>
-                        <Button variant="outline" onClick={exportLitematica}>Export Litematica</Button>
-                        <Button variant="outline" onClick={() => downloadSimple1x1Schematic()}>test</Button>
+                        <Button variant="outline" onClick={exportSchematic}>Export Schematic</Button>
                     </CardAction>
                 </CardHeader>
                 <CardContent className="space-y-4">
