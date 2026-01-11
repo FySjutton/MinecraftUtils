@@ -25,29 +25,25 @@ export function isCircleFilled(x: number, y: number, opts: CircleOptions): boole
 
     if (opts.mode === "filled") return true;
 
-    const t = opts.thickness ?? 1;
-
     if (opts.mode === "thin") {
-        const surrounded =
-            Array.from({ length: t }, (_, i) => i + 1).every(d =>
-                insideEllipse(cx + d, cy, rx, ry) && insideEllipse(cx - d, cy, rx, ry)
-            ) &&
-            Array.from({ length: t }, (_, i) => i + 1).every(d =>
-                insideEllipse(cx, cy + d, rx, ry) && insideEllipse(cx, cy - d, rx, ry)
-            );
-        return inside && !surrounded;
+        const up = insideEllipse(cx, cy - 1, rx, ry);
+        const down = insideEllipse(cx, cy + 1, rx, ry);
+        const left = insideEllipse(cx - 1, cy, rx, ry);
+        const right = insideEllipse(cx + 1, cy, rx, ry);
+
+        const fullySurrounded = up && down && left && right;
+        return inside && !fullySurrounded;
     }
 
     if (opts.mode === "thick") {
-        const neighbors: [number, number][] = [];
-        for (let dx = -t; dx <= t; dx++) {
-            for (let dy = -t; dy <= t; dy++) {
-                if (dx === 0 && dy === 0) continue;
-                neighbors.push([dx, dy]);
-            }
-        }
-        const surrounded = neighbors.every(([dx, dy]) => insideEllipse(cx + dx, cy + dy, rx, ry));
-        return inside && !surrounded;
+        const t = Math.max(1, Math.floor(opts.thickness ?? 1));
+        const maxR = Math.max(rx, ry);
+
+        const distNorm = Math.sqrt((cx * cx) / (rx * rx) + (cy * cy) / (ry * ry));
+        if (distNorm > 1) return false;
+
+        const inwardPx = (1 - distNorm) * maxR;
+        return inwardPx >= 0 && inwardPx < t;
     }
 
     return false;

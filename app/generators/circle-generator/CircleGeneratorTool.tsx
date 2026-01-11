@@ -36,7 +36,7 @@ export default function CircleGeneratorPage() {
         width,
         height,
         mode,
-        thickness: mode !== "filled" ? thickness : undefined,
+        thickness: mode == "thick" ? thickness : undefined,
     };
 
     const circleMap = useMemo(() => {
@@ -47,7 +47,7 @@ export default function CircleGeneratorPage() {
             width,
             height,
             mode,
-            thickness: mode !== "filled" ? thickness : undefined,
+            thickness: mode == "thick" ? thickness : undefined,
         };
 
         for (let y = 0; y < height; y++) {
@@ -161,7 +161,7 @@ export default function CircleGeneratorPage() {
                                 <TabsTrigger value="filled">Filled</TabsTrigger>
                             </TabsList>
                         </Tabs>
-                        {mode !== "filled" && (
+                        {mode == "thick" && (
                             <InputGroup className="max-[450]:mt-2">
                                 <InputGroupInput
                                     type="text"
@@ -169,7 +169,7 @@ export default function CircleGeneratorPage() {
                                     onChange={(e) => {
                                         setThicknessInput(e.target.value);
                                         const num = parseInt(e.target.value, 10);
-                                        if (!isNaN(num) && num >= MIN_VALUE) setThickness(num);
+                                        if (!isNaN(num) && num >= 1) setThickness(num);
                                     }}
                                     placeholder="1+"
                                     className={`outline-none ${isThicknessValid ? "" : "border-red-500 border-2"}`}
