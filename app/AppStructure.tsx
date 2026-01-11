@@ -20,7 +20,7 @@ import {
     IconUser, IconWand
 } from "@tabler/icons-react";
 import {SlidersVertical} from "lucide-react";
-import Image from "next/image";
+import {IconImage} from "@/components/IconImage";
 
 export interface PageItem {
     name: string
@@ -40,9 +40,9 @@ export interface ToolCategory {
     pages: PageItem[]
 }
 
-export const renderIcon = (icon: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string) => {
+export const renderIcon = (icon: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string, size: number = 28) => {
     if (!icon) return null
-    if (typeof icon === "string") return <span>{icon}</span>
+    if (typeof icon === "string") return <IconImage name={icon} size={size} />
     if (React.isValidElement(icon)) return icon
     if (typeof icon === "function") return React.createElement(icon, { className: "size-4" })
     return null
@@ -59,18 +59,6 @@ function getPage(categories: ToolCategory[], pageName: string): PageItem {
         }
     }
     throw new Error(`Page "${pageName}" not found in any category`)
-}
-
-function getImage(name: string) {
-    return <span className="flex items-center shrink-0 h-[28] w-[28]">
-        <Image
-          src={`/assets/icons/${name}.png`}
-          alt={name}
-          width={32}
-          height={32}
-          className="object-contain image-pixelated"
-        />
-    </span>
 }
 
 interface PageWithCategory extends PageItem {
@@ -90,10 +78,6 @@ export function getCurrentPage(pathname: string) {
     );
 }
 
-export const navMain: PageItem[] = [
-    { name: "Home", url: "/", icon: <IconHome /> },
-]
-
 export const tools: ToolCategory[] = [
     {
         name: "Calculators",
@@ -101,9 +85,9 @@ export const tools: ToolCategory[] = [
         url: "/calculators",
         defaultOpen: true,
         pages: [
-            { name: "Unit Calculator", url: "units", icon: getImage("shulkerbox"), description: "Convert units and measurements quickly." },
-            { name: "XP to Level Calculator", url: "experience", icon: getImage("xp-bottle"), description: "Calculate how much XP each level is through an interactive experience bar." },
-            { name: "Coordinate Calculator", url: "coordinate-calculator", icon: getImage("filled_map"), description: "Convert coordinates between the overworld, chunks, regions as well as nether coordinates." },
+            { name: "Unit Calculator", url: "units", icon: "shulkerbox", description: "Convert units and measurements quickly." },
+            { name: "XP to Level Calculator", url: "experience", icon: "xp-bottle", description: "Calculate how much XP each level is through an interactive experience bar." },
+            { name: "Coordinate Calculator", url: "coordinate-calculator", icon: "filled_map", description: "Convert coordinates between the overworld, chunks, regions as well as nether coordinates." },
         ],
     },
     {
@@ -112,10 +96,10 @@ export const tools: ToolCategory[] = [
         url: "/generators",
         defaultOpen: true,
         pages: [
-            { name: "Beacon Generator", url: "beacon-color", icon: getImage("beacon"), description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
-            { name: "Circle Generator", url: "circle-generator", icon: getImage("circle-generator"), description: "Generate pixel perfect circles for minecraft.", type: "alpha" },
-            { name: "Sign Generator", url: "sign-generator", icon: getImage("sign"), description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
-            { name: "Motd Creator", url: "motd-creator", icon: getImage("motd"), description: "Generate server motds through an interactive editor." },
+            { name: "Beacon Generator", url: "beacon-color", icon: "beacon", description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
+            { name: "Circle Generator", url: "circle-generator", icon: "circle-generator", description: "Generate pixel perfect circles for minecraft.", type: "beta" },
+            { name: "Sign Generator", url: "sign-generator", icon: "sign", description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
+            { name: "Motd Creator", url: "motd-creator", icon: "motd", description: "Generate server motds through an interactive editor." },
         ],
     },
     {
@@ -124,10 +108,10 @@ export const tools: ToolCategory[] = [
         url: "/references",
         defaultOpen: true,
         pages: [
-            { name: "Daylight Cycle", url: "daylight-cycle", icon: getImage("sun"), description: "Interactive daylight cycle viewer, with video, daylight detector output, and time converter." },
-            { name: "Potion Brewing", url: "potion-brewing", icon: getImage("potion"), description: "View instructions how to brew a specific potion.", type: "beta" },
-            { name: "Inventory Slots", url: "inventory-slots", icon: getImage("chest"), description: "Visual guide to inventory slot positions." },
-            { name: "Color Codes", url: "color-codes", icon: getImage("colors"), description: "A list of all formatting codes in Minecraft." },
+            { name: "Daylight Cycle", url: "daylight-cycle", icon: "sun", description: "Interactive daylight cycle viewer, with video, daylight detector output, and time converter." },
+            { name: "Potion Brewing", url: "potion-brewing", icon: "potion", description: "View instructions how to brew a specific potion.", type: "beta" },
+            { name: "Inventory Slots", url: "inventory-slots", icon: "chest", description: "Visual guide to inventory slot positions." },
+            { name: "Color Codes", url: "color-codes", icon: "colors", description: "A list of all formatting codes in Minecraft." },
         ],
     },
 ]
@@ -177,9 +161,11 @@ export const externals: ToolCategory[] = [
 ]
 
 export const featuredHomePage: PageItem[] = [
+    getPage(tools, "Circle Generator"),
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
     getPage(tools, "Beacon Generator"),
+    getPage(tools, "Potion Brewing"),
     getPage(tools, "Sign Generator"),
     getPage(tools, "Coordinate Calculator"),
     getPage(tools, "Daylight Cycle"),
@@ -196,12 +182,14 @@ export const featuredCalculators: PageItem[] = [
 
 export const featuredGenerators: PageItem[] = [
     getPage(tools, "Beacon Generator"),
+    getPage(tools, "Circle Generator"),
     getPage(tools, "Sign Generator"),
     getPage(tools, "Motd Creator"),
 ]
 
 export const featuredReferences: PageItem[] = [
     getPage(tools, "Daylight Cycle"),
+    getPage(tools, "Potion Brewing"),
     getPage(tools, "Inventory Slots"),
     getPage(tools, "Color Codes"),
 ]

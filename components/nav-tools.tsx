@@ -21,8 +21,9 @@ import {Badge} from "@/components/ui/badge";
 import {renderIcon, ToolCategory} from "@/app/AppStructure";
 import {IconChevronRight, IconExternalLink} from "@tabler/icons-react";
 
-export function NavTools({tools, activeCategory, activePage, title}: {
+export function NavTools({tools, search, activeCategory, activePage, title}: {
     tools: ToolCategory[];
+    search: string;
     activeCategory?: string;
     activePage?: string;
     title?: string;
@@ -53,11 +54,12 @@ export function NavTools({tools, activeCategory, activePage, title}: {
                             !tool.pages.some((p) => p.url === activePage);
 
                         const isOpen = openCategories[tool.name] ?? false;
+                        const pages = tool.pages.filter(page => page.name.toLowerCase().includes(search ? search.toLowerCase() : ""));
 
                         return (
                             <SidebarMenuItem key={tool.name}>
                                 <Collapsible open={isOpen} onOpenChange={() => toggleCategory(tool.name)}>
-                                    <div className="flex items-center">
+                                    <div className="flex items-center mb-1">
                                         <SidebarMenuButton asChild isActive={isCategoryBold}>
                                             <Link
                                                 href={tool.external ? "#" : tool.url}
@@ -72,7 +74,7 @@ export function NavTools({tools, activeCategory, activePage, title}: {
                                             </Link>
                                         </SidebarMenuButton>
 
-                                        {tool.pages.length > 0 && (
+                                        {pages.length > 0 && (
                                             <CollapsibleTrigger asChild>
                                                 <SidebarMenuAction
                                                     className="data-[state=open]:rotate-90"
@@ -84,10 +86,10 @@ export function NavTools({tools, activeCategory, activePage, title}: {
                                         )}
                                     </div>
 
-                                    {tool.pages.length > 0 && (
+                                    {pages.length > 0 && (
                                         <CollapsibleContent>
                                             <SidebarMenuSub>
-                                                {tool.pages
+                                                {pages
                                                     .slice()
                                                     .sort((a, b) => {
                                                         const order = { undefined: 0, released: 0, beta: 1, alpha: 2 };
