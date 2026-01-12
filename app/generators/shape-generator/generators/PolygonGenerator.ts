@@ -1,22 +1,6 @@
 import { ShapeGenerator } from "@/app/generators/shape-generator/ShapeGenerator";
-
-function degToRad(deg: number) {
-    return (deg * Math.PI) / 180;
-}
-
-function pointInPolygon(px: number, py: number, poly: [number, number][]) {
-    let inside = false;
-    const EPS = 1e-9;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-        const [xi, yi] = poly[i];
-        const [xj, yj] = poly[j];
-        const intersectsY = (yi <= py && py < yj) || (yj <= py && py < yi);
-        if (!intersectsY) continue;
-        const xIntersect = xi + ((xj - xi) * (py - yi)) / (yj - yi);
-        if (px < xIntersect - EPS) inside = !inside;
-    }
-    return inside;
-}
+import {degToRad, pointInPolygon} from "@/app/generators/shape-generator/generators/utils";
+import {CircleOptions, PolygonOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
 function regularPolygonVerts(
     sides: number,
@@ -68,15 +52,13 @@ function regularPolygonVerts(
     return rotated.map(([x, y]) => [x - offsetX, y - offsetY] as [number, number]);
 }
 
-export const PolygonGenerator: ShapeGenerator = {
+export const PolygonGenerator: ShapeGenerator<PolygonOptions> = ({
     isFilled: (x, y, opts) => {
-        const sides = opts.shape === "Hexagon" ? 6 : Math.max(3, Math.floor(opts.sides ?? 6));
+        const px = x + 0.5 - opts.size / 2;
+        const py = y + 0.5 - opts.size / 2;
 
-        const px = x + 0.5 - opts.width / 2;
-        const py = y + 0.5 - opts.height / 2;
-
-        if (opts.width <= 1 || opts.height <= 1) return Math.abs(px) < 0.5 && Math.abs(py) < 0.5;
-        const verts = regularPolygonVerts(sides, opts.width, opts.height, opts.rotation ?? 0);
+        if (opts.size <= 1 || opts.size <= 1) return Math.abs(px) < 0.5 && Math.abs(py) < 0.5;
+        const verts = regularPolygonVerts(opts.sides, opts.size, opts.size, opts.rotation ?? 0);
 
         if (!pointInPolygon(px, py, verts)) return false;
 
@@ -90,4 +72,4 @@ export const PolygonGenerator: ShapeGenerator = {
         }
         return false;
     },
-};
+});

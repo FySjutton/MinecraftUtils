@@ -1,9 +1,10 @@
 "use client";
 
 import React, {useState, useMemo, forwardRef} from "react";
-import {ShapeOptions, isShapeFilled} from "./ShapeGenerator";
+import {isShapeFilled, Shape} from "./ShapeGenerator";
 import {ThemeName, themes} from "@/app/generators/shape-generator/styling/themes";
 import {ShapeGridBackground} from "@/app/generators/shape-generator/styling/ShapeGridBackground";
+import {ShapeOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
 const CELL = 14;
 const GAP = 2;
@@ -22,6 +23,7 @@ interface Group {
 }
 
 interface Props {
+    shape: Shape;
     options: ShapeOptions,
     theme: ThemeName,
     checks: Map<string, boolean>,
@@ -29,7 +31,7 @@ interface Props {
     ref?: React.RefObject<SVGSVGElement>
 }
 
-export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ options, theme, checks, setChecks }, ref) => {
+export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape, options, theme, checks, setChecks }, ref) => {
     const {width, height} = options;
 
     const [hoveredGroup, setHoveredGroup] = useState<Group | null>(null);
@@ -46,7 +48,7 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ option
         for (let y = 0; y < height; y++) {
             let run: Cell[] = [];
             for (let x = 0; x < width; x++) {
-                if (isShapeFilled(x, y, options)) run.push({x, y});
+                if (isShapeFilled(x, y, shape, options)) run.push({x, y});
                 else if (run.length >= 2) {
                     out.push({cells: run, orientation: "horizontal"});
                     run = [];
@@ -59,7 +61,7 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ option
         for (let x = 0; x < width; x++) {
             let run: Cell[] = [];
             for (let y = 0; y < height; y++) {
-                if (isShapeFilled(x, y, options)) run.push({x, y});
+                if (isShapeFilled(x, y, shape, options)) run.push({x, y});
                 else if (run.length >= 2) {
                     out.push({cells: run, orientation: "vertical"});
                     run = [];
@@ -69,7 +71,7 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ option
         }
 
         return out;
-    }, [options, width, height]);
+    }, [options, height, width, shape]);
 
     const cellToGroup = useMemo(() => {
         const map = new Map<string, Group>();
@@ -136,7 +138,7 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ option
             <g>
                 {Array.from({length: height}).map((_, y) =>
                     Array.from({length: width}).map((_, x) => {
-                        if (!isShapeFilled(x, y, options)) return null;
+                        if (!isShapeFilled(x, y, shape, options)) return null;
 
                         const key = `${x},${y}`;
                         const isBuilt = checks.get(key) ?? false;
