@@ -11,6 +11,7 @@ export interface ShapeOptions {
     width: number;
     height: number;
     mode: ShapeMode;
+    rotation: number;
     thickness?: number;
     sides?: number;
 }

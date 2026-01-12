@@ -76,7 +76,7 @@ export default function CoordinateCalculatorTool() {
                 return { x: values[0], y: values[1], z: values[2] };
             }
             return { x: "0", y: "63", z: "0" };
-        }
+        }, {defaultValue: { x: "0", y: "63", z: "0" }}
     );
 
     useEffect(() => {

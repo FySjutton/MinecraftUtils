@@ -64,6 +64,7 @@ export function InputField({
                 <InputGroupInput
                     value={value}
                     onChange={handleChange}
+                    className="outline-none"
                     {...props}
                 />
                 {showCopy && (

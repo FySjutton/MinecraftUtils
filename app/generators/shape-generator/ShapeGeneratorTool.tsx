@@ -15,6 +15,13 @@ import { defaultTheme, ThemeName, themeNames } from "@/app/generators/shape-gene
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { LucideLock, LucideUnlock } from "lucide-react";
 import {ExportCard} from "@/app/generators/shape-generator/ExportCard";
+import {
+    AngleSlider,
+    AngleSliderRange,
+    AngleSliderThumb,
+    AngleSliderTrack,
+    AngleSliderValue
+} from "@/components/ui/angle-slider";
 
 export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean }) {
     const [shape, setShape] = useState<Shape>(circleOnly ? "Circle" : "Hexagon");
@@ -31,6 +38,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [lockRatio, setLockRatio] = useState(true);
     const [sidesInput, setSidesInput] = useState(`${sides}`);
+    const [rotation, setRotation] = useState(0);
 
     const MIN_VALUE = 3;
     const [checks, setChecks] = useState<Map<string, boolean>>(new Map());
@@ -38,8 +46,8 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     const svgRef = useRef<SVGSVGElement>(null);
 
     const shapeOptions: ShapeOptions = useMemo(() => {
-        return { shape, width, height, mode, thickness: mode == "thick" ? thickness : undefined, sides };
-    }, [height, mode, shape, sides, thickness, width]);
+        return { shape, width, height, mode, rotation, thickness: mode == "thick" ? thickness : undefined, sides };
+    }, [height, mode, rotation, shape, sides, thickness, width]);
 
     const shapeMap = useMemo(() => {
         const newMap = new Map<string, boolean>();
@@ -72,9 +80,14 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     };
 
     const setShapeAction = (shape: Shape) => {
+        const size = shape == "Polygon" ? 45 : 15;
         setShape(shape);
-        setHeight(shape == "Polygon" ? 45 : 15);
-        setWidth(shape == "Polygon" ? 45 : 15);
+
+        setHeight(size);
+        setHeightInput(size.toString())
+
+        setWidth(size);
+        setWidthInput(size.toString())
     }
 
     const setLock = (newState: boolean) => {
@@ -148,7 +161,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                             <Label>Sides</Label>
                             <Input
                                 type="text"
-                                value={sides}
+                                value={sidesInput}
                                 onChange={(e) => handleSidesChange(e.target.value)}
                                 placeholder={`3+`}
                                 className="mt-2 outline-none"
@@ -181,31 +194,41 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                         </div>
                     </div>
 
-                    <div className="flex items-center max-[450]:block">
-                        <Tabs value={mode} onValueChange={(v) => setMode(v as ShapeMode)} className="mr-2">
-                            <TabsList className="max-[450]:w-full">
-                                <TabsTrigger value="thick">Thick</TabsTrigger>
-                                <TabsTrigger value="thin">Thin</TabsTrigger>
-                                <TabsTrigger value="filled">Filled</TabsTrigger>
-                            </TabsList>
-                        </Tabs>
-                        {mode == "thick" && (
-                            <InputGroup className="max-[450]:mt-2">
-                                <InputGroupInput
-                                    type="text"
-                                    value={thicknessInput}
-                                    onChange={(e) => {
-                                        setThicknessInput(e.target.value);
-                                        const num = parseInt(e.target.value, 10);
-                                        if (!isNaN(num) && num >= 1) setThickness(num);
-                                    }}
-                                    placeholder="1+"
-                                    className={`outline-none ${isThicknessValid ? "" : "border-red-500 border-2"}`}
-                                />
-                                <InputGroupAddon align="inline-end">Border Thickness</InputGroupAddon>
-                            </InputGroup>
-                        )}
+                    <div className="flex items-center">
+                        <div className="w-1/2">
+                            <Tabs value={mode} onValueChange={(v) => setMode(v as ShapeMode)}>
+                                <TabsList className="w-full">
+                                    <TabsTrigger value="thick">Thick</TabsTrigger>
+                                    <TabsTrigger value="thin">Thin</TabsTrigger>
+                                    <TabsTrigger value="filled">Filled</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                            {mode == "thick" && (
+                                <InputGroup className="mt-2">
+                                    <InputGroupInput
+                                        type="text"
+                                        value={thicknessInput}
+                                        onChange={(e) => {
+                                            setThicknessInput(e.target.value);
+                                            const num = parseInt(e.target.value, 10);
+                                            if (!isNaN(num) && num >= 1) setThickness(num);
+                                        }}
+                                        placeholder="1+"
+                                        className={`outline-none ${isThicknessValid ? "" : "border-red-500 border-2"}`}
+                                    />
+                                    <InputGroupAddon align="inline-end">Border Thickness</InputGroupAddon>
+                                </InputGroup>
+                            )}
+                        </div>
+                        <AngleSlider defaultValue={[0]} max={360} min={0} step={45} onValueChange={value => setRotation(value[0])} size={40} className="mx-auto">
+                            <AngleSliderTrack>
+                                <AngleSliderRange />
+                            </AngleSliderTrack>
+                            <AngleSliderThumb />
+                            <AngleSliderValue />
+                        </AngleSlider>
                     </div>
+
                     <div>
                         <Label>Theme</Label>
                         <ComboBox

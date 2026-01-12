@@ -35,8 +35,8 @@ export default function UnitsTool() {
 
     const share = getShareManager("units");
 
-    share.registerString("input", [inputValue, setInputValue]);
-    share.registerString("type", [inputType, setInputType]);
+    share.registerString("input", [inputValue, setInputValue], {defaultValue: "0"});
+    share.registerString("type", [inputType, setInputType], {defaultValue: "Items"});
 
     useEffect(() => {
         share.hydrate();

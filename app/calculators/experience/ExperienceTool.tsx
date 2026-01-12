@@ -18,8 +18,8 @@ export default function ExperienceTool() {
 
     const share = getShareManager("xp");
 
-    share.registerNumber("xp", [xp, setXp]);
-    share.registerNumber("level", [level, setLevel]);
+    share.registerNumber("xp", [xp, setXp], {defaultValue: 9});
+    share.registerNumber("level", [level, setLevel], {defaultValue: 1});
 
     useEffect(() => {
         share.hydrate();

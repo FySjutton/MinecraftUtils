@@ -11,8 +11,10 @@ export const CircleGenerator: ShapeGenerator = {
         const rx = opts.width / 2;
         const ry = opts.height / 2;
 
+        const inside = insideEllipse(cx, cy, rx, ry);
+
         if (opts.mode === "filled") {
-            return insideEllipse(cx, cy, rx, ry);
+            return inside;
         }
 
         if (opts.mode === "thin") {
@@ -21,15 +23,25 @@ export const CircleGenerator: ShapeGenerator = {
             const left = insideEllipse(cx - 1, cy, rx, ry);
             const right = insideEllipse(cx + 1, cy, rx, ry);
 
-            return insideEllipse(cx, cy, rx, ry) && !(up && down && left && right);
+            return inside && !(up && down && left && right);
         }
 
         if (opts.mode === "thick") {
-            const t = Math.max(1, Math.floor(opts.thickness ?? 1));
-            const maxR = Math.max(rx, ry);
-            const distNorm = Math.sqrt((cx * cx) / (rx * rx) + (cy * cy) / (ry * ry));
-            const inwardPx = (1 - distNorm) * maxR;
-            return inwardPx >= 0 && inwardPx < t;
+            const t = opts.thickness ?? 1;
+
+            const neighbors: [number, number][] = [];
+            for (let dx = -t; dx <= t; dx++) {
+                for (let dy = -t; dy <= t; dy++) {
+                    if (dx === 0 && dy === 0) continue;
+                    neighbors.push([dx, dy]);
+                }
+            }
+
+            const surrounded = neighbors.every(([dx, dy]) =>
+                insideEllipse(cx + dx, cy + dy, rx, ry)
+            );
+
+            return inside && !surrounded;
         }
 
         return false;
