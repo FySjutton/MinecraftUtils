@@ -126,6 +126,7 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
             />
 
             <ShapeGridBackground
+                shape={shape}
                 width={width}
                 height={height}
                 cellSize={CELL}

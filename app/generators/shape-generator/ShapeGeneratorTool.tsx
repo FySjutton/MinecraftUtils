@@ -13,76 +13,43 @@ import { shapes, Shape, isPolygon, getPolygon, isShapeFilled } from "./ShapeGene
 import { InteractiveShapeGroups } from "./ShapeSvg";
 
 import { ShapeInputs } from "./ShapeInputs";
-import { CircleOptions, PolygonOptions } from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
+import {createDefaults, ShapeOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
 export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean }) {
     const [shape, setShape] = useState<Shape>(circleOnly ? "Circle" : "Hexagon");
     const [checks, setChecks] = useState<Map<string, boolean>>(new Map());
     const svgRef = useRef<SVGSVGElement>(null);
 
-    const [circleOptions, setCircleOptions] = useState<CircleOptions>({
-        width: 15,
-        height: 15,
-        mode: "thick",
-        rotation: 0,
-        thickness: 1,
-        lockRatio: true,
-    });
-
-    const [polygonOptions, setPolygonOptions] = useState<PolygonOptions>({
-        size: 45,
-        sides: 6,
-        mode: "thick",
-        rotation: 0,
-        thickness: 1,
-    });
+    const [options, setOptions] = useState<ShapeOptions>(createDefaults(circleOnly ? "Circle" : "Hexagon"));
 
     const [theme, setTheme] = useState<ThemeName>(defaultTheme);
-
-    const currentOptions = useMemo(() => {
-        if (shape === "Circle") return circleOptions;
-        return polygonOptions;
-    }, [shape, circleOptions, polygonOptions]);
 
     const shapeMap = useMemo(() => {
         const newMap = new Map<string, boolean>();
         const oldChecks = new Map(checks);
 
-        const width = shape === "Circle" ? circleOptions.width : polygonOptions.size;
-        const height = shape === "Circle" ? circleOptions.height : polygonOptions.size;
+        const width = options.width;
+        const height = options.height;
 
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
-                if (isShapeFilled(x, y, shape, currentOptions)) {
+                if (isShapeFilled(x, y, shape, options)) {
                     const key = `${x},${y}`;
                     newMap.set(key, oldChecks.get(key) ?? false);
                 }
             }
         }
         return newMap;
-    }, [checks, currentOptions, shape, circleOptions, polygonOptions]);
+    }, [checks, options, shape]);
 
     const reset = () => {
-        setCircleOptions({
-            width: 15,
-            height: 15,
-            mode: "thick",
-            rotation: 0,
-            thickness: 1,
-            lockRatio: true,
-        });
-        setPolygonOptions({
-            size: 45,
-            sides: 6,
-            mode: "thick",
-            rotation: 0,
-            thickness: 1,
-        });
+        setShapeAction(circleOnly ? "Circle" : "Hexagon")
         setChecks(new Map());
     };
 
-    const setShapeAction = (newShape: Shape) => {
-        setShape(newShape);
+    const setShapeAction = (shape: Shape) => {
+        setOptions(createDefaults(shape));
+        setShape(shape);
     };
 
     const totalSlots = shapeMap.size;
@@ -116,10 +83,8 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                     <ShapeInputs
                         shape={shape}
                         circleOnly={circleOnly}
-                        circleOptions={circleOptions}
-                        setCircleOptionsAction={setCircleOptions}
-                        polygonOptions={polygonOptions}
-                        setPolygonOptionsAction={setPolygonOptions}
+                        options={options}
+                        setOptionsAction={setOptions}
                     />
 
                     <div>
@@ -134,7 +99,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                         />
                     </div>
 
-                    <ExportCard shapeMap={shapeMap} width={circleOptions.width} height={circleOptions.height} circleOnly={circleOnly} svgRef={svgRef} />
+                    <ExportCard shapeMap={shapeMap} width={options.width} height={options.height} circleOnly={circleOnly} svgRef={svgRef} />
                 </CardContent>
             </Card>
 
@@ -155,8 +120,8 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                             <p><span className="font-bold">Progress:</span> {checkedSlots} / {totalSlots}</p>
                         </CardContent>
                     </Card>
-                    <ZoomViewport cellWidth={circleOptions.width} cellHeight={circleOptions.height} isFullscreen={false} setIsFullscreen={() => {}}>
-                        <InteractiveShapeGroups ref={svgRef} options={currentOptions} theme={theme} checks={shapeMap} setChecks={setChecks} />
+                    <ZoomViewport cellWidth={options.width} cellHeight={options.height} isFullscreen={false} setIsFullscreen={() => {}}>
+                        <InteractiveShapeGroups ref={svgRef} options={options} theme={theme} checks={shapeMap} setChecks={setChecks} shape={shape} />
                     </ZoomViewport>
                 </CardContent>
             </Card>

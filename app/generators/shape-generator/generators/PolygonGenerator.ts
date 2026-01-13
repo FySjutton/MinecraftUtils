@@ -1,11 +1,9 @@
 import { ShapeGenerator } from "@/app/generators/shape-generator/ShapeGenerator";
 import {degToRad, pointInPolygon} from "@/app/generators/shape-generator/generators/utils";
-import {CircleOptions, PolygonOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
 function regularPolygonVerts(
     sides: number,
-    width: number,
-    height: number,
+    size: number,
     rotationDeg = 0
 ): [number, number][] {
     const verts: [number, number][] = [];
@@ -34,7 +32,7 @@ function regularPolygonVerts(
     const currentWidth = maxX - minX;
     const currentHeight = maxY - minY;
 
-    const scale = Math.min(width / currentWidth, height / currentHeight);
+    const scale = Math.min(size / currentWidth, size / currentHeight);
 
     rotated = rotated.map(([x, y]) => [x * scale, y * scale] as [number, number]);
 
@@ -52,13 +50,14 @@ function regularPolygonVerts(
     return rotated.map(([x, y]) => [x - offsetX, y - offsetY] as [number, number]);
 }
 
-export const PolygonGenerator: ShapeGenerator<PolygonOptions> = ({
+export const PolygonGenerator: ShapeGenerator = ({
     isFilled: (x, y, opts) => {
-        const px = x + 0.5 - opts.size / 2;
-        const py = y + 0.5 - opts.size / 2;
+        const size = opts.width;
+        const px = x + 0.5 - size / 2;
+        const py = y + 0.5 - size / 2;
 
-        if (opts.size <= 1 || opts.size <= 1) return Math.abs(px) < 0.5 && Math.abs(py) < 0.5;
-        const verts = regularPolygonVerts(opts.sides, opts.size, opts.size, opts.rotation ?? 0);
+        if (size <= 1 || size <= 1) return Math.abs(px) < 0.5 && Math.abs(py) < 0.5;
+        const verts = regularPolygonVerts(opts.sides, size, opts.rotation ?? 0);
 
         if (!pointInPolygon(px, py, verts)) return false;
 

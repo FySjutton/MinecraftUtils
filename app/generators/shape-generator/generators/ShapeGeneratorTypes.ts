@@ -1,23 +1,43 @@
-import {Shape, ShapeMode} from "@/app/generators/shape-generator/ShapeGenerator";
+import {
+    getPolygon,
+    isPolygon,
+    isPolygonLikeShape,
+    Shape,
+    ShapeMode
+} from "@/app/generators/shape-generator/ShapeGenerator";
 
-export type ShapeOptions =
-    | CircleOptions
-    | PolygonOptions;
-
-export interface CircleOptions {
+export interface ShapeOptions {
+    shape: Shape;
+    mode: ShapeMode;
+    rotation: number;
+    thickness: number;
     width: number;
     height: number;
-    mode: ShapeMode;
-    rotation: number;
-    thickness: number;
-    lockRatio: boolean;
+
+    // Circle-specific
+    lockRatio?: boolean;
+
+    // Polygon-specific
+    sides: number;
 }
 
-export interface PolygonOptions {
-    size: number;
-    sides: number;
-    mode: ShapeMode;
-    rotation: number;
-    thickness: number;
-}
+export const createDefaults = (shape: Shape): ShapeOptions => {
+    const standardSize = isPolygonLikeShape(shape) ? 45 : 15;
+    const sides = isPolygon(shape) ? getPolygon(shape).sides : 6;
+
+    return {
+        shape,
+        mode: ShapeMode.Thick,
+        rotation: 0,
+        thickness: 1,
+        width: standardSize,
+        height: standardSize,
+
+        // Circle-specific
+        lockRatio: true,
+
+        // Polygon-specific
+        sides,
+    };
+};
 

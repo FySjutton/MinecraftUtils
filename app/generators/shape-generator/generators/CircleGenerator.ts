@@ -1,11 +1,10 @@
 import {ShapeGenerator} from "@/app/generators/shape-generator/ShapeGenerator";
-import {CircleOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
 function insideEllipse(x: number, y: number, rx: number, ry: number) {
     return (x * x) / (rx * rx) + (y * y) / (ry * ry) <= 1;
 }
 
-export const CircleGenerator: ShapeGenerator<CircleOptions> = {
+export const CircleGenerator: ShapeGenerator = {
     isFilled: (x, y, opts) => {
         const cx = x - (opts.width - 1) / 2;
         const cy = y - (opts.height - 1) / 2;

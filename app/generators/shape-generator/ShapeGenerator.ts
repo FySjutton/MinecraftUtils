@@ -1,11 +1,14 @@
-import {
-    PolygonOptions,
-    ShapeOptions
-} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
+
 import {PolygonGenerator} from "@/app/generators/shape-generator/generators/PolygonGenerator";
 import {CircleGenerator} from "@/app/generators/shape-generator/generators/CircleGenerator";
+import {Hexagon} from "lucide-react";
+import {ShapeOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
-export type ShapeMode = "filled" | "thin" | "thick";
+export enum ShapeMode {
+    Filled = "filled",
+    Thin = "thin",
+    Thick = "thick",
+}
 
 export const polygons = [
     { name: "Triangle", sides: 3 },
@@ -28,15 +31,15 @@ export const shapes: string[] = [
 ] as const;
 export type Shape = typeof shapes[number];
 
-export interface ShapeGenerator<Opts = ShapeOptions> {
-    isFilled: (x: number, y: number, options: Opts) => boolean;
+export interface ShapeGenerator {
+    isFilled: (x: number, y: number, options: ShapeOptions) => boolean;
 }
 
-const polygonGenerators: Record<PolygonShape, ShapeGenerator<PolygonOptions>> = Object.fromEntries(
+const polygonGenerators: Record<PolygonShape, ShapeGenerator> = Object.fromEntries(
     polygons.map(p => [p.name, PolygonGenerator])
-) as Record<PolygonShape, ShapeGenerator<PolygonOptions>>;
+) as Record<PolygonShape, ShapeGenerator>;
 
-export const generators: Record<Shape, ShapeGenerator<any>> = {
+export const generators: Record<Shape, ShapeGenerator> = {
     Circle: CircleGenerator,
     Polygon: PolygonGenerator,
     ...polygonGenerators,
@@ -49,3 +52,6 @@ export const getPolygon = (name: string): { name: string; sides: number } =>
 export function isShapeFilled(x: number, y: number, shape: Shape, opts: ShapeOptions) {
     return generators[shape].isFilled(x, y, opts);
 }
+
+export const isPolygonLikeShape = (shape: string): boolean =>
+    shape === "Polygon" || polygons.some(p => p.name === shape);

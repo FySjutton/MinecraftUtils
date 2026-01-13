@@ -1,8 +1,10 @@
-import {ShapeOptions, isShapeFilled} from "@/app/generators/shape-generator/ShapeGenerator";
+import {isShapeFilled, Shape} from "@/app/generators/shape-generator/ShapeGenerator";
 import React from "react";
 import {ThemeName, themes} from "@/app/generators/shape-generator/styling/themes";
+import {ShapeOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
 interface Props {
+    shape: Shape;
     width: number;
     height: number;
     cellSize: number;
@@ -12,7 +14,7 @@ interface Props {
     options: ShapeOptions;
 }
 
-export function ShapeGridBackground({ width, height, cellSize, gap, theme, padding = 6, options }: Props) {
+export function ShapeGridBackground({ shape, width, height, cellSize, gap, theme, padding = 6, options }: Props) {
     const totalWidth = width * (cellSize + gap);
     const totalHeight = height * (cellSize + gap);
 
@@ -27,7 +29,7 @@ export function ShapeGridBackground({ width, height, cellSize, gap, theme, paddi
     // vertical center line
     if (width % 2 === 1) {
         for (let y = 0; y < height; y++) {
-            if (!isShapeFilled(centerX, y, options)) {
+            if (!isShapeFilled(centerX, y, shape, options)) {
                 elements.push(
                     <rect
                         key={`center-col-${centerX}-${y}`}
@@ -59,7 +61,7 @@ export function ShapeGridBackground({ width, height, cellSize, gap, theme, paddi
 
     if (height % 2 === 1) {
         for (let x = 0; x < width; x++) {
-            if (!isShapeFilled(x, centerY, options)) {
+            if (!isShapeFilled(x, centerY, shape, options)) {
                 elements.push(
                     <rect
                         key={`center-row-${centerY}-${x}`}
