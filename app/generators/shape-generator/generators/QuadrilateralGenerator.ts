@@ -1,14 +1,8 @@
 import {ShapeGenerator, ShapeOptions} from "@/app/generators/shape-generator/ShapeGenerator";
 import { pointInPolygon, degToRad } from "./utils";
 
-export interface QuadrilateralOptions extends ShapeOptions {
-    topWidth: number;
-    bottomWidth: number;
-    skew?: number;
-}
-
-export const QuadrilateralGenerator = (): ShapeGenerator<QuadrilateralOptions> => ({
-    isFilled: (x, y, opts: QuadrilateralOptions & { width: number; height: number }) => {
+export const QuadrilateralGenerator: ShapeGenerator = ({
+    isFilled: (x, y, opts) => {
         const { topWidth, bottomWidth, height, skew = 0, rotation = 0, mode, thickness = 1 } = opts;
 
         // center pixel coordinates

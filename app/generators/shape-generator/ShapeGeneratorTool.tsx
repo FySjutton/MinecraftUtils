@@ -9,18 +9,26 @@ import { ComboBox } from "@/components/ComboBox";
 import { defaultTheme, ThemeName, themeNames } from "@/app/generators/shape-generator/styling/themes";
 import { ExportCard } from "@/app/generators/shape-generator/ExportCard";
 
-import { shapes, Shape, isPolygon, getPolygon, isShapeFilled } from "./ShapeGenerator";
+import {
+    shapes,
+    Shape,
+    isPolygon,
+    getPolygon,
+    isShapeFilled,
+    ShapeOptions,
+    createDefaults,
+    getShapeOptions
+} from "./ShapeGenerator";
 import { InteractiveShapeGroups } from "./ShapeSvg";
 
 import { ShapeInputs } from "./ShapeInputs";
-import {createDefaults, ShapeOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
 export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean }) {
     const [shape, setShape] = useState<Shape>(circleOnly ? "Circle" : "Hexagon");
     const [checks, setChecks] = useState<Map<string, boolean>>(new Map());
     const svgRef = useRef<SVGSVGElement>(null);
 
-    const [options, setOptions] = useState<ShapeOptions>(createDefaults(circleOnly ? "Circle" : "Hexagon"));
+    const [options, setOptions] = useState<ShapeOptions>(getShapeOptions(circleOnly ? "Circle" : "Hexagon"));
 
     const [theme, setTheme] = useState<ThemeName>(defaultTheme);
 
@@ -43,12 +51,13 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     }, [checks, options, shape]);
 
     const reset = () => {
-        setShapeAction(circleOnly ? "Circle" : "Hexagon")
+        setOptions(createDefaults(shape));
+        setShape(circleOnly ? "Circle" : "Hexagon");
         setChecks(new Map());
     };
 
     const setShapeAction = (shape: Shape) => {
-        setOptions(createDefaults(shape));
+        setOptions(getShapeOptions(shape));
         setShape(shape);
     };
 
@@ -82,7 +91,6 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
 
                     <ShapeInputs
                         shape={shape}
-                        circleOnly={circleOnly}
                         options={options}
                         setOptionsAction={setOptions}
                     />

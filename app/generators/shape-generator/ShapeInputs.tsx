@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -13,38 +13,50 @@ import {
     AngleSliderTrack,
     AngleSliderValue
 } from "@/components/ui/angle-slider";
-import {isPolygonLikeShape, Shape, ShapeMode} from "./ShapeGenerator";
-import {ShapeOptions} from "./generators/ShapeGeneratorTypes";
+import { isPolygonLikeShape, Shape, ShapeMode, ShapeOptions } from "./ShapeGenerator";
 
 type Props = {
     shape: Shape;
-    circleOnly: boolean;
-
     options: ShapeOptions;
     setOptionsAction: React.Dispatch<React.SetStateAction<ShapeOptions>>;
 };
 
-export const ShapeInputs = ({shape, circleOnly, options, setOptionsAction,}: Props) => {
-    const handleWidthChange = (value: string) => {
-        const num = parseInt(value, 10);
-        if (!isNaN(num) && num >= 3) {
-            setOptionsAction(prev => ({
-                ...prev,
-                width: num,
-                height: prev.lockRatio ? num : prev.height,
-            }));
-        }
+export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
+    const [pendingOptions, setPendingOptions] = useState<Map<string, string>>(new Map());
+
+    const updatePending = (key: string, value: string) => {
+        setPendingOptions(prev => {
+            const copy = new Map(prev);
+            copy.set(key, value);
+            return copy;
+        });
     };
 
+    const clearPending = (key: string) => {
+        setPendingOptions(prev => {
+            const copy = new Map(prev);
+            copy.delete(key);
+            return copy;
+        });
+    };
 
-    const handleHeightChange = (value: string) => {
+    const makeNumberHandler = <K extends keyof ShapeOptions, S extends keyof ShapeOptions = never>(
+        key: K,
+        min = 0,
+        syncWith?: S
+    ) => (value: string) => {
         const num = parseInt(value, 10);
-        if (!isNaN(num) && num >= 3) {
-            setOptionsAction(prev => ({
-                ...prev,
-                height: num,
-                width: prev.lockRatio ? num : prev.width
-            }));
+        if (!isNaN(num) && num >= min) {
+            setOptionsAction(prev => {
+                const updated: ShapeOptions = { ...prev, [key]: num } as ShapeOptions;
+                if (syncWith && prev.lockRatio) {
+                    (updated[syncWith] as number) = num;
+                }
+                return updated;
+            });
+            clearPending(key as string);
+        } else {
+            updatePending(key as string, value);
         }
     };
 
@@ -52,15 +64,8 @@ export const ShapeInputs = ({shape, circleOnly, options, setOptionsAction,}: Pro
         setOptionsAction(prev => ({
             ...prev,
             lockRatio: !prev.lockRatio,
-            height: !prev.lockRatio ? prev.width : prev.height // optional sync on unlock
+            height: !prev.lockRatio ? prev.width : prev.height,
         }));
-    };
-
-    const handleThicknessChange = (value: string) => {
-        const num = parseInt(value, 10);
-        if (!isNaN(num) && num >= 1) {
-            setOptionsAction(prev => ({ ...prev, thickness: num }));
-        }
     };
 
     const handleModeChange = (mode: ShapeMode) => {
@@ -71,56 +76,48 @@ export const ShapeInputs = ({shape, circleOnly, options, setOptionsAction,}: Pro
         setOptionsAction(prev => ({ ...prev, rotation: rot }));
     };
 
-    const handleSizeChange = (value: string) => {
-        const num = parseInt(value, 10);
-        if (!isNaN(num) && num >= 5) {
-            setOptionsAction(prev => ({ ...prev, size: num }));
-        }
-    };
-
-    const handleSidesChange = (value: string) => {
-        const num = parseInt(value, 10);
-        if (!isNaN(num) && num >= 3) {
-            setOptionsAction(prev => ({ ...prev, sides: num, width: num, height: num }));
-        }
-    };
+    const getValue = (key: keyof ShapeOptions) =>
+        pendingOptions.get(key as string) ?? options[key] as string | number;
 
     return (
         <>
-            {shape == "Polygon" && (
+            {/* Polygon */}
+            {shape === "Polygon" && (
                 <div className="flex-1">
                     <Label>Sides</Label>
                     <Input
                         type="text"
-                        value={`${options.sides}`}
-                        onChange={(e) => handleSidesChange(e.target.value)}
+                        value={getValue("sides")}
+                        onChange={(e) => makeNumberHandler("sides", 3)(e.target.value)}
                         placeholder="3+"
                         className="mt-2 outline-none"
                     />
                 </div>
             )}
+
             {isPolygonLikeShape(shape) && (
-                <div className="">
+                <div>
                     <Label>Size</Label>
                     <Input
                         type="text"
-                        value={`${options.width}`}
-                        onChange={(e) => handleSizeChange(e.target.value)}
+                        value={getValue("width")}
+                        onChange={(e) => makeNumberHandler("width", 5, "height")(e.target.value)}
                         placeholder="5+"
                         className="mt-2 outline-none"
                     />
                 </div>
             )}
 
+            {/* Circle */}
             {shape === "Circle" && (
                 <div className="flex items-center space-x-2">
                     <div className="flex-1">
                         <Label>Width</Label>
                         <Input
                             type="text"
-                            value={`${options.width}`}
-                            onChange={(e) => handleWidthChange(e.target.value)}
-                            placeholder={`3+`}
+                            value={getValue("width")}
+                            onChange={(e) => makeNumberHandler("width", 3, "height")(e.target.value)}
+                            placeholder="3+"
                             className="mt-2 outline-none"
                         />
                     </div>
@@ -131,13 +128,49 @@ export const ShapeInputs = ({shape, circleOnly, options, setOptionsAction,}: Pro
                         <Label>Height</Label>
                         <Input
                             type="text"
-                            value={`${options.height}`}
-                            onChange={(e) => handleHeightChange(e.target.value)}
-                            placeholder={`3+`}
+                            value={getValue("height")}
+                            onChange={(e) => makeNumberHandler("height", 3, "width")(e.target.value)}
+                            placeholder="3+"
                             className="mt-2 outline-none"
                         />
                     </div>
                 </div>
+            )}
+
+            {/* Quadrilateral */}
+            {shape === "Quadrilateral" && (
+                <>
+                    <div>
+                        <Label>Top Width</Label>
+                        <Input
+                            type="text"
+                            value={getValue("topWidth")}
+                            onChange={(e) => makeNumberHandler("topWidth", 3)(e.target.value)}
+                            placeholder="3+"
+                            className="mt-2 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <Label>Bottom Width</Label>
+                        <Input
+                            type="text"
+                            value={getValue("bottomWidth")}
+                            onChange={(e) => makeNumberHandler("bottomWidth", 3)(e.target.value)}
+                            placeholder="3+"
+                            className="mt-2 outline-none"
+                        />
+                    </div>
+                    <div>
+                        <Label>Skew</Label>
+                        <Input
+                            type="text"
+                            value={getValue("skew")}
+                            onChange={(e) => makeNumberHandler("skew", 0)(e.target.value)}
+                            placeholder="0+"
+                            className="mt-2 outline-none"
+                        />
+                    </div>
+                </>
             )}
 
             {/* Mode / Thickness / Rotation */}
@@ -155,8 +188,8 @@ export const ShapeInputs = ({shape, circleOnly, options, setOptionsAction,}: Pro
                         <InputGroup className="mt-2">
                             <InputGroupInput
                                 type="text"
-                                value={`${options.thickness}`}
-                                onChange={(e) => handleThicknessChange(e.target.value)}
+                                value={getValue("thickness")}
+                                onChange={(e) => makeNumberHandler("thickness", 1)(e.target.value)}
                                 placeholder="1+"
                                 className="outline-none"
                             />

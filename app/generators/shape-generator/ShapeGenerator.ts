@@ -1,8 +1,7 @@
 
 import {PolygonGenerator} from "@/app/generators/shape-generator/generators/PolygonGenerator";
 import {CircleGenerator} from "@/app/generators/shape-generator/generators/CircleGenerator";
-import {Hexagon} from "lucide-react";
-import {ShapeOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
+import {QuadrilateralGenerator} from "@/app/generators/shape-generator/generators/QuadrilateralGenerator";
 
 export enum ShapeMode {
     Filled = "filled",
@@ -23,7 +22,60 @@ export const polygons = [
 
 type PolygonShape = typeof polygons[number]["name"];
 
-export const primitiveShapes = ["Circle", "Polygon"] as const;
+export const primitiveShapes = ["Circle", "Polygon", "Quadrilateral"] as const;
+
+export interface ShapeOptions {
+    shape: Shape;
+    mode: ShapeMode;
+    rotation: number;
+    thickness: number;
+    width: number;
+    height: number;
+
+    // Circle-specific
+    lockRatio?: boolean;
+
+    // Polygon-specific
+    sides: number;
+
+    // Quadrilateral-specific
+    topWidth: number;
+    bottomWidth: number;
+    skew: number;
+}
+
+export const createDefaults = (shape: Shape): ShapeOptions => {
+    const standardSize = isPolygonLikeShape(shape) ? 45 : 15;
+    const sides = isPolygon(shape) ? getPolygon(shape).sides : 6;
+
+    return {
+        shape,
+        mode: ShapeMode.Thick,
+        rotation: 0,
+        thickness: 1,
+        width: standardSize,
+        height: standardSize,
+
+        // Circle-specific
+        lockRatio: true,
+
+        // Polygon-specific
+        sides: sides,
+
+        // Quadrilateral-specific
+        topWidth: 20,
+        bottomWidth: 10,
+        skew: 0,
+    };
+};
+
+const shapeCache = new Map<string, ShapeOptions>();
+export function getShapeOptions(shape: Shape): ShapeOptions {
+    if (!shapeCache.has(shape)) {
+        shapeCache.set(shape, createDefaults(shape));
+    }
+    return <ShapeOptions>shapeCache.get(shape);
+}
 
 export const shapes: string[] = [
     ...primitiveShapes,
@@ -42,6 +94,7 @@ const polygonGenerators: Record<PolygonShape, ShapeGenerator> = Object.fromEntri
 export const generators: Record<Shape, ShapeGenerator> = {
     Circle: CircleGenerator,
     Polygon: PolygonGenerator,
+    Quadrilateral: QuadrilateralGenerator,
     ...polygonGenerators,
 };
 
