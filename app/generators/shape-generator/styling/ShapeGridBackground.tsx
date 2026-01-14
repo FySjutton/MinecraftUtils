@@ -1,7 +1,6 @@
-import {isShapeFilled, Shape} from "@/app/generators/shape-generator/ShapeGenerator";
+import {isShapeFilled, Shape, ShapeOptions} from "@/app/generators/shape-generator/ShapeGenerator";
 import React from "react";
 import {ThemeName, themes} from "@/app/generators/shape-generator/styling/themes";
-import {ShapeOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
 interface Props {
     shape: Shape;
