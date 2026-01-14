@@ -19,6 +19,8 @@ import Image from "next/image";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
 import {Search} from "lucide-react";
 import {useState} from "react";
+import {Switch} from "@/components/ui/switch";
+import {Separator} from "@/components/ui/separator";
 
 export function AppSidebar() {
     const pathname = usePathname()
@@ -27,8 +29,15 @@ export function AppSidebar() {
     let activePage: string = ""
 
     const [search, setSearch] = useState("");
+    const [filterAlpha, setFilterAlpha] = useState(true);
+    let hasAlphaTool = false;
 
     for (const tool of tools) {
+        for (const page of tool.pages) {
+            if (page.type == "alpha") {
+                hasAlphaTool = true;
+            }
+        }
         if (pathname.startsWith(tool.url)) {
             activeCategory = tool.name
 
@@ -81,6 +90,7 @@ export function AppSidebar() {
                     activeCategory={activeCategory}
                     activePage={activePage}
                     title="Utilities"
+                    filterAlpha={filterAlpha}
                 />
                 <NavTools
                     tools={externals}
@@ -88,7 +98,17 @@ export function AppSidebar() {
                     activeCategory={activeCategory}
                     activePage={activePage}
                     title="External Utilities"
+                    filterAlpha={filterAlpha}
                 />
+                {hasAlphaTool && (
+                    <div className="mx-2 mt-auto">
+                        <Separator />
+                        <div className="flex flex-wrap justify-center text-center mt-4 mb-5">
+                            <p className="w-full mb-2 text-gray-200">Show Experimental</p>
+                            <Switch checked={!filterAlpha} onCheckedChange={() => setFilterAlpha(!filterAlpha)} />
+                        </div>
+                    </div>
+                )}
             </SidebarContent>
             <SidebarRail/>
         </Sidebar>

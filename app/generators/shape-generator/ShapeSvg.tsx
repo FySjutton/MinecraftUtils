@@ -1,10 +1,9 @@
 "use client";
 
 import React, {useState, useMemo, forwardRef} from "react";
-import {isShapeFilled, Shape} from "./ShapeGenerator";
+import {isShapeFilled, Shape, ShapeOptions} from "./ShapeGenerator";
 import {ThemeName, themes} from "@/app/generators/shape-generator/styling/themes";
 import {ShapeGridBackground} from "@/app/generators/shape-generator/styling/ShapeGridBackground";
-import {ShapeOptions} from "@/app/generators/shape-generator/generators/ShapeGeneratorTypes";
 
 const CELL = 14;
 const GAP = 2;

@@ -21,12 +21,13 @@ import {Badge} from "@/components/ui/badge";
 import {renderIcon, ToolCategory} from "@/app/AppStructure";
 import {IconChevronRight, IconExternalLink} from "@tabler/icons-react";
 
-export function NavTools({tools, search, activeCategory, activePage, title}: {
+export function NavTools({tools, search, activeCategory, activePage, title, filterAlpha}: {
     tools: ToolCategory[];
     search: string;
     activeCategory?: string;
     activePage?: string;
     title?: string;
+    filterAlpha: boolean;
 }) {
     const [openCategories, setOpenCategories] = React.useState<Record<string, boolean>>(
         () =>
@@ -54,8 +55,10 @@ export function NavTools({tools, search, activeCategory, activePage, title}: {
                             !tool.pages.some((p) => p.url === activePage);
 
                         const isOpen = openCategories[tool.name] ?? false;
-                        const pages = tool.pages.filter(page => page.name.toLowerCase().includes(search ? search.toLowerCase() : ""));
-
+                        let pages = tool.pages.filter(page => page.name.toLowerCase().includes(search ? search.toLowerCase() : ""));
+                        if (filterAlpha) {
+                            pages = pages.filter(page => page.type != "alpha");
+                        }
                         return (
                             <SidebarMenuItem key={tool.name}>
                                 <Collapsible open={isOpen} onOpenChange={() => toggleCategory(tool.name)}>
