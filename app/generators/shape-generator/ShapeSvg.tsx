@@ -1,7 +1,7 @@
 "use client";
 
 import React, {useState, useMemo, forwardRef} from "react";
-import {isShapeFilled, Shape, ShapeOptions} from "./ShapeGenerator";
+import {generators, isShapeFilled, Shape, ShapeOptions} from "./ShapeGenerator";
 import {ThemeName, themes} from "@/app/generators/shape-generator/styling/themes";
 import {ShapeGridBackground} from "@/app/generators/shape-generator/styling/ShapeGridBackground";
 
@@ -31,7 +31,8 @@ interface Props {
 }
 
 export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape, options, theme, checks, setChecks }, ref) => {
-    const {width, height} = options;
+    const {width, height} = generators[options.shape].getSize(options)
+    // TODO: Canvas missshapen still
 
     const [hoveredGroup, setHoveredGroup] = useState<Group | null>(null);
     const [hoveredCell, setHoveredCell] = useState<Cell | null>(null);

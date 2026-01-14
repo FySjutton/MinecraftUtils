@@ -46,4 +46,10 @@ export const CircleGenerator: ShapeGenerator = {
 
         return false;
     },
+    getSize: (opts) => {
+        return {
+            width: opts.width,
+            height: opts.height
+        }
+    }
 };

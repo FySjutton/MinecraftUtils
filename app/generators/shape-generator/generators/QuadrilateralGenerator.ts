@@ -1,35 +1,37 @@
-import {ShapeGenerator, ShapeOptions} from "@/app/generators/shape-generator/ShapeGenerator";
-import { pointInPolygon, degToRad } from "./utils";
+import {degToRad, pointInPolygon} from "./utils";
+import {ShapeGenerator} from "@/app/generators/shape-generator/ShapeGenerator";
 
-export const QuadrilateralGenerator: ShapeGenerator = ({
+export const QuadrilateralGenerator: ShapeGenerator = {
     isFilled: (x, y, opts) => {
         const { topWidth, bottomWidth, height, skew = 0, rotation = 0, mode, thickness = 1 } = opts;
 
-        // center pixel coordinates
         const px = x + 0.5 - opts.width / 2;
         const py = y + 0.5 - opts.height / 2;
 
-        // compute vertices
         let verts: [number, number][] = [
-            [-bottomWidth / 2,  height / 2],             // bl
-            [ bottomWidth / 2,  height / 2],             // br
-            [ topWidth / 2 + skew, -height / 2],         // tr
-            [-topWidth / 2 + skew, -height / 2],         // tl
+            [-bottomWidth / 2,  height / 2],
+            [ bottomWidth / 2,  height / 2],
+            [ topWidth / 2 + skew, -height / 2],
+            [-topWidth / 2 + skew, -height / 2],
         ];
 
-        // apply rotation
         const rot = degToRad(rotation);
-        verts = verts.map(([vx, vy]) => [
-            vx * Math.cos(rot) - vy * Math.sin(rot),
-            vx * Math.sin(rot) + vy * Math.cos(rot),
+        const cos = Math.cos(rot);
+        const sin = Math.sin(rot);
+
+        verts = verts.map(([x, y]) => [
+            x * cos - y * sin,
+            x * sin + y * cos,
         ]);
 
         const inside = pointInPolygon(px, py, verts);
         if (mode === "filled") return inside;
 
-        const insideAt = (ox: number, oy: number) => pointInPolygon(px + ox, py + oy, verts);
+        const insideAt = (ox: number, oy: number) =>
+            pointInPolygon(px + ox, py + oy, verts);
 
-        if (mode === "thin") return !(insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0));
+        if (mode === "thin")
+            return !(insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0));
 
         if (mode === "thick") {
             const neighbors: [number, number][] = [];
@@ -43,4 +45,39 @@ export const QuadrilateralGenerator: ShapeGenerator = ({
 
         return false;
     },
-});
+
+    getSize: (opts) => {
+        const { topWidth, bottomWidth, height, skew = 0, rotation = 0, thickness = 1 } = opts;
+
+        let verts: [number, number][] = [
+            [-bottomWidth / 2,  height / 2],
+            [ bottomWidth / 2,  height / 2],
+            [ topWidth / 2 + skew, -height / 2],
+            [-topWidth / 2 + skew, -height / 2],
+        ];
+
+        const rot = degToRad(rotation);
+        const cos = Math.cos(rot);
+        const sin = Math.sin(rot);
+
+        verts = verts.map(([x, y]) => [
+            x * cos - y * sin,
+            x * sin + y * cos,
+        ]);
+
+        let minX = Infinity, maxX = -Infinity;
+        let minY = Infinity, maxY = -Infinity;
+
+        for (const [x, y] of verts) {
+            minX = Math.min(minX, x);
+            maxX = Math.max(maxX, x);
+            minY = Math.min(minY, y);
+            maxY = Math.max(maxY, y);
+        }
+
+        return {
+            width: Math.ceil(maxX - minX) + thickness * 2,
+            height: Math.ceil(maxY - minY) + thickness * 2,
+        };
+    },
+};

@@ -85,6 +85,10 @@ export type Shape = typeof shapes[number];
 
 export interface ShapeGenerator {
     isFilled: (x: number, y: number, options: ShapeOptions) => boolean;
+    getSize: (options: ShapeOptions) => {
+        width: number;
+        height: number;
+    };
 }
 
 const polygonGenerators: Record<PolygonShape, ShapeGenerator> = Object.fromEntries(

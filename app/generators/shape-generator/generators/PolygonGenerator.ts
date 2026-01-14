@@ -71,4 +71,10 @@ export const PolygonGenerator: ShapeGenerator = ({
         }
         return false;
     },
+    getSize: (opts) => {
+        return {
+            width: opts.width,
+            height: opts.height
+        }
+    }
 });

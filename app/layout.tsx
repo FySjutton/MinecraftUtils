@@ -35,8 +35,6 @@ export const metadata: Metadata = {
     openGraph: {
         type: "website",
         siteName: "Minecraft Utils",
-        title: "Minecraft Utils",
-        description: "Free Minecraft utilities, calculators, generators, and tools for players, server admins, and creators.",
         locale: "en_US",
         images: [
             {
@@ -50,14 +48,12 @@ export const metadata: Metadata = {
 
     twitter: {
         card: "summary_large_image",
-        title: "Minecraft Utils",
-        description:
-            "Free Minecraft utilities, calculators, generators, and tools for players, server admins, and creators.",
         images: ["/og-banner.png"],
     },
 
     icons: undefined,
 };
+
 
 export const viewport: Viewport = {
     themeColor: "#1cffca",
