@@ -1,5 +1,5 @@
 import { ShapeGenerator } from "@/app/generators/shape-generator/ShapeGenerator";
-import {degToRad, pointInPolygon} from "@/app/generators/shape-generator/generators/utils";
+import { degToRad, pointInPolygon } from "@/app/generators/shape-generator/generators/utils";
 
 function regularPolygonVerts(
     sides: number,
@@ -7,7 +7,7 @@ function regularPolygonVerts(
     rotationDeg = 0
 ): [number, number][] {
     const verts: [number, number][] = [];
-    let startAngle = -Math.PI / 2; // default pointy up
+    let startAngle = -Math.PI / 2; // pointy up
     if (sides % 2 === 0) startAngle = -Math.PI / sides; // flat bottom
 
     for (let i = 0; i < sides; i++) {
@@ -21,6 +21,7 @@ function regularPolygonVerts(
         x * Math.sin(rot) + y * Math.cos(rot),
     ] as [number, number]);
 
+    // scale to requested size
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const [x, y] of rotated) {
         minX = Math.min(minX, x);
@@ -31,11 +32,11 @@ function regularPolygonVerts(
 
     const currentWidth = maxX - minX;
     const currentHeight = maxY - minY;
-
     const scale = Math.min(size / currentWidth, size / currentHeight);
 
     rotated = rotated.map(([x, y]) => [x * scale, y * scale] as [number, number]);
 
+    // recenter
     minX = Infinity; maxX = -Infinity; minY = Infinity; maxY = -Infinity;
     for (const [x, y] of rotated) {
         minX = Math.min(minX, x);
@@ -50,18 +51,19 @@ function regularPolygonVerts(
     return rotated.map(([x, y]) => [x - offsetX, y - offsetY] as [number, number]);
 }
 
-export const PolygonGenerator: ShapeGenerator = ({
+export const PolygonGenerator: ShapeGenerator = {
     isFilled: (x, y, opts) => {
         const size = opts.width;
-        const px = x + 0.5 - size / 2;
-        const py = y + 0.5 - size / 2;
 
-        if (size <= 1 || size <= 1) return Math.abs(px) < 0.5 && Math.abs(py) < 0.5;
+        // x,y are already center-based, so no top-left compensation needed
+        if (size <= 1) return Math.abs(x) < 0.5 && Math.abs(y) < 0.5;
+
         const verts = regularPolygonVerts(opts.sides, size, opts.rotation ?? 0);
 
-        if (!pointInPolygon(px, py, verts)) return false;
+        if (!pointInPolygon(x, y, verts)) return false;
 
-        const insideAt = (ox: number, oy: number) => pointInPolygon(px + ox, py + oy, verts);
+        const insideAt = (ox: number, oy: number) => pointInPolygon(x + ox, y + oy, verts);
+
         if (opts.mode === "filled") return true;
         if (opts.mode === "thin") return !(insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0));
         if (opts.mode === "thick") {
@@ -69,12 +71,12 @@ export const PolygonGenerator: ShapeGenerator = ({
             if (!core) return true;
             return !(insideAt(-1, -1) && insideAt(1, -1) && insideAt(-1, 1) && insideAt(1, 1));
         }
+
         return false;
     },
-    getSize: (opts) => {
-        return {
-            width: opts.width,
-            height: opts.height
-        }
-    }
-});
+
+    getSize: (opts) => ({
+        width: opts.width,
+        height: opts.height,
+    }),
+};

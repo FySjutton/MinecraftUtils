@@ -106,20 +106,28 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
         });
     };
 
+    const W = (CELL + GAP) * width + 2 * PADDING;
+    const H = (CELL + GAP) * height + 2 * PADDING;
+
+    const totalWidth = (CELL + GAP) * width;
+    const totalHeight = (CELL + GAP) * height;
+
+    const ox = -totalWidth / 2 + PADDING / 2;
+    const oy = -totalHeight / 2 + PADDING / 2;
+
     return (
         <svg
             ref={ref}
-            viewBox={`0 0 ${(CELL + GAP) * width + 2 * PADDING} ${(CELL + GAP) * height + 2 * PADDING}`}
+            viewBox={`${-W / 2} ${-H / 2} ${W} ${H}`}
             width="100%"
             height="100%"
-            preserveAspectRatio="none"
             className="rounded-sm"
         >
             <defs>{pattern}</defs>
 
             <rect
-                x={0}
-                y={0}
+                x={-(CELL + GAP) * width / 2 - PADDING}
+                y={-(CELL + GAP) * height / 2 - PADDING}
                 width={(CELL + GAP) * width + 2 * PADDING}
                 height={(CELL + GAP) * height + 2 * PADDING}
                 fill={backgroundColor}
@@ -137,8 +145,11 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
             />
 
             <g>
-                {Array.from({length: height}).map((_, y) =>
-                    Array.from({length: width}).map((_, x) => {
+                {Array.from({ length: height }).map((_, iy) =>
+                    Array.from({ length: width }).map((_, ix) => {
+                        const x = ix - Math.floor(width / 2);
+                        const y = iy - Math.floor(height / 2);
+
                         if (!isShapeFilled(x, y, shape, options)) return null;
 
                         const key = `${x},${y}`;
@@ -148,11 +159,14 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
                         const inGroup = hoveredGroup?.cells.some(c => c.x === x && c.y === y);
                         const isHoveredCell = hoveredCell?.x === x && hoveredCell?.y === y;
 
+                        const cx = x * (CELL + GAP) - PADDING - 1;
+                        const cy = y * (CELL + GAP) - PADDING - 1;
+
                         return (
                             <g key={`cell-${x}-${y}`}>
                                 <rect
-                                    x={x * (CELL + GAP) + PADDING + 1}
-                                    y={y * (CELL + GAP) + PADDING + 1}
+                                    x={cx}
+                                    y={cy}
                                     width={CELL}
                                     height={CELL}
                                     rx={3}
@@ -161,7 +175,7 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
                                     strokeWidth={borderColor ? 1 : 0}
                                     onClick={() => toggleCell(x, y)}
                                     onMouseEnter={() => {
-                                        setHoveredCell({x, y});
+                                        setHoveredCell({ x, y });
                                         setHoveredGroup(gGroup);
                                     }}
                                     onMouseLeave={() => {
@@ -176,8 +190,8 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
 
                                 {pattern && (
                                     <rect
-                                        x={x * (CELL + GAP) + PADDING + 1}
-                                        y={y * (CELL + GAP) + PADDING + 1}
+                                        x={cx}
+                                        y={cy}
                                         width={CELL}
                                         height={CELL}
                                         rx={3}
@@ -188,8 +202,8 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
 
                                 {(inGroup || isHoveredCell) && (
                                     <rect
-                                        x={x * (CELL + GAP) + PADDING + 1}
-                                        y={y * (CELL + GAP) + PADDING + 1}
+                                        x={cx}
+                                        y={cy}
                                         width={CELL}
                                         height={CELL}
                                         rx={3}
@@ -199,8 +213,8 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
 
                                 {inGroup && (
                                     <text
-                                        x={x * (CELL + GAP) + CELL / 2 + PADDING + 0.5}
-                                        y={y * (CELL + GAP) + CELL / 2 + PADDING + 4.5}
+                                        x={cx + CELL / 2}
+                                        y={cy + CELL / 2 + 3.5}
                                         textAnchor="middle"
                                         fontSize={9}
                                         fill={textColor}

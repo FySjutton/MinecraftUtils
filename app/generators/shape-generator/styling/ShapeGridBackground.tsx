@@ -1,6 +1,6 @@
-import {isShapeFilled, Shape, ShapeOptions} from "@/app/generators/shape-generator/ShapeGenerator";
+import { isShapeFilled, Shape, ShapeOptions } from "@/app/generators/shape-generator/ShapeGenerator";
 import React from "react";
-import {ThemeName, themes} from "@/app/generators/shape-generator/styling/themes";
+import { ThemeName, themes } from "@/app/generators/shape-generator/styling/themes";
 
 interface Props {
     shape: Shape;
@@ -13,7 +13,16 @@ interface Props {
     options: ShapeOptions;
 }
 
-export function ShapeGridBackground({ shape, width, height, cellSize, gap, theme, padding = 6, options }: Props) {
+export function ShapeGridBackground({
+                                        shape,
+                                        width,
+                                        height,
+                                        cellSize,
+                                        gap,
+                                        theme,
+                                        padding = 6,
+                                        options,
+                                    }: Props) {
     const totalWidth = width * (cellSize + gap);
     const totalHeight = height * (cellSize + gap);
 
@@ -22,18 +31,21 @@ export function ShapeGridBackground({ shape, width, height, cellSize, gap, theme
 
     const elements: React.ReactNode[] = [];
 
-    const centerX = Math.floor(width / 2);
-    const centerY = Math.floor(height / 2);
+    // offset so grid is centered around 0,0
+    const offsetX = -totalWidth / 2;
+    const offsetY = -totalHeight / 2;
 
-    // vertical center line
+    // vertical center line (x = 0)
     if (width % 2 === 1) {
-        for (let y = 0; y < height; y++) {
-            if (!isShapeFilled(centerX, y, shape, options)) {
+        const x = 0;
+        for (let iy = 0; iy < height; iy++) {
+            const y = iy - Math.floor(height / 2);
+            if (!isShapeFilled(x, y, shape, options)) {
                 elements.push(
                     <rect
-                        key={`center-col-${centerX}-${y}`}
-                        x={centerX * (cellSize + gap) + padding + 1}
-                        y={y * (cellSize + gap) + padding + 1}
+                        key={`center-col-${x}-${y}`}
+                        x={offsetX + (x + Math.floor(width / 2)) * (cellSize + gap) + 1}
+                        y={offsetY + (y + Math.floor(height / 2)) * (cellSize + gap) + 1}
                         width={cellSize}
                         height={cellSize}
                         fill={gridCellColor}
@@ -43,14 +55,16 @@ export function ShapeGridBackground({ shape, width, height, cellSize, gap, theme
             }
         }
     } else {
-        const cx = width / 2;
+        const x = 0; // line at center
+        const lineX = offsetX + (x + width / 2) * (cellSize + gap) - gap / 2 + 1;
+
         elements.push(
             <line
                 key="center-vertical-even"
-                x1={cx * (cellSize + gap) - gap / 2 + padding + 1}
-                y1={padding}
-                x2={cx * (cellSize + gap) - gap / 2 + padding + 1}
-                y2={totalHeight + padding}
+                x1={lineX}
+                y1={offsetY}
+                x2={lineX}
+                y2={offsetY + totalHeight}
                 stroke={gridCellColor}
                 strokeWidth={2}
                 opacity={0.5}
@@ -58,14 +72,17 @@ export function ShapeGridBackground({ shape, width, height, cellSize, gap, theme
         );
     }
 
+    // horizontal center line (y = 0)
     if (height % 2 === 1) {
-        for (let x = 0; x < width; x++) {
-            if (!isShapeFilled(x, centerY, shape, options)) {
+        const y = 0;
+        for (let ix = 0; ix < width; ix++) {
+            const x = ix - Math.floor(width / 2);
+            if (!isShapeFilled(x, y, shape, options)) {
                 elements.push(
                     <rect
-                        key={`center-row-${centerY}-${x}`}
-                        x={x * (cellSize + gap) + padding + 1}
-                        y={centerY * (cellSize + gap) + padding + 1}
+                        key={`center-row-${y}-${x}`}
+                        x={offsetX + (x + Math.floor(width / 2)) * (cellSize + gap) + 1}
+                        y={offsetY + (y + Math.floor(height / 2)) * (cellSize + gap) + 1}
                         width={cellSize}
                         height={cellSize}
                         fill={gridCellColor}
@@ -75,14 +92,16 @@ export function ShapeGridBackground({ shape, width, height, cellSize, gap, theme
             }
         }
     } else {
-        const cy = height / 2;
+        const y = 0; // line at center
+        const lineY = offsetY + (y + height / 2) * (cellSize + gap) - gap / 2 + 1;
+
         elements.push(
             <line
                 key="center-horizontal-even"
-                x1={padding}
-                y1={cy * (cellSize + gap) - gap / 2 + padding + 1}
-                x2={totalWidth + padding}
-                y2={cy * (cellSize + gap) - gap / 2 + padding + 1}
+                x1={offsetX}
+                y1={lineY}
+                x2={offsetX + totalWidth}
+                y2={lineY}
                 stroke={gridCellColor}
                 strokeWidth={2}
                 opacity={0.5}
@@ -90,29 +109,36 @@ export function ShapeGridBackground({ shape, width, height, cellSize, gap, theme
         );
     }
 
+    // regular vertical grid lines
+    for (let ix = 0; ix <= width; ix++) {
+        const x = ix - Math.floor(width / 2);
+        const gx = offsetX + (x + Math.floor(width / 2)) * (cellSize + gap);
 
-    // regular grid lines
-    for (let x = 0; x <= width; x++) {
         elements.push(
             <line
                 key={`v-${x}`}
-                x1={x * (cellSize + gap) + padding}
-                y1={padding}
-                x2={x * (cellSize + gap) + padding}
-                y2={totalHeight + padding}
+                x1={gx}
+                y1={offsetY}
+                x2={gx}
+                y2={offsetY + totalHeight}
                 stroke={gridLineColor}
                 strokeWidth={0.5}
             />
         );
     }
-    for (let y = 0; y <= height; y++) {
+
+    // regular horizontal grid lines
+    for (let iy = 0; iy <= height; iy++) {
+        const y = iy - Math.floor(height / 2);
+        const gy = offsetY + (y + Math.floor(height / 2)) * (cellSize + gap);
+
         elements.push(
             <line
                 key={`h-${y}`}
-                x1={padding}
-                y1={y * (cellSize + gap) + padding}
-                x2={totalWidth + padding}
-                y2={y * (cellSize + gap) + padding}
+                x1={offsetX}
+                y1={gy}
+                x2={offsetX + totalWidth}
+                y2={gy}
                 stroke={gridLineColor}
                 strokeWidth={0.5}
             />

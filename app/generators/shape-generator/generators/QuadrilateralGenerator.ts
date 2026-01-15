@@ -1,37 +1,63 @@
-import {degToRad, pointInPolygon} from "./utils";
-import {ShapeGenerator} from "@/app/generators/shape-generator/ShapeGenerator";
+import { degToRad, pointInPolygon } from "./utils";
+import { ShapeGenerator } from "@/app/generators/shape-generator/ShapeGenerator";
+
+function getAlignedVerts(opts: {
+    topWidth: number;
+    bottomWidth: number;
+    height: number;
+    skew?: number;
+    rotation?: number;
+}): [number, number][] {
+    const { topWidth, bottomWidth, height, skew = 0, rotation = 0 } = opts;
+
+    let verts: [number, number][] = [
+        [-bottomWidth / 2,  height / 2],
+        [ bottomWidth / 2,  height / 2],
+        [ topWidth / 2 + skew, -height / 2],
+        [-topWidth / 2 + skew, -height / 2],
+    ];
+
+    const rot = degToRad(rotation);
+    const cos = Math.cos(rot);
+    const sin = Math.sin(rot);
+
+    verts = verts.map(([x, y]) => [
+        x * cos - y * sin,
+        x * sin + y * cos,
+    ]);
+
+    // recenter verts around (0,0)
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const [x, y] of verts) {
+        minX = Math.min(minX, x);
+        maxX = Math.max(maxX, x);
+        minY = Math.min(minY, y);
+        maxY = Math.max(maxY, y);
+    }
+    const cx = (minX + maxX) / 2;
+    const cy = (minY + maxY) / 2;
+
+    return verts.map(([x, y]) => [x - cx, y - cy]);
+}
 
 export const QuadrilateralGenerator: ShapeGenerator = {
     isFilled: (x, y, opts) => {
-        const { topWidth, bottomWidth, height, skew = 0, rotation = 0, mode, thickness = 1 } = opts;
+        const { mode, thickness = 1 } = opts;
 
-        const px = x + 0.5 - opts.width / 2;
-        const py = y + 0.5 - opts.height / 2;
+        // x, y are **already centered** — no offsets
+        const px = x;
+        const py = y;
 
-        let verts: [number, number][] = [
-            [-bottomWidth / 2,  height / 2],
-            [ bottomWidth / 2,  height / 2],
-            [ topWidth / 2 + skew, -height / 2],
-            [-topWidth / 2 + skew, -height / 2],
-        ];
-
-        const rot = degToRad(rotation);
-        const cos = Math.cos(rot);
-        const sin = Math.sin(rot);
-
-        verts = verts.map(([x, y]) => [
-            x * cos - y * sin,
-            x * sin + y * cos,
-        ]);
+        const verts = getAlignedVerts(opts);
 
         const inside = pointInPolygon(px, py, verts);
         if (mode === "filled") return inside;
 
-        const insideAt = (ox: number, oy: number) =>
-            pointInPolygon(px + ox, py + oy, verts);
+        const insideAt = (ox: number, oy: number) => pointInPolygon(px + ox, py + oy, verts);
 
-        if (mode === "thin")
+        if (mode === "thin") {
             return !(insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0));
+        }
 
         if (mode === "thick") {
             const neighbors: [number, number][] = [];
@@ -47,27 +73,11 @@ export const QuadrilateralGenerator: ShapeGenerator = {
     },
 
     getSize: (opts) => {
-        const { topWidth, bottomWidth, height, skew = 0, rotation = 0, thickness = 1 } = opts;
+        const { thickness = 1 } = opts;
 
-        let verts: [number, number][] = [
-            [-bottomWidth / 2,  height / 2],
-            [ bottomWidth / 2,  height / 2],
-            [ topWidth / 2 + skew, -height / 2],
-            [-topWidth / 2 + skew, -height / 2],
-        ];
+        const verts = getAlignedVerts(opts);
 
-        const rot = degToRad(rotation);
-        const cos = Math.cos(rot);
-        const sin = Math.sin(rot);
-
-        verts = verts.map(([x, y]) => [
-            x * cos - y * sin,
-            x * sin + y * cos,
-        ]);
-
-        let minX = Infinity, maxX = -Infinity;
-        let minY = Infinity, maxY = -Infinity;
-
+        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         for (const [x, y] of verts) {
             minX = Math.min(minX, x);
             maxX = Math.max(maxX, x);

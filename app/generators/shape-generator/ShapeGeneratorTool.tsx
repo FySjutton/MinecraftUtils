@@ -29,7 +29,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     const svgRef = useRef<SVGSVGElement>(null);
 
     const [options, setOptions] = useState<ShapeOptions>(getShapeOptions(circleOnly ? "Circle" : "Hexagon"));
-
+    const [isFullscreen, setIsFullscreen] = useState(false);
     const [theme, setTheme] = useState<ThemeName>(defaultTheme);
 
     const shapeMap = useMemo(() => {
@@ -115,7 +115,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                 <CardHeader>
                     <CardTitle>{circleOnly ? "Circle" : "Shape"} Output</CardTitle>
                     <CardAction>
-                        <Button variant="outline" onClick={() => {}}>Fullscreen</Button>
+                        <Button variant="outline" onClick={() => {setIsFullscreen(true)}}>Fullscreen</Button>
                     </CardAction>
                 </CardHeader>
                 <CardContent className="p-4 w-full">
@@ -128,7 +128,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                             <p><span className="font-bold">Progress:</span> {checkedSlots} / {totalSlots}</p>
                         </CardContent>
                     </Card>
-                    <ZoomViewport cellWidth={options.width} cellHeight={options.height} isFullscreen={false} setIsFullscreen={() => {}}>
+                    <ZoomViewport cellWidth={options.width} cellHeight={options.height} isFullscreen={isFullscreen} setIsFullscreen={setIsFullscreen}>
                         <InteractiveShapeGroups ref={svgRef} options={options} theme={theme} checks={shapeMap} setChecks={setChecks} shape={shape} />
                     </ZoomViewport>
                 </CardContent>
