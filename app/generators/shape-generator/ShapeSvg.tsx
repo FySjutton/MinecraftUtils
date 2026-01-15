@@ -1,9 +1,9 @@
 "use client";
 
-import React, {useState, useMemo, forwardRef} from "react";
-import {generators, isShapeFilled, Shape, ShapeOptions} from "./ShapeGenerator";
-import {ThemeName, themes} from "@/app/generators/shape-generator/styling/themes";
-import {ShapeGridBackground} from "@/app/generators/shape-generator/styling/ShapeGridBackground";
+import React, {useState, useMemo, forwardRef, useCallback} from "react";
+import { generators, isShapeFilled, Shape, ShapeOptions } from "./ShapeGenerator";
+import { ThemeName, themes } from "@/app/generators/shape-generator/styling/themes";
+import { ShapeGridBackground } from "@/app/generators/shape-generator/styling/ShapeGridBackground";
 
 const CELL = 14;
 const GAP = 2;
@@ -23,55 +23,63 @@ interface Group {
 
 interface Props {
     shape: Shape;
-    options: ShapeOptions,
-    theme: ThemeName,
-    checks: Map<string, boolean>,
-    setChecks: React.Dispatch<React.SetStateAction<Map<string, boolean>>>,
-    ref?: React.RefObject<SVGSVGElement>
+    options: ShapeOptions;
+    theme: ThemeName;
+    checks: Map<string, boolean>;
+    setChecks: React.Dispatch<React.SetStateAction<Map<string, boolean>>>;
+    ref?: React.RefObject<SVGSVGElement>;
 }
 
 export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape, options, theme, checks, setChecks }, ref) => {
-    const {width, height} = generators[options.shape].getSize(options)
-    // TODO: Canvas missshapen still
+    const { width, height } = generators[options.shape].getSize(options);
 
     const [hoveredGroup, setHoveredGroup] = useState<Group | null>(null);
     const [hoveredCell, setHoveredCell] = useState<Cell | null>(null);
 
-    const {backgroundColor, checkedColor, cellColor, borderColor, textColor, pattern} = themes[theme];
+    const { backgroundColor, checkedColor, cellColor, borderColor, textColor, pattern } = themes[theme];
 
-    // Precompute groups for “thin” / “thick” modes
+    const centerX = (width - 1) / 2;
+    const centerY = (height - 1) / 2;
+
+    const gridToShape = useCallback((ix: number, iy: number) => {
+        return { x: ix - centerX, y: iy - centerY };
+    }, [centerX, centerY]);
+
     const groups = useMemo<Group[]>(() => {
         if (options.mode === "filled") return [];
+
         const out: Group[] = [];
 
-        // horizontal runs
-        for (let y = 0; y < height; y++) {
+        for (let iy = 0; iy < height; iy++) {
             let run: Cell[] = [];
-            for (let x = 0; x < width; x++) {
-                if (isShapeFilled(x, y, shape, options)) run.push({x, y});
-                else if (run.length >= 2) {
-                    out.push({cells: run, orientation: "horizontal"});
+            for (let ix = 0; ix < width; ix++) {
+                const { x: sx, y: sy } = gridToShape(ix, iy);
+                if (isShapeFilled(sx, sy, shape, options)) {
+                    run.push({ x: ix, y: iy });
+                } else {
+                    if (run.length >= 2) out.push({ cells: run, orientation: "horizontal" });
                     run = [];
-                } else run = [];
+                }
             }
-            if (run.length >= 2) out.push({cells: run, orientation: "horizontal"});
+            if (run.length >= 2) out.push({ cells: run, orientation: "horizontal" });
         }
 
-        // vertical runs
-        for (let x = 0; x < width; x++) {
+        for (let ix = 0; ix < width; ix++) {
             let run: Cell[] = [];
-            for (let y = 0; y < height; y++) {
-                if (isShapeFilled(x, y, shape, options)) run.push({x, y});
-                else if (run.length >= 2) {
-                    out.push({cells: run, orientation: "vertical"});
+            for (let iy = 0; iy < height; iy++) {
+                const { x: sx, y: sy } = gridToShape(ix, iy);
+                if (isShapeFilled(sx, sy, shape, options)) {
+                    run.push({ x: ix, y: iy });
+                } else {
+                    if (run.length >= 2) out.push({ cells: run, orientation: "vertical" });
                     run = [];
-                } else run = [];
+                }
             }
-            if (run.length >= 2) out.push({cells: run, orientation: "vertical"});
+            if (run.length >= 2) out.push({ cells: run, orientation: "vertical" });
         }
 
         return out;
-    }, [options, height, width, shape]);
+    }, [options, height, width, gridToShape, shape]);
 
     const cellToGroup = useMemo(() => {
         const map = new Map<string, Group>();
@@ -109,12 +117,6 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
     const W = (CELL + GAP) * width + 2 * PADDING;
     const H = (CELL + GAP) * height + 2 * PADDING;
 
-    const totalWidth = (CELL + GAP) * width;
-    const totalHeight = (CELL + GAP) * height;
-
-    const ox = -totalWidth / 2 + PADDING / 2;
-    const oy = -totalHeight / 2 + PADDING / 2;
-
     return (
         <svg
             ref={ref}
@@ -147,23 +149,24 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
             <g>
                 {Array.from({ length: height }).map((_, iy) =>
                     Array.from({ length: width }).map((_, ix) => {
-                        const x = ix - Math.floor(width / 2);
-                        const y = iy - Math.floor(height / 2);
+                        const { x: sx, y: sy } = gridToShape(ix, iy);
 
-                        if (!isShapeFilled(x, y, shape, options)) return null;
+                        if (!isShapeFilled(sx, sy, shape, options)) return null;
 
-                        const key = `${x},${y}`;
+                        const key = `${ix},${iy}`;
                         const isBuilt = checks.get(key) ?? false;
 
                         const gGroup = cellToGroup.get(key) ?? null;
-                        const inGroup = hoveredGroup?.cells.some(c => c.x === x && c.y === y);
-                        const isHoveredCell = hoveredCell?.x === x && hoveredCell?.y === y;
+                        const inGroup = hoveredGroup?.cells.some(c => c.x === ix && c.y === iy);
+                        const isHoveredCell = hoveredCell?.x === ix && hoveredCell?.y === iy;
 
-                        const cx = x * (CELL + GAP) - PADDING - 1;
-                        const cy = y * (CELL + GAP) - PADDING - 1;
+                        const Xcenter = sx * (CELL + GAP);
+                        const Ycenter = sy * (CELL + GAP);
+                        const cx = Xcenter - CELL / 2;
+                        const cy = Ycenter - CELL / 2;
 
                         return (
-                            <g key={`cell-${x}-${y}`}>
+                            <g key={`cell-${ix}-${iy}`}>
                                 <rect
                                     x={cx}
                                     y={cy}
@@ -173,9 +176,9 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
                                     fill={isBuilt ? checkedColor : cellColor}
                                     stroke={borderColor ?? "transparent"}
                                     strokeWidth={borderColor ? 1 : 0}
-                                    onClick={() => toggleCell(x, y)}
+                                    onClick={() => toggleCell(ix, iy)}
                                     onMouseEnter={() => {
-                                        setHoveredCell({ x, y });
+                                        setHoveredCell({ x: ix, y: iy });
                                         setHoveredGroup(gGroup);
                                     }}
                                     onMouseLeave={() => {

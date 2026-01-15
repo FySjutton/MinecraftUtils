@@ -160,6 +160,16 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                             className="mt-2 outline-none"
                         />
                     </div>
+                    <div className="flex-1">
+                        <Label>Height</Label>
+                        <Input
+                            type="text"
+                            value={getValue("height")}
+                            onChange={(e) => makeNumberHandler("height", 3)(e.target.value)}
+                            placeholder="3+"
+                            className="mt-2 outline-none"
+                        />
+                    </div>
                     <div>
                         <Label>Skew</Label>
                         <Input

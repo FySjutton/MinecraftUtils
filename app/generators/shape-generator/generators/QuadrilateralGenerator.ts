@@ -1,15 +1,13 @@
-import { degToRad, pointInPolygon } from "./utils";
 import { ShapeGenerator } from "@/app/generators/shape-generator/ShapeGenerator";
+import { degToRad, pointInPolygon } from "@/app/generators/shape-generator/generators/utils";
 
-function getAlignedVerts(opts: {
-    topWidth: number;
-    bottomWidth: number;
-    height: number;
-    skew?: number;
-    rotation?: number;
-}): [number, number][] {
-    const { topWidth, bottomWidth, height, skew = 0, rotation = 0 } = opts;
-
+function quadVerts(
+    topWidth: number,
+    bottomWidth: number,
+    height: number,
+    skew = 0,
+    rotationDeg = 0
+): [number, number][] {
     let verts: [number, number][] = [
         [-bottomWidth / 2,  height / 2],
         [ bottomWidth / 2,  height / 2],
@@ -17,16 +15,13 @@ function getAlignedVerts(opts: {
         [-topWidth / 2 + skew, -height / 2],
     ];
 
-    const rot = degToRad(rotation);
-    const cos = Math.cos(rot);
-    const sin = Math.sin(rot);
+    if (rotationDeg !== 0) {
+        const rot = degToRad(rotationDeg);
+        const cos = Math.cos(rot);
+        const sin = Math.sin(rot);
+        verts = verts.map(([x, y]) => [x * cos - y * sin, x * sin + y * cos] as [number, number]);
+    }
 
-    verts = verts.map(([x, y]) => [
-        x * cos - y * sin,
-        x * sin + y * cos,
-    ]);
-
-    // recenter verts around (0,0)
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     for (const [x, y] of verts) {
         minX = Math.min(minX, x);
@@ -34,48 +29,46 @@ function getAlignedVerts(opts: {
         minY = Math.min(minY, y);
         maxY = Math.max(maxY, y);
     }
-    const cx = (minX + maxX) / 2;
-    const cy = (minY + maxY) / 2;
 
-    return verts.map(([x, y]) => [x - cx, y - cy]);
+    const offsetX = (minX + maxX) / 2;
+    const offsetY = (minY + maxY) / 2;
+
+    return verts.map(([x, y]) => [x - offsetX, y - offsetY] as [number, number]);
 }
 
 export const QuadrilateralGenerator: ShapeGenerator = {
     isFilled: (x, y, opts) => {
-        const { mode, thickness = 1 } = opts;
+        const verts = quadVerts(
+            opts.topWidth,
+            opts.bottomWidth,
+            opts.height,
+            opts.skew ?? 0,
+            opts.rotation ?? 0
+        );
 
-        // x, y are **already centered** — no offsets
-        const px = x;
-        const py = y;
+        if (!pointInPolygon(x, y, verts)) return false;
 
-        const verts = getAlignedVerts(opts);
+        const insideAt = (ox: number, oy: number) => pointInPolygon(x + ox, y + oy, verts);
 
-        const inside = pointInPolygon(px, py, verts);
-        if (mode === "filled") return inside;
-
-        const insideAt = (ox: number, oy: number) => pointInPolygon(px + ox, py + oy, verts);
-
-        if (mode === "thin") {
-            return !(insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0));
-        }
-
-        if (mode === "thick") {
-            const neighbors: [number, number][] = [];
-            for (let dx = -thickness; dx <= thickness; dx++)
-                for (let dy = -thickness; dy <= thickness; dy++)
-                    if (dx !== 0 || dy !== 0) neighbors.push([dx, dy]);
-
-            const surrounded = neighbors.every(([dx, dy]) => insideAt(dx, dy));
-            return inside && !surrounded;
+        if (opts.mode === "filled") return true;
+        if (opts.mode === "thin") return !(insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0));
+        if (opts.mode === "thick") {
+            const core = insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0);
+            if (!core) return true;
+            return !(insideAt(-1, -1) && insideAt(1, -1) && insideAt(-1, 1) && insideAt(1, 1));
         }
 
         return false;
     },
 
     getSize: (opts) => {
-        const { thickness = 1 } = opts;
-
-        const verts = getAlignedVerts(opts);
+        const verts = quadVerts(
+            opts.topWidth,
+            opts.bottomWidth,
+            opts.height,
+            opts.skew ?? 0,
+            opts.rotation ?? 0
+        );
 
         let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
         for (const [x, y] of verts) {
@@ -85,9 +78,14 @@ export const QuadrilateralGenerator: ShapeGenerator = {
             maxY = Math.max(maxY, y);
         }
 
-        return {
-            width: Math.ceil(maxX - minX) + thickness * 2,
-            height: Math.ceil(maxY - minY) + thickness * 2,
-        };
-    },
+        const rawWidth = maxX - minX;
+        const rawHeight = maxY - minY;
+
+        const width = Math.ceil(rawWidth + 2);
+        const height = Math.ceil(rawHeight + 2);
+
+        return { width, height };
+        // TODO: Fix some padding issues
+    }
+
 };

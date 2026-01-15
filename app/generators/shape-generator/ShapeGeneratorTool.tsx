@@ -17,7 +17,7 @@ import {
     isShapeFilled,
     ShapeOptions,
     createDefaults,
-    getShapeOptions
+    getShapeOptions, generators
 } from "./ShapeGenerator";
 import { InteractiveShapeGroups } from "./ShapeSvg";
 
@@ -128,8 +128,8 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                             <p><span className="font-bold">Progress:</span> {checkedSlots} / {totalSlots}</p>
                         </CardContent>
                     </Card>
-                    <ZoomViewport cellWidth={options.width} cellHeight={options.height} isFullscreen={isFullscreen} setIsFullscreen={setIsFullscreen}>
-                        <InteractiveShapeGroups ref={svgRef} options={options} theme={theme} checks={shapeMap} setChecks={setChecks} shape={shape} />
+                    <ZoomViewport cellWidth={generators[shape].getSize(options).width} cellHeight={generators[shape].getSize(options).height} isFullscreen={isFullscreen} setIsFullscreen={setIsFullscreen}>
+                        <InteractiveShapeGroups ref={svgRef} options={options} theme={theme} checks={checks} setChecks={setChecks} shape={shape} />
                     </ZoomViewport>
                 </CardContent>
             </Card>
