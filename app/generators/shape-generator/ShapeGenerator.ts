@@ -10,7 +10,7 @@ export enum ShapeMode {
 }
 
 export const polygons = [
-    { name: "Triangle", sides: 3 },
+    { name: "Equilateral Triangle", sides: 3 },
     { name: "Square", sides: 4 },
     { name: "Pentagon", sides: 5 },
     { name: "Hexagon", sides: 6 },

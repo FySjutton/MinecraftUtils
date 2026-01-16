@@ -117,8 +117,8 @@ export function ZoomViewport({ children, cellWidth, cellHeight, isFullscreen, se
             const update = () => {
                 if (fullscreenRef.current) {
                     const rect = fullscreenRef.current.getBoundingClientRect();
-                    setFsWidth(rect.width - 16);
-                    setFsHeight(rect.height - 16);
+                    setFsWidth(rect.width - 32);
+                    setFsHeight(rect.height - 32);
                 }
             };
             update();

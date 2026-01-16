@@ -60,7 +60,6 @@ export const QuadrilateralGenerator: ShapeGenerator = {
 
         return false;
     },
-
     getSize: (opts) => {
         const verts = quadVerts(
             opts.topWidth,
@@ -70,7 +69,9 @@ export const QuadrilateralGenerator: ShapeGenerator = {
             opts.rotation ?? 0
         );
 
-        let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        let minX = Infinity, maxX = -Infinity;
+        let minY = Infinity, maxY = -Infinity;
+
         for (const [x, y] of verts) {
             minX = Math.min(minX, x);
             maxX = Math.max(maxX, x);
@@ -78,14 +79,14 @@ export const QuadrilateralGenerator: ShapeGenerator = {
             maxY = Math.max(maxY, y);
         }
 
-        const rawWidth = maxX - minX;
-        const rawHeight = maxY - minY;
+        const minXi = Math.ceil(minX);
+        const maxXi = Math.floor(maxX);
+        const minYi = Math.ceil(minY);
+        const maxYi = Math.floor(maxY);
 
-        const width = Math.ceil(rawWidth + 2);
-        const height = Math.ceil(rawHeight + 2);
+        const width  = (maxXi - minXi + 1) + 2;
+        const height = (maxYi - minYi + 1) + 2;
 
         return { width, height };
-        // TODO: Fix some padding issues
     }
-
 };

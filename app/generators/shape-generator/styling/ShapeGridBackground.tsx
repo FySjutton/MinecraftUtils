@@ -13,16 +13,7 @@ interface Props {
     options: ShapeOptions;
 }
 
-export function ShapeGridBackground({
-                                        shape,
-                                        width,
-                                        height,
-                                        cellSize,
-                                        gap,
-                                        theme,
-                                        padding = 6,
-                                        options,
-                                    }: Props) {
+export function ShapeGridBackground({shape, width, height, cellSize, gap, theme, padding = 6, options}: Props) {
     const totalWidth = width * (cellSize + gap);
     const totalHeight = height * (cellSize + gap);
 

@@ -82,7 +82,14 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                                 placeholder="Select shape"
                                 className="mt-2"
                                 renderItem={item => {
-                                    const sides = isPolygon(item) ? getPolygon(item).sides : (item === "Polygon" ? "n" : "");
+                                    let sides = "";
+                                    if (isPolygon(item)) {
+                                        sides = getPolygon(item).sides.toString();
+                                    } else if (item === "Polygon") {
+                                        sides = "n"
+                                    } else if (item == "Quadrilateral") {
+                                        sides = "4"
+                                    }
                                     return <div>{sides && <p className="text-gray-400">{sides} sides</p>}</div>;
                                 }}
                             />
@@ -124,8 +131,14 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                             <CardTitle>{circleOnly ? "Circle" : "Shape"} Stats</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p><span className="font-bold">Blocks:</span> {totalSlots}</p>
-                            <p><span className="font-bold">Progress:</span> {checkedSlots} / {totalSlots}</p>
+                            <p>
+                                <span className="font-bold">Blocks:</span>
+                                {` ${totalSlots} (${totalSlots >= 64 ? `${Math.floor(totalSlots / 64)} stack${totalSlots / 64 < 2 ? "" : "s"}` : ""}${totalSlots % 64 != 0 && totalSlots >= 64 ? " and " : ""}${totalSlots % 64 != 0 ? `${totalSlots % 64} blocks` : ""})`}
+                            </p>
+                            <p>
+                                <span className="font-bold">Progress:</span>
+                                {` ${checkedSlots} / ${totalSlots} (${Math.round(checkedSlots / totalSlots * 10000) / 100}%)`}
+                            </p>
                         </CardContent>
                     </Card>
                     <ZoomViewport cellWidth={generators[shape].getSize(options).width} cellHeight={generators[shape].getSize(options).height} isFullscreen={isFullscreen} setIsFullscreen={setIsFullscreen}>

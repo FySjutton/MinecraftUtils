@@ -38,12 +38,16 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
 
     const { backgroundColor, checkedColor, cellColor, borderColor, textColor, pattern } = themes[theme];
 
-    const centerX = (width - 1) / 2;
-    const centerY = (height - 1) / 2;
+    const centerX = Math.floor(width / 2);
+    const centerY = Math.floor(height / 2);
 
-    const gridToShape = useCallback((ix: number, iy: number) => {
-        return { x: ix - centerX, y: iy - centerY };
-    }, [centerX, centerY]);
+    const gridToShape = useCallback(
+        (ix: number, iy: number) => ({
+            x: ix - centerX,
+            y: iy - centerY,
+        }),
+        [centerX, centerY]
+    );
 
     const groups = useMemo<Group[]>(() => {
         if (options.mode === "filled") return [];
@@ -160,8 +164,9 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
                         const inGroup = hoveredGroup?.cells.some(c => c.x === ix && c.y === iy);
                         const isHoveredCell = hoveredCell?.x === ix && hoveredCell?.y === iy;
 
-                        const Xcenter = sx * (CELL + GAP);
-                        const Ycenter = sy * (CELL + GAP);
+                        const Xcenter = (ix - centerX) * (CELL + GAP);
+                        const Ycenter = (iy - centerY) * (CELL + GAP);
+
                         const cx = Xcenter - CELL / 2;
                         const cy = Ycenter - CELL / 2;
 

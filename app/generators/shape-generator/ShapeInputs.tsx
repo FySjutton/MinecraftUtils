@@ -40,13 +40,9 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
         });
     };
 
-    const makeNumberHandler = <K extends keyof ShapeOptions, S extends keyof ShapeOptions = never>(
-        key: K,
-        min = 0,
-        syncWith?: S
-    ) => (value: string) => {
+    const makeNumberHandler = <K extends keyof ShapeOptions, S extends keyof ShapeOptions = never>(key: K, {min = 0, max = -1, syncWith,}: { min?: number; max?: number; syncWith?: S; } = {}) => (value: string) => {
         const num = parseInt(value, 10);
-        if (!isNaN(num) && num >= min) {
+        if (!isNaN(num) && num >= min && (max == -1 || num <= max)) {
             setOptionsAction(prev => {
                 const updated: ShapeOptions = { ...prev, [key]: num } as ShapeOptions;
                 if (syncWith && prev.lockRatio) {
@@ -88,7 +84,7 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                     <Input
                         type="text"
                         value={getValue("sides")}
-                        onChange={(e) => makeNumberHandler("sides", 3)(e.target.value)}
+                        onChange={(e) => makeNumberHandler("sides", { min: 3 })(e.target.value)}
                         placeholder="3+"
                         className="mt-2 outline-none"
                     />
@@ -101,7 +97,7 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                     <Input
                         type="text"
                         value={getValue("width")}
-                        onChange={(e) => makeNumberHandler("width", 5, "height")(e.target.value)}
+                        onChange={(e) => makeNumberHandler("width", { min: 5, syncWith: "height" })(e.target.value)}
                         placeholder="5+"
                         className="mt-2 outline-none"
                     />
@@ -109,14 +105,14 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
             )}
 
             {/* Circle */}
-            {shape === "Circle" && (
+            {(shape === "Circle") && (
                 <div className="flex items-center space-x-2">
                     <div className="flex-1">
                         <Label>Width</Label>
                         <Input
                             type="text"
                             value={getValue("width")}
-                            onChange={(e) => makeNumberHandler("width", 3, "height")(e.target.value)}
+                            onChange={(e) => makeNumberHandler("width", { min: 3, syncWith: "height" })(e.target.value)}
                             placeholder="3+"
                             className="mt-2 outline-none"
                         />
@@ -129,7 +125,7 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                         <Input
                             type="text"
                             value={getValue("height")}
-                            onChange={(e) => makeNumberHandler("height", 3, "width")(e.target.value)}
+                            onChange={(e) => makeNumberHandler("height", { min: 3, syncWith: "width" })(e.target.value)}
                             placeholder="3+"
                             className="mt-2 outline-none"
                         />
@@ -145,7 +141,7 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                         <Input
                             type="text"
                             value={getValue("topWidth")}
-                            onChange={(e) => makeNumberHandler("topWidth", 3)(e.target.value)}
+                            onChange={(e) => makeNumberHandler("topWidth", { min: 3 })(e.target.value)}
                             placeholder="3+"
                             className="mt-2 outline-none"
                         />
@@ -155,7 +151,7 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                         <Input
                             type="text"
                             value={getValue("bottomWidth")}
-                            onChange={(e) => makeNumberHandler("bottomWidth", 3)(e.target.value)}
+                            onChange={(e) => makeNumberHandler("bottomWidth", { min: 3 })(e.target.value)}
                             placeholder="3+"
                             className="mt-2 outline-none"
                         />
@@ -165,7 +161,7 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                         <Input
                             type="text"
                             value={getValue("height")}
-                            onChange={(e) => makeNumberHandler("height", 3)(e.target.value)}
+                            onChange={(e) => makeNumberHandler("height", { min: 3 })(e.target.value)}
                             placeholder="3+"
                             className="mt-2 outline-none"
                         />
@@ -175,7 +171,7 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                         <Input
                             type="text"
                             value={getValue("skew")}
-                            onChange={(e) => makeNumberHandler("skew", 0)(e.target.value)}
+                            onChange={(e) => makeNumberHandler("skew")(e.target.value)}
                             placeholder="0+"
                             className="mt-2 outline-none"
                         />
@@ -184,8 +180,8 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
             )}
 
             {/* Mode / Thickness / Rotation */}
-            <div className="flex items-center mt-4">
-                <div className="w-1/2">
+            <div className="flex items-center mt-4 max-[450]:flex-wrap">
+                <div className="w-1/2 max-[450]:w-full">
                     <Tabs value={options.mode} onValueChange={v => handleModeChange(v as ShapeMode)}>
                         <TabsList className="w-full">
                             <TabsTrigger value="thick">Thick</TabsTrigger>
@@ -199,7 +195,7 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                             <InputGroupInput
                                 type="text"
                                 value={getValue("thickness")}
-                                onChange={(e) => makeNumberHandler("thickness", 1)(e.target.value)}
+                                onChange={(e) => makeNumberHandler("thickness", { min: 1 })(e.target.value)}
                                 placeholder="1+"
                                 className="outline-none"
                             />
