@@ -18,11 +18,26 @@ import { DyeColors } from '@/lib/Colors'
 import type { Pattern } from './BannerImageManager'
 import { createLayerPreview } from './BannerImageManager'
 
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent
+} from '@dnd-kit/core'
+import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+
 type EditTarget =
     | { type: 'base' }
     | { type: 'pattern'; index: number }
     | { type: 'add' }
     | null
+
+interface PatternWithVisible extends Pattern {
+    visible: boolean
+}
 
 const ColorPicker = ({selected, onSelect, onHover, onLeave}: { selected: string, onSelect: (hex: string) => void, onHover?: (hex: string) => void, onLeave?: () => void }) => (
     <div className="flex flex-wrap gap-2">
@@ -110,23 +125,23 @@ const PatternEditorPopup = ({pattern, color, onPatternSelect, onColorSelect, onP
 
 export default function BannerGenerator() {
     const [baseColor, setBaseColor] = useState(DyeColors.white)
-    const [patterns, setPatterns] = useState<Pattern[]>([])
+    const [patterns, setPatterns] = useState<PatternWithVisible[]>([])
     const [editing, setEditing] = useState<EditTarget>(null)
 
     const [addColor, setAddColor] = useState(baseColor == DyeColors.white ? DyeColors.light_gray : DyeColors.white)
 
     const [preview, setPreview] = useState<{
         index: number
-        pattern: Pattern
+        pattern: PatternWithVisible
     } | null>(null)
     const [hoveredBaseColor, setHoveredBaseColor] = useState<string | null>(null)
 
     const effectivePatterns = useMemo(() => {
-        if (!preview) return patterns
+        if (!preview) return patterns.filter(p => p.visible)
         if (preview.index === patterns.length) {
-            return [...patterns, preview.pattern]
+            return [...patterns, preview.pattern].filter(p => p.visible)
         }
-        return patterns.map((p, i) => (i === preview.index ? preview.pattern : p))
+        return patterns.map((p, i) => (i === preview.index ? preview.pattern : p)).filter(p => p.visible)
     }, [patterns, preview])
 
     const startAdd = () => {
@@ -135,31 +150,42 @@ export default function BannerGenerator() {
     }
 
     const commitAdd = (pattern: string) => {
-        setPatterns((p) => [...p, {pattern, color: addColor}])
+        setPatterns((p) => [...p, {pattern, color: addColor, visible: true}])
         setTimeout(() => setEditing(null), 0)
         setPreview(null)
     }
 
-    const updatePattern = (index: number, update: Partial<Pattern>) => {
-        setPatterns((p) =>
-            p.map((item, i) => (i === index ? {...item, ...update} : item))
-        )
+    const sensors = useSensors(useSensor(PointerSensor))
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event
+        if (over && active.id !== over.id) {
+            const oldIndex = patterns.findIndex((_, i) => i.toString() === active.id)
+            const newIndex = patterns.findIndex((_, i) => i.toString() === over.id)
+            setPatterns((items) => arrayMove(items, oldIndex, newIndex))
+        }
     }
 
-    const movePattern = (from: number, to: number) => {
-        if (to < 0 || to >= patterns.length) return
-        setPatterns((prev) => {
-            const next = prev.slice()
-            const [item] = next.splice(from, 1)
-            next.splice(to, 0, item)
-            return next
+    const randomizeBanner = () => {
+        const num = Math.floor(Math.random() * 3) + 3 // 3-5 layers
+        const newPatterns: PatternWithVisible[] = Array.from({ length: num }, () => {
+            const pat = patternList[Math.floor(Math.random() * patternList.length)]
+            const color = Object.values(DyeColors)[Math.floor(Math.random() * Object.values(DyeColors).length)]
+            return { pattern: pat, color, visible: true }
         })
+        setPatterns(newPatterns)
     }
 
-    const removePattern = (index: number) => {
-        setPatterns((p) => p.filter((_, i) => i !== index))
-        setEditing(null)
-    }
+    const clearAll = () => setPatterns([])
+
+    const bannerColor = Object.keys(DyeColors).find((k) => DyeColors[k] === baseColor) ?? 'white'
+
+    const command = `/give @p minecraft:${bannerColor}_banner[banner_patterns=[${patterns
+        .filter(p => p.visible)
+        .map((p) => {
+            const colorKey =
+                Object.keys(DyeColors).find((k) => DyeColors[k] === p.color) ?? 'white'
+            return `{pattern:${p.pattern},color:${colorKey}}`
+        }).join(',')}]]`
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -182,17 +208,14 @@ export default function BannerGenerator() {
         })
     }, [patterns])
 
-    const bannerColor = Object.keys(DyeColors).find((k) => DyeColors[k] === baseColor) ?? 'white'
-
-    const command = `/give @p minecraft:${bannerColor}_banner[banner_patterns=[${patterns
-        .map((p) => {
-            const colorKey =
-                Object.keys(DyeColors).find((k) => DyeColors[k] === p.color) ?? 'white'
-            return `{pattern:${p.pattern},color:${colorKey}}`
-        }).join(',')}]]`
-
     return (
         <div>
+            {/* Toolbar */}
+            <div className="flex gap-2 mb-4">
+                <Button onClick={randomizeBanner}>Randomize</Button>
+                <Button variant="destructive" onClick={clearAll}>Clear All</Button>
+            </div>
+
             <div className="flex gap-4">
                 <Card className="w-1/2 max-w-150">
                     <CardHeader>
@@ -224,7 +247,7 @@ export default function BannerGenerator() {
                                         color={addColor}
                                         onPatternSelect={commitAdd}
                                         onColorSelect={setAddColor}
-                                        onPatternHover={(pat) => setPreview({index: patterns.length, pattern: {pattern: pat, color: addColor}})}
+                                        onPatternHover={(pat) => setPreview({index: patterns.length, pattern: {pattern: pat, color: addColor, visible: true}})}
                                         onLeave={() => setPreview(null)}
                                     />
                                 </div>
@@ -258,75 +281,22 @@ export default function BannerGenerator() {
                             </div>
                         </div>
 
-                        {/* Pattern layers */}
-                        {patterns.map((p, i) => (
-                            <div key={i} className="relative">
-                                <div
-                                    data-layer
-                                    className="flex items-center gap-3 border rounded-md p-2 w-full"
-                                    onClick={() => setEditing({type: 'pattern', index: i})}
-                                >
-                                    <canvas
-                                        id={`layer-preview-${i}`}
-                                        className="w-10 aspect-1/2 border"
-                                        style={{imageRendering: 'pixelated'}}
+                        {/* Pattern layers with DnD & eye toggle */}
+                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                            <SortableContext items={patterns.map((_, i) => i.toString())} strategy={verticalListSortingStrategy}>
+                                {patterns.map((p, i) => (
+                                    <SortableLayer
+                                        key={i}
+                                        index={i}
+                                        pattern={p}
+                                        setPatterns={setPatterns}
+                                        setEditing={setEditing}
+                                        setPreview={setPreview}
+                                        editing={editing}
                                     />
-
-                                    <Badge variant="secondary" className="capitalize">
-                                        {p.pattern}
-                                    </Badge>
-
-                                    <div className="flex gap-2 ml-auto">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                movePattern(i, i - 1)
-                                            }}
-                                        >
-                                            ↑
-                                        </Button>
-
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                movePattern(i, i + 1)
-                                            }}
-                                        >
-                                            ↓
-                                        </Button>
-
-                                        <Button
-                                            size="sm"
-                                            variant="destructive"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                removePattern(i)
-                                            }}
-                                        >
-                                            ✕
-                                        </Button>
-                                    </div>
-                                </div>
-
-                                <div data-popup-container className={`absolute z-50 mt-2 w-full transition-all ${editing?.type === 'pattern' && editing.index === i ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                                    {editing?.type === 'pattern' && editing.index === i && (
-                                        <PatternEditorPopup
-                                            pattern={p.pattern}
-                                            color={p.color}
-                                            onPatternSelect={(pat) => updatePattern(i, {pattern: pat})}
-                                            onColorSelect={(hex) => updatePattern(i, {color: hex})}
-                                            onPatternHover={(pat) => setPreview({index: i, pattern: {...p, pattern: pat},})}
-                                            onColorHover={(hex) => setPreview({index: i, pattern: {...p, color: hex},})}
-                                            onLeave={() => setPreview(null)}
-                                        />
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                                ))}
+                            </SortableContext>
+                        </DndContext>
                     </CardContent>
                 </Card>
             </div>
@@ -348,6 +318,88 @@ export default function BannerGenerator() {
                 />
                 </CardContent>
             </Card>
+        </div>
+    )
+}
+
+function SortableLayer({
+                           index,
+                           pattern,
+                           setPatterns,
+                           setEditing,
+                           setPreview,
+                           editing
+                       }: {
+    index: number
+    pattern: PatternWithVisible
+    setPatterns: React.Dispatch<React.SetStateAction<PatternWithVisible[]>>
+    setEditing: React.Dispatch<React.SetStateAction<EditTarget | null>>
+    setPreview: React.Dispatch<React.SetStateAction<{ index: number; pattern: PatternWithVisible } | null>>
+    editing: EditTarget | null
+}) {
+    const { attributes, listeners, setNodeRef, transform } = useSortable({ id: index.toString() })
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition: transform ? 'none' : 'transform 150ms ease-out', // smooth from release
+    }
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} className="relative">
+            <div
+                data-layer
+                className="flex items-center gap-3 border rounded-md p-2 w-full"
+                onClick={() => setEditing({ type: 'pattern', index })}
+            >
+                <div {...listeners} className="cursor-grab text-lg select-none">⋮⋮</div>
+                <canvas
+                    id={`layer-preview-${index}`}
+                    className="w-10 aspect-1/2 border"
+                    style={{ imageRendering: 'pixelated' }}
+                />
+                <Badge variant="secondary" className="capitalize">{pattern.pattern}</Badge>
+
+                <div className="flex gap-2 ml-auto">
+                    <Button
+                        size="sm"
+                        variant={pattern.visible ? 'outline' : 'ghost'}
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            setPatterns((p) =>
+                                p.map((item, idx) => idx === index ? { ...item, visible: !item.visible } : item)
+                            )
+                        }}
+                    >
+                        👁
+                    </Button>
+
+                    <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={(e) => {
+                            e.stopPropagation()
+                            setPatterns((p) => p.filter((_, i) => i !== index))
+                            setEditing(null)
+                        }}
+                    >
+                        ✕
+                    </Button>
+                </div>
+            </div>
+
+            <div data-popup-container className={`absolute z-50 mt-2 w-full transition-all ${editing?.type === 'pattern' && editing.index === index ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+                {editing?.type === 'pattern' && editing.index === index && (
+                    <PatternEditorPopup
+                        pattern={pattern.pattern}
+                        color={pattern.color}
+                        onPatternSelect={(pat) => setPatterns(p => p.map((item, idx) => idx === index ? { ...item, pattern: pat } : item))}
+                        onColorSelect={(hex) => setPatterns(p => p.map((item, idx) => idx === index ? { ...item, color: hex } : item))}
+                        onPatternHover={(pat) => setPreview({index, pattern: {...pattern, pattern: pat}})}
+                        onColorHover={(hex) => setPreview({index, pattern: {...pattern, color: hex}})}
+                        onLeave={() => setPreview(null)}
+                    />
+                )}
+            </div>
         </div>
     )
 }
