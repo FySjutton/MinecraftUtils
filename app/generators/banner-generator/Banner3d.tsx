@@ -12,11 +12,9 @@ import { buildBannerCanvas } from './BannerImageManager'
 interface Banner3DProps {
     baseColor: string
     patterns: Pattern[]
-    width?: number
-    height?: number
 }
 
-function BannerScene({baseColor, patterns}: { baseColor: string, patterns: Pattern[] }) {
+function BannerScene({ baseColor, patterns }: { baseColor: string; patterns: Pattern[] }) {
     const mainRef = useRef<THREE.Group | null>(null)
     const [stand, setStand] = useState<THREE.Group | null>(null)
     const [main, setMain] = useState<THREE.Group | null>(null)
@@ -50,11 +48,7 @@ function BannerScene({baseColor, patterns}: { baseColor: string, patterns: Patte
 
         stand.traverse((child) => {
             if (!(child instanceof THREE.Mesh)) return
-
-            const materials = Array.isArray(child.material)
-                ? child.material
-                : [child.material]
-
+            const materials = Array.isArray(child.material) ? child.material : [child.material]
             materials.forEach((material) => {
                 if (material instanceof THREE.Material && 'map' in material) {
                     ;(material as THREE.MeshStandardMaterial).map = tex
@@ -66,7 +60,6 @@ function BannerScene({baseColor, patterns}: { baseColor: string, patterns: Patte
 
     useEffect(() => {
         if (!main) return
-
         let cancelled = false
 
         ;(async () => {
@@ -81,11 +74,7 @@ function BannerScene({baseColor, patterns}: { baseColor: string, patterns: Patte
 
             main.traverse((child) => {
                 if (!(child instanceof THREE.Mesh)) return
-
-                const materials = Array.isArray(child.material)
-                    ? child.material
-                    : [child.material]
-
+                const materials = Array.isArray(child.material) ? child.material : [child.material]
                 materials.forEach((material) => {
                     if (material instanceof THREE.Material && 'map' in material) {
                         ;(material as THREE.MeshStandardMaterial).map = texture
@@ -102,15 +91,12 @@ function BannerScene({baseColor, patterns}: { baseColor: string, patterns: Patte
 
     useEffect(() => {
         let raf = 0
-
         const tick = () => {
             if (mainRef.current) {
-                mainRef.current.rotation.z =
-                    0.05 + Math.sin(Date.now() * 0.001) * 0.05
+                mainRef.current.rotation.z = 0.05 + Math.sin(Date.now() * 0.001) * 0.05
             }
             raf = requestAnimationFrame(tick)
         }
-
         raf = requestAnimationFrame(tick)
         return () => cancelAnimationFrame(raf)
     }, [])
@@ -119,20 +105,48 @@ function BannerScene({baseColor, patterns}: { baseColor: string, patterns: Patte
         <>
             {stand && <primitive object={stand} />}
             {main && <primitive ref={mainRef} object={main} />}
-            <OrbitControls target={[0, 0, -5]} />
         </>
     )
 }
 
-export default function Banner3D({baseColor, patterns, width = 600, height = 400}: Banner3DProps) {
+export default function Banner3D({ baseColor, patterns }: Banner3DProps) {
+    const containerRef = useRef<HTMLDivElement>(null)
+    const [size, setSize] = useState({ width: 0, height: 0 })
+
+    useEffect(() => {
+        const el = containerRef.current
+        if (!el) return
+
+        const observer = new ResizeObserver((entries) => {
+            for (const entry of entries) {
+                const { width, height } = entry.contentRect
+                setSize({ width, height })
+            }
+        })
+        observer.observe(el)
+        return () => observer.disconnect()
+    }, [])
+
     return (
-        <div style={{ width, height }}>
-            <Canvas camera={{ position: [4, 1, -7], fov: 75 }}>
-                <ambientLight intensity={0.6} />
-                <directionalLight position={[5, 10, 7]} intensity={0.6} />
-                <hemisphereLight groundColor={0x444444} intensity={0.4} />
-                <BannerScene baseColor={baseColor} patterns={patterns} />
-            </Canvas>
+        <div ref={containerRef} style={{ width: '100%', height: '100%' }}>
+            {size.width > 0 && size.height > 0 && (
+                <Canvas
+                    style={{ width: size.width, height: size.height }}
+                    camera={{ position: [4, 1, -6], fov: 60 }}
+                >
+                    <ambientLight intensity={0.6} />
+                    <directionalLight position={[5, 10, 7]} intensity={0.6} />
+                    <hemisphereLight groundColor={0x444444} intensity={0.4} />
+
+                    <OrbitControls
+                        target={[0, 0, -5]}
+                        enableZoom={false}
+                        enablePan={false}
+                    />
+
+                    <BannerScene baseColor={baseColor} patterns={patterns} />
+                </Canvas>
+            )}
         </div>
     )
 }
