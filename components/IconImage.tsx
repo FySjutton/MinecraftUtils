@@ -1,16 +1,15 @@
 "use client"
-import Image from "next/image"
-import React from "react"
+import Image from 'next/image'
 
-export function IconImage({ name, size }: { name: string, size?: number }) {
+export function IconImage({name, size = 32}: { name: string, size?: number }) {
     return (
-        <span className="flex items-center shrink-0" style={{ width: size, height: size }}>
+        <span className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
             <Image
                 src={`/assets/icons/${name}.png`}
                 alt={name}
-                width={size}
-                height={size}
-                className="object-contain image-pixelated"
+                fill
+                style={{ objectFit: 'contain' }}
+                className="image-pixelated"
             />
         </span>
     )

@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 
     twitter: {
         card: "summary_large_image",
-        images: ["/og-banner.png"],
+        images: ["/og-banner-generator.png"],
     },
 
     icons: undefined,
