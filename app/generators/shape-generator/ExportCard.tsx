@@ -53,17 +53,29 @@ export function ExportCard({ shapeMap, width, height, circleOnly, svgRef }: Expo
         console.log(exportType)
         if (exportType === "Schematic") {
             const grid: boolean[][] = [];
+
+            const xOffset = Math.floor(width / 2);
+            const yOffset = Math.floor(height / 2);
+
             for (let y = 0; y < height; y++) {
                 const row: boolean[] = [];
                 for (let x = 0; x < width; x++) {
-                    const key = `${x},${y}`;
+                    const cx = x - xOffset;
+                    const cy = y - yOffset;
+
+                    const key = `${cx},${cy}`;
                     row.push(shapeMap.has(key));
                 }
                 grid.push(row);
             }
 
-            download2DSchematic(grid, circleOnly ? "minecraftutils_circle.schem" : "minecraftutils_shape.schem", blockName);
+            download2DSchematic(
+                grid,
+                circleOnly ? "minecraftutils_circle.schem" : "minecraftutils_shape.schem",
+                blockName
+            );
         }
+
 
         if ((exportType === "PNG" || exportType === "SVG") && svgRef.current) {
             const svgElement = svgRef.current;

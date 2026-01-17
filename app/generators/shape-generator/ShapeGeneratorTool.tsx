@@ -39,14 +39,21 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
         const width = options.width;
         const height = options.height;
 
+        const centerX = Math.floor(width / 2);
+        const centerY = Math.floor(height / 2);
+
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
-                if (isShapeFilled(x, y, shape, options)) {
-                    const key = `${x},${y}`;
+                const cx = x - centerX;
+                const cy = y - centerY;
+
+                if (isShapeFilled(cx, cy, shape, options)) {
+                    const key = `${cx},${cy}`;
                     newMap.set(key, oldChecks.get(key) ?? false);
                 }
             }
         }
+
         return newMap;
     }, [checks, options, shape]);
 
@@ -62,7 +69,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     };
 
     const totalSlots = shapeMap.size;
-    const checkedSlots = Array.from(shapeMap.values()).filter(v => v).length;
+    const checkedSlots = Array.from(checks.entries()).filter(([key, value]) => value && checks.has(key)).length
 
     return (
         <div className="space-y-6">
