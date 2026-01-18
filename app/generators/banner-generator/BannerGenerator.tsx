@@ -15,8 +15,8 @@ import { Badge } from '@/components/ui/badge'
 import ImageObj from 'next/image'
 import { DyeColors } from '@/lib/Colors'
 
-import type { Pattern } from './BannerImageManager'
-import { createLayerPreview } from './BannerImageManager'
+import {Pattern} from './TextureManager'
+import { createLayerPreview } from './TextureManager'
 
 import {
     DndContext,
@@ -30,12 +30,16 @@ import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } 
 import {restrictToParentElement, restrictToVerticalAxis} from '@dnd-kit/modifiers'
 import { CSS } from '@dnd-kit/utilities'
 import {Eye, EyeOff, GripVertical, X} from "lucide-react";
+import {Toggle} from "@/components/ui/toggle";
+import Shield3D from "@/app/generators/banner-generator/Shield3d";
 
 type EditTarget =
     | { type: 'base' }
     | { type: 'pattern'; index: number }
     | { type: 'add' }
     | null
+
+export type Mode = "banner" | "shield"
 
 interface PatternWithVisible extends Pattern {
     visible: boolean
@@ -67,13 +71,13 @@ const ColorPicker = ({selected, onSelect, onHover, onLeave}: { selected: string,
     </div>
 )
 
-const CanvasPreview = ({pattern, color, width = 20, height = 40,}: { pattern: string, color: string, width?: number, height?: number }) => {
+const CanvasPreview = ({pattern, mode, color, width = 20, height = 40 }: { pattern: string, mode: Mode, color: string, width?: number, height?: number }) => {
     const canvasRef = React.useRef<HTMLCanvasElement>(null)
 
     useEffect(() => {
         if (!canvasRef.current) return
-        createLayerPreview(canvasRef.current, { pattern, color }, color == DyeColors.black ? "#a6a6a6" : "#1e1e1e").catch(() => {})
-    }, [pattern, color])
+        createLayerPreview(canvasRef.current, { pattern, color }, mode, color == DyeColors.black ? "#a6a6a6" : "#1e1e1e").catch(() => {})
+    }, [pattern, color, mode])
 
     return (
         <canvas
@@ -86,8 +90,9 @@ const CanvasPreview = ({pattern, color, width = 20, height = 40,}: { pattern: st
     )
 }
 
-const PatternEditorPopup = ({pattern, color, onPatternSelect, onPatternHover, onLeave}: {
+const PatternEditorPopup = ({pattern, mode, color, onPatternSelect, onPatternHover, onLeave}: {
     pattern: string
+    mode: Mode
     color: string
     onPatternSelect: (pat: string) => void
     onPatternHover: (pat: string) => void
@@ -105,7 +110,7 @@ const PatternEditorPopup = ({pattern, color, onPatternSelect, onPatternHover, on
                         onMouseLeave={onLeave}
                         onClick={() => onPatternSelect(pat)}
                     >
-                        <CanvasPreview pattern={pat} color={color}/>
+                        <CanvasPreview pattern={pat} color={color} mode={mode}/>
                     </button>
                 ))}
             </div>
@@ -114,6 +119,8 @@ const PatternEditorPopup = ({pattern, color, onPatternSelect, onPatternHover, on
 }
 
 export default function BannerGenerator() {
+    const [mode, setMode] = useState<Mode>("shield")
+
     const [baseColor, setBaseColor] = useState(DyeColors.white)
     const [patterns, setPatterns] = useState<PatternWithVisible[]>([])
     const [editing, setEditing] = useState<EditTarget>(null)
@@ -197,9 +204,9 @@ export default function BannerGenerator() {
         patterns.forEach((pattern, index) => {
             const canvas = document.getElementById(`layer-preview-${index}`) as HTMLCanvasElement | null
             if (!canvas) return
-            createLayerPreview(canvas, pattern, pattern.color == DyeColors.black ? "#7e7e7e" : "#1e1e1e").catch(() => {})
+            createLayerPreview(canvas, pattern, mode, pattern.color == DyeColors.black ? "#7e7e7e" : "#1e1e1e").catch(() => {})
         })
-    }, [patterns])
+    }, [mode, patterns])
 
     return (
         <div>
@@ -207,6 +214,16 @@ export default function BannerGenerator() {
             <div className="flex gap-2 mb-4">
                 <Button onClick={randomizeBanner}>Randomize</Button>
                 <Button variant="destructive" onClick={clearAll}>Clear All</Button>
+                <Toggle
+                    aria-label="Enable Feature"
+                    size="default"
+                    variant="outline"
+                    pressed={mode == "banner"}
+                    onPressedChange={(pressed) => setMode(pressed ? "banner" : "shield")}
+                    className="flex items-center gap-2"
+                >
+                    <span>{mode}</span>
+                </Toggle>
             </div>
 
             <div className="flex gap-4">
@@ -216,10 +233,17 @@ export default function BannerGenerator() {
                     </CardHeader>
                     <CardContent className="w-full h-full">
                         <div style={{ width: '100%', height: '100%' }}>
-                            <Banner3D
-                                baseColor={hoveredBaseColor ?? baseColor}
-                                patterns={effectivePatterns}
-                            />
+                            {mode == "banner" ? (
+                                <Banner3D
+                                    baseColor={hoveredBaseColor ?? baseColor}
+                                    patterns={effectivePatterns}
+                                />
+                            ) : (
+                                <Shield3D
+                                    baseColor={hoveredBaseColor ?? baseColor}
+                                    patterns={effectivePatterns}
+                                />
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -242,6 +266,7 @@ export default function BannerGenerator() {
                                             <div className="my-4"></div>
                                             <PatternEditorPopup
                                                 pattern=""
+                                                mode={mode}
                                                 color={addColor}
                                                 onPatternSelect={commitAdd}
                                                 onPatternHover={(pat) => setPreview({index: patterns.length, pattern: {pattern: pat, color: addColor, visible: true}})}
@@ -300,6 +325,7 @@ export default function BannerGenerator() {
                                                         <CardContent>
                                                             <PatternEditorPopup
                                                                 pattern={pattern.pattern}
+                                                                mode={mode}
                                                                 color={pattern.color}
                                                                 onPatternSelect={(pat) => setPatterns(p => p.map((item, idx) => idx === index ? {...item, pattern: pat} : item))}
                                                                 onPatternHover={(pat) => setPreview({index, pattern: {...pattern, pattern: pat}})}

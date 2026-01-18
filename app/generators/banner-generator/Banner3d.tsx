@@ -6,8 +6,8 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { OBJLoader } from 'three-stdlib'
 
-import type { Pattern } from './BannerImageManager'
-import { buildBannerCanvas } from './BannerImageManager'
+import type { Pattern } from './TextureManager'
+import { buildTextureCanvas } from './TextureManager'
 import {Toggle} from "@/components/ui/toggle";
 import Image from "next/image";
 import {Check, X} from "lucide-react";
@@ -70,7 +70,7 @@ function BannerScene({baseColor, patterns, animate}: {
         let cancelled = false
 
         ;(async () => {
-            const canvas = await buildBannerCanvas(baseColor, patterns)
+            const canvas = await buildTextureCanvas(baseColor, patterns, "banner")
             if (cancelled) return
 
             const texture = new THREE.CanvasTexture(canvas)
