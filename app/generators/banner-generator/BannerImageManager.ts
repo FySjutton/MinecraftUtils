@@ -34,7 +34,7 @@ function tintMasked(ctx: CanvasRenderingContext2D, img: HTMLImageElement, color:
     ctx.globalCompositeOperation = 'source-over'
 }
 
-export async function createLayerPreview(canvas: HTMLCanvasElement, pattern: Pattern) {
+export async function createLayerPreview(canvas: HTMLCanvasElement, pattern: Pattern, backgroundColor?: string) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
@@ -51,6 +51,13 @@ export async function createLayerPreview(canvas: HTMLCanvasElement, pattern: Pat
     ctx.clearRect(0, 0, frontW, frontH)
 
     tintMasked(ctx, img, pattern.color, frontX, frontY, frontW, frontH)
+
+    if (backgroundColor) {
+        ctx.globalCompositeOperation = 'destination-over'
+        ctx.fillStyle = backgroundColor
+        ctx.fillRect(0, 0, frontW, frontH)
+        ctx.globalCompositeOperation = 'source-over'
+    }
 }
 
 export async function buildBannerCanvas(baseColor: string, patterns: Pattern[]): Promise<HTMLCanvasElement> {
