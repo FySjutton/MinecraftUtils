@@ -32,6 +32,9 @@ import { CSS } from '@dnd-kit/utilities'
 import {Eye, EyeOff, GripVertical, X} from "lucide-react";
 import {Toggle} from "@/components/ui/toggle";
 import Shield3D from "@/app/generators/banner-generator/Shield3d";
+import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import BeaconToGlassTool from "@/app/generators/beacon-color/subtools/beaconToGlassTool";
+import GlassToBeaconColor from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
 
 type EditTarget =
     | { type: 'base' }
@@ -214,16 +217,12 @@ export default function BannerGenerator() {
             <div className="flex gap-2 mb-4">
                 <Button onClick={randomizeBanner}>Randomize</Button>
                 <Button variant="destructive" onClick={clearAll}>Clear All</Button>
-                <Toggle
-                    aria-label="Enable Feature"
-                    size="default"
-                    variant="outline"
-                    pressed={mode == "banner"}
-                    onPressedChange={(pressed) => setMode(pressed ? "banner" : "shield")}
-                    className="flex items-center gap-2"
-                >
-                    <span>{mode}</span>
-                </Toggle>
+                <Tabs value={mode} onValueChange={v => setMode(v == 'banner' ? v : 'shield')} className="w-full">
+                    <TabsList>
+                        <TabsTrigger value="banner">Banner</TabsTrigger>
+                        <TabsTrigger value="shield">Shield</TabsTrigger>
+                    </TabsList>
+                </Tabs>
             </div>
 
             <div className="flex gap-4">
