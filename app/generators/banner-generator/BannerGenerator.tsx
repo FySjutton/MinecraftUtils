@@ -27,7 +27,9 @@ import {
     DragEndEvent
 } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
+import {restrictToParentElement, restrictToVerticalAxis} from '@dnd-kit/modifiers'
 import { CSS } from '@dnd-kit/utilities'
+import {Eye, EyeOff, X} from "lucide-react";
 
 type EditTarget =
     | { type: 'base' }
@@ -237,11 +239,11 @@ export default function BannerGenerator() {
                         <Button size="sm" data-add-button onClick={startAdd}>Add</Button>
                     </CardHeader>
 
-                    <CardContent className="space-y-3 relative max-h-170 min-h-100 overflow-y-auto">
-                        {/* Add popup */}
-                        <div className="relative">
+                    <CardContent className="relative px-0 mx-6">
+                        <div className="max-h-170 min-h-100 overflow-y-auto space-y-3 overflow-x-hidden">
+                            {/* Add popup */}
                             {editing?.type === 'add' && (
-                                <div data-popup-container className={`mt-2`}>
+                                <div data-popup-container className="absolute mt-1 w-full">
                                     <PatternEditorPopup
                                         pattern=""
                                         color={addColor}
@@ -252,17 +254,15 @@ export default function BannerGenerator() {
                                     />
                                 </div>
                             )}
-                        </div>
 
-                        {/* Base layer */}
-                        <div className="relative">
+                            {/* Base layer */}
                             <div className="flex items-center gap-3 border rounded-md p-2" onClick={() => setEditing({type: 'base'})}>
                                 <div className="w-10 aspect-1/2" style={{backgroundColor: baseColor}}/>
                                 <Badge variant="secondary">Base</Badge>
                             </div>
 
-                            <div data-popup-container className={`absolute z-50 mt-2 w-full transition-all ${editing?.type === 'base' ? 'opacity-100' : 'opacity-0'}`}>
-                                {editing?.type === 'base' && (
+                            {editing?.type === 'base' && (
+                                <div data-popup-container className="absolute mt-1 w-full">
                                     <Card>
                                         <CardContent>
                                             <p className="mb-1 text-sm font-medium">Color</p>
@@ -277,26 +277,27 @@ export default function BannerGenerator() {
                                             </div>
                                         </CardContent>
                                     </Card>
-                                )}
-                            </div>
-                        </div>
+                                </div>
+                            )}
 
-                        {/* Pattern layers with DnD & eye toggle */}
-                        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-                            <SortableContext items={patterns.map((_, i) => i.toString())} strategy={verticalListSortingStrategy}>
-                                {patterns.map((p, i) => (
-                                    <SortableLayer
-                                        key={i}
-                                        index={i}
-                                        pattern={p}
-                                        setPatterns={setPatterns}
-                                        setEditing={setEditing}
-                                        setPreview={setPreview}
-                                        editing={editing}
-                                    />
-                                ))}
-                            </SortableContext>
-                        </DndContext>
+                            {/* Pattern layers */}
+                            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}     modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                            >
+                                <SortableContext items={patterns.map((_, i) => i.toString())} strategy={verticalListSortingStrategy}>
+                                    {patterns.map((p, i) => (
+                                        <SortableLayer
+                                            key={i}
+                                            index={i}
+                                            pattern={p}
+                                            setPatterns={setPatterns}
+                                            setEditing={setEditing}
+                                            setPreview={setPreview}
+                                            editing={editing}
+                                        />
+                                    ))}
+                                </SortableContext>
+                            </DndContext>
+                        </div>
                     </CardContent>
                 </Card>
             </div>
@@ -322,14 +323,7 @@ export default function BannerGenerator() {
     )
 }
 
-function SortableLayer({
-                           index,
-                           pattern,
-                           setPatterns,
-                           setEditing,
-                           setPreview,
-                           editing
-                       }: {
+function SortableLayer({index, pattern, setPatterns, setEditing, setPreview, editing}: {
     index: number
     pattern: PatternWithVisible
     setPatterns: React.Dispatch<React.SetStateAction<PatternWithVisible[]>>
@@ -337,40 +331,36 @@ function SortableLayer({
     setPreview: React.Dispatch<React.SetStateAction<{ index: number; pattern: PatternWithVisible } | null>>
     editing: EditTarget | null
 }) {
-    const { attributes, listeners, setNodeRef, transform } = useSortable({ id: index.toString() })
+    const { attributes, listeners, setNodeRef, transform, isDragging } = useSortable({ id: index.toString() })
 
     const style = {
         transform: CSS.Transform.toString(transform),
-        transition: transform ? 'none' : 'transform 150ms ease-out', // smooth from release
+        transition: transform ? 'transform 150ms ease-out' : undefined,
+        zIndex: isDragging ? 50 : 'auto',
     }
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} className="relative">
-            <div
-                data-layer
-                className="flex items-center gap-3 border rounded-md p-2 w-full"
-                onClick={() => setEditing({ type: 'pattern', index })}
-            >
-                <div {...listeners} className="cursor-grab text-lg select-none">⋮⋮</div>
+        <div>
+        <Card ref={setNodeRef} data-layer style={style} {...attributes} onClick={() => setEditing({type: 'pattern', index})} className="relative cursor-pointer p-0">
+            <CardContent className="flex items-center gap-3 p-0">
+                <div {...listeners} className="cursor-grab text-lg select-none px-2 py-2 bg-green-800">⋮⋮</div>
                 <canvas
                     id={`layer-preview-${index}`}
-                    className="w-10 aspect-1/2 border"
-                    style={{ imageRendering: 'pixelated' }}
+                    className="w-15 aspect-1/2 border"
+                    style={{imageRendering: 'pixelated'}}
                 />
                 <Badge variant="secondary" className="capitalize">{pattern.pattern}</Badge>
 
                 <div className="flex gap-2 ml-auto">
                     <Button
                         size="sm"
-                        variant={pattern.visible ? 'outline' : 'ghost'}
+                        variant="outline"
                         onClick={(e) => {
                             e.stopPropagation()
-                            setPatterns((p) =>
-                                p.map((item, idx) => idx === index ? { ...item, visible: !item.visible } : item)
-                            )
+                            setPatterns((p) => p.map((item, idx) => idx === index ? {...item, visible: !item.visible} : item))
                         }}
                     >
-                        👁
+                        {pattern.visible ? (<Eye />) : (<EyeOff />)}
                     </Button>
 
                     <Button
@@ -382,24 +372,25 @@ function SortableLayer({
                             setEditing(null)
                         }}
                     >
-                        ✕
+                        <X />
                     </Button>
                 </div>
-            </div>
 
-            <div data-popup-container className={`absolute z-50 mt-2 w-full transition-all ${editing?.type === 'pattern' && editing.index === index ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
-                {editing?.type === 'pattern' && editing.index === index && (
+            </CardContent>
+        </Card>
+            {editing?.type === 'pattern' && editing.index === index && (
+                <div data-popup-container className="absolute mt-1 w-full">
                     <PatternEditorPopup
                         pattern={pattern.pattern}
                         color={pattern.color}
-                        onPatternSelect={(pat) => setPatterns(p => p.map((item, idx) => idx === index ? { ...item, pattern: pat } : item))}
-                        onColorSelect={(hex) => setPatterns(p => p.map((item, idx) => idx === index ? { ...item, color: hex } : item))}
+                        onPatternSelect={(pat) => setPatterns(p => p.map((item, idx) => idx === index ? {...item, pattern: pat} : item))}
+                        onColorSelect={(hex) => setPatterns(p => p.map((item, idx) => idx === index ? {...item, color: hex} : item))}
                         onPatternHover={(pat) => setPreview({index, pattern: {...pattern, pattern: pat}})}
                         onColorHover={(hex) => setPreview({index, pattern: {...pattern, color: hex}})}
                         onLeave={() => setPreview(null)}
                     />
-                )}
-            </div>
+                </div>
+            )}
         </div>
     )
 }
