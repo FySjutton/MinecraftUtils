@@ -42,3 +42,5 @@ export const patternList: Record<string, string> = {
     "triangles_bottom": "Base Indented",
     "triangles_top": "Chief Indented"
 } as const;
+
+export type PatternType = typeof patternList[keyof typeof patternList]
