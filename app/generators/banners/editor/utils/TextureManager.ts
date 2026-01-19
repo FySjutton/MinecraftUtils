@@ -1,4 +1,4 @@
-import {Mode} from "@/app/generators/banner-generator/BannerGenerator";
+import {Mode} from "@/app/generators/banners/editor/BannerGenerator";
 
 export type Pattern = {
     pattern: string

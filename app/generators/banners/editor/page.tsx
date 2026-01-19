@@ -1,5 +1,5 @@
 import {Metadata} from "next";
-import BannerGenerator from "@/app/generators/banner-generator/BannerGenerator";
+import BannerGenerator from "@/app/generators/banners/editor/BannerGenerator";
 
 export default function Page() {
     return (

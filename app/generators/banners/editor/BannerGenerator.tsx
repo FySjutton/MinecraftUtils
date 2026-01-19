@@ -1,9 +1,9 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import Banner3D from '@/app/generators/banner-generator/preview/Banner3d'
-import Shield3D from '@/app/generators/banner-generator/preview/Shield3d'
-import { patternList } from '@/app/generators/banner-generator/utils/patterns'
+import Banner3D from '@/app/generators/banners/editor/preview/Banner3d'
+import Shield3D from '@/app/generators/banners/editor/preview/Shield3d'
+import { patternList } from '@/app/generators/banners/editor/utils/patterns'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -16,7 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import ImageObj from 'next/image'
 import { DyeColors } from '@/lib/Colors'
 
-import { Pattern, createLayerPreview } from '@/app/generators/banner-generator/utils/TextureManager'
+import { Pattern, createLayerPreview } from '@/app/generators/banners/editor/utils/TextureManager'
 
 import {
     DndContext,
@@ -206,7 +206,11 @@ export default function BannerGenerator() {
             if (!canvas) return
             createLayerPreview(canvas, pattern, mode, pattern.color == DyeColors.black ? "#7e7e7e" : "#1e1e1e").catch(() => {})
         })
-    }, [mode, patterns])
+        const canvas = document.getElementById(`layer-preview-base`) as HTMLCanvasElement | null
+        if (!canvas) return
+        createLayerPreview(canvas, { pattern: "base", color: bannerColor }, mode, "#1e1e1e").catch(() => {})
+
+    }, [bannerColor, mode, patterns])
 
     return (
         <div>
@@ -279,7 +283,11 @@ export default function BannerGenerator() {
                             <Card className="relative cursor-pointer p-0 overflow-hidden" onClick={() => setEditing({type: 'base'})}>
                                 <CardContent className="flex gap-3 p-0 flex-wrap items-stretch">
                                     <div style={{ backgroundColor: baseColor}} className="w-2 rounded"></div>
-                                    <div className="w-15 aspect-1/2" style={{backgroundColor: baseColor}}/>
+                                    <canvas
+                                        id={`layer-preview-base`}
+                                        className="w-20 aspect-1/2 mr-2"
+                                        style={{imageRendering: 'pixelated'}}
+                                    />
                                     <Badge variant="secondary" className="my-auto">Banner</Badge>
                                 </CardContent>
                             </Card>
