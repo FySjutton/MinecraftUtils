@@ -6,8 +6,8 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { OBJLoader } from 'three-stdlib'
 
-import type { Pattern } from './TextureManager'
-import { buildTextureCanvas } from './TextureManager'
+import type { Pattern } from '@/app/generators/banner-generator/utils/TextureManager'
+import { buildTextureCanvas } from '@/app/generators/banner-generator/utils/TextureManager'
 
 interface Shield3DProps {
     baseColor: string

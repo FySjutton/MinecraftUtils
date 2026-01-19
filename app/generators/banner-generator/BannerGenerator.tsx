@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useEffect, useMemo, useState } from 'react'
-import Banner3D from './Banner3d'
-import { patternList } from './patterns'
+import Banner3D from '@/app/generators/banner-generator/preview/Banner3d'
+import Shield3D from '@/app/generators/banner-generator/preview/Shield3d'
+import { patternList } from '@/app/generators/banner-generator/utils/patterns'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -15,8 +16,7 @@ import { Badge } from '@/components/ui/badge'
 import ImageObj from 'next/image'
 import { DyeColors } from '@/lib/Colors'
 
-import {Pattern} from './TextureManager'
-import { createLayerPreview } from './TextureManager'
+import { Pattern, createLayerPreview } from '@/app/generators/banner-generator/utils/TextureManager'
 
 import {
     DndContext,
@@ -30,11 +30,8 @@ import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } 
 import {restrictToParentElement, restrictToVerticalAxis} from '@dnd-kit/modifiers'
 import { CSS } from '@dnd-kit/utilities'
 import {Eye, EyeOff, GripVertical, X} from "lucide-react";
-import {Toggle} from "@/components/ui/toggle";
-import Shield3D from "@/app/generators/banner-generator/Shield3d";
-import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import BeaconToGlassTool from "@/app/generators/beacon-color/subtools/beaconToGlassTool";
-import GlassToBeaconColor from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
+import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {InputField} from "@/components/InputField";
 
 type EditTarget =
     | { type: 'base' }
@@ -183,13 +180,13 @@ export default function BannerGenerator() {
 
     const bannerColor = Object.keys(DyeColors).find((k) => DyeColors[k] === baseColor) ?? 'white'
 
-    const command = `/give @p minecraft:${bannerColor}_banner[banner_patterns=[${patterns
+    const command = `/give @p minecraft:${mode == "shield" ? "shield" : `${bannerColor}_banner`}[banner_patterns=[${patterns
         .filter(p => p.visible)
         .map((p) => {
             const colorKey =
                 Object.keys(DyeColors).find((k) => DyeColors[k] === p.color) ?? 'white'
             return `{pattern:${p.pattern},color:${colorKey}}`
-        }).join(',')}]]`
+        }).join(',')}]${mode == "shield" ? `, minecraft:base_color="${bannerColor}"` : ""}]`
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -214,19 +211,21 @@ export default function BannerGenerator() {
     return (
         <div>
             {/* Toolbar */}
-            <div className="flex gap-2 mb-4">
-                <Button onClick={randomizeBanner}>Randomize</Button>
-                <Button variant="destructive" onClick={clearAll}>Clear All</Button>
-                <Tabs value={mode} onValueChange={v => setMode(v == 'banner' ? v : 'shield')} className="w-full">
-                    <TabsList>
-                        <TabsTrigger value="banner">Banner</TabsTrigger>
-                        <TabsTrigger value="shield">Shield</TabsTrigger>
-                    </TabsList>
-                </Tabs>
-            </div>
+            <Card>
+                <CardContent className="flex flex-wrap gap-2">
+                    <Tabs value={mode} onValueChange={v => setMode(v == 'banner' ? v : 'shield')} className="mr-auto">
+                        <TabsList>
+                            <TabsTrigger value="banner">Banner</TabsTrigger>
+                            <TabsTrigger value="shield">Shield</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    <Button onClick={randomizeBanner}>Randomize</Button>
+                    <Button variant="destructive" onClick={clearAll}>Clear All</Button>
+                </CardContent>
+            </Card>
 
-            <div className="flex gap-4">
-                <Card className="w-1/2 max-w-150">
+            <div className="flex gap-4 mt-4 max-[1100]:flex-wrap">
+                <Card className="w-1/2 max-w-150 max-[1100]:w-full max-[1100]:max-w-none max-[1100]:min-h-150">
                     <CardHeader>
                         <CardTitle>Preview</CardTitle>
                     </CardHeader>
@@ -247,10 +246,10 @@ export default function BannerGenerator() {
                     </CardContent>
                 </Card>
 
-                <Card className="w-full">
+                <Card className="w-1/2 max-[1100]:w-full">
                     <CardHeader className="flex justify-between items-center">
                         <CardTitle>Layers</CardTitle>
-                        <Button size="sm" data-add-button onClick={startAdd}>Add</Button>
+                        <Button size="sm" data-add-button variant="outline" onClick={startAdd}>Add Layer</Button>
                     </CardHeader>
 
                     <CardContent className="relative px-0 mx-6">
@@ -278,7 +277,7 @@ export default function BannerGenerator() {
 
                             {/* Base layer */}
                             <Card className="relative cursor-pointer p-0 overflow-hidden" onClick={() => setEditing({type: 'base'})}>
-                                <CardContent className="flex items-center gap-3 p-0 flex-wrap items-stretch">
+                                <CardContent className="flex gap-3 p-0 flex-wrap items-stretch">
                                     <div style={{ backgroundColor: baseColor}} className="w-2 rounded"></div>
                                     <div className="w-15 aspect-1/2" style={{backgroundColor: baseColor}}/>
                                     <Badge variant="secondary" className="my-auto">Banner</Badge>
@@ -354,18 +353,18 @@ export default function BannerGenerator() {
                     <CardTitle>Minecraft Command</CardTitle>
                 </CardHeader>
                 <CardContent>
-                <textarea
-                    readOnly
-                    value={command}
-                    className="w-full h-32 font-mono text-sm border rounded-md p-2"
-                    onClick={(e) =>
-                        navigator.clipboard.writeText(
-                            (e.target as HTMLTextAreaElement).value
-                        )
-                    }
-                />
+                    <InputField
+                        showCopy
+                        value={command}
+                        readOnly
+                    />
                 </CardContent>
             </Card>
+            {/* TODO: Temporary margin, this must be minimum later. Add more content until its this height. */}
+            {/* This is for the editing popup on small devices, otherwise causing problems on the footer / scroll height. */}
+            <div className="h-150">
+
+            </div>
         </div>
     )
 }
@@ -386,7 +385,7 @@ function SortableLayer({index, pattern, setPatterns, setEditing}: {
 
     return (
         <Card ref={setNodeRef} data-layer style={style} {...attributes} onClick={() => setEditing({type: 'pattern', index})} className={`relative cursor-pointer p-0 overflow-hidden ${index > 5 ? "border-2 border-red-400 border-l-0" : ""}`}>
-            <CardContent className="flex items-center gap-3 p-0 flex-wrap items-stretch">
+            <CardContent className="flex gap-3 p-0 items-stretch">
                 <div style={{ backgroundColor: pattern.color}} className="w-2 rounded"></div>
                 <Button
                     size="sm"
@@ -399,27 +398,31 @@ function SortableLayer({index, pattern, setPatterns, setEditing}: {
                 >
                     {pattern.visible ? (<Eye />) : (<EyeOff />)}
                 </Button>
-                <canvas
-                    id={`layer-preview-${index}`}
-                    className="w-15 aspect-1/2"
-                    style={{imageRendering: 'pixelated'}}
-                />
-                <Badge variant="secondary" className="my-auto">{patternList[pattern.pattern]}</Badge>
+                <div className="flex w-full flex-wrap justify-center max-[430]:flex-col max-[430]:content-center">
+                    <canvas
+                        id={`layer-preview-${index}`}
+                        className="w-20 aspect-1/2 mr-2"
+                        style={{imageRendering: 'pixelated'}}
+                    />
+                    <div className="flex flex-1 content-center max-[430]:flex-col max-[430]:mt-2">
+                        <Badge variant="secondary" className="my-auto">{patternList[pattern.pattern]}</Badge>
 
-                <div className="flex gap-2 ml-auto my-auto items-center mr-6">
-                    <div {...listeners} className="cursor-grab text-lg select-none px-2 flex items-center my-auto py-3"><GripVertical /></div>
+                        <div className="flex gap-2 items-center ml-auto mr-6 max-[430]:mx-auto">
+                            <div {...listeners} className="cursor-grab text-lg select-none px-2 flex items-center my-auto py-3"><GripVertical /></div>
 
-                    <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={(e) => {
-                            e.stopPropagation()
-                            setPatterns((p) => p.filter((_, i) => i !== index))
-                            setEditing(null)
-                        }}
-                    >
-                        <X />
-                    </Button>
+                            <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    setPatterns((p) => p.filter((_, i) => i !== index))
+                                    setEditing(null)
+                                }}
+                            >
+                                <X />
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </CardContent>
         </Card>
