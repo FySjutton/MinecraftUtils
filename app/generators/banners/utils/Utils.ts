@@ -1,3 +1,25 @@
+import {DyeColorsReverse} from "@/lib/Colors";
+
+export function generateCommand(mode: Mode, patterns: Pattern[], baseColor: string) {
+    return `/give @p minecraft:${mode == "shield" ? "shield" : `${baseColor.startsWith("#") ? DyeColorsReverse[baseColor] : baseColor}_banner`}[banner_patterns=[${patterns
+        .map((p) => {
+            const colorKey = p.color.startsWith("#") ? DyeColorsReverse[p.color] : p.color
+            return `{pattern:${p.pattern},color:${colorKey}}`
+        }).join(',')}]${mode == "shield" ? `, minecraft:base_color="${baseColor.startsWith("#") ? DyeColorsReverse[baseColor] : baseColor}"` : ""}]`
+}
+
+export type Mode = "banner" | "shield"
+
+export type Pattern = {
+    pattern: PatternType
+    color: string
+}
+
+export type Banner = {
+    patterns: Pattern[]
+    baseColor: string
+}
+
 export const patternList: Record<string, string> = {
     "border": "Bordure",
     "bricks": "Field Masoned",

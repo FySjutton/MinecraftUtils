@@ -1,8 +1,7 @@
 "use client"
-import UtilBase, {Banner} from "@/app/generators/banners/utils/UtilBase"
-import {Pattern} from "@/app/generators/banners/TextureManager";
-import {PatternType} from "@/app/generators/banners/patterns";
+import UtilBase from "@/app/generators/banners/utils/UtilBase"
 import {DyeColors} from "@/lib/Colors";
+import {Banner, Pattern, PatternType} from "@/app/generators/banners/utils/Utils";
 
 type BannerValues = {
     background: string
@@ -27,6 +26,7 @@ export default function MinecraftBannerLetters() {
                     defaultValue: DyeColors.black,
                 }
             ]}
+            livePreview={true}
             getResultsAction={(values) => {
                 const result: Record<string, Banner> = {}
 
@@ -40,7 +40,6 @@ export default function MinecraftBannerLetters() {
                         pattern,
                         color: useBackground ? values.background : values.foreground
                     }))
-
                     const baseColor = baseUse ? values.background : values.foreground
 
                     result[letter] = { patterns, baseColor }

@@ -50,7 +50,6 @@ export function ExportCard({ shapeMap, width, height, circleOnly, svgRef }: Expo
     }, [isOpen]);
 
     const handleExport = async () => {
-        console.log(exportType)
         if (exportType === "Schematic") {
             const grid: boolean[][] = [];
 

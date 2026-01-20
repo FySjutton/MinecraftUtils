@@ -85,7 +85,6 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
 
             const [targetHex, resultsStr] = raw.split("^");
             setResultTarget(targetHex);
-            console.log("here2")
 
             const unpackRGB = (s: string): [number, number, number] => {
                 const n = parseInt(s, 36);
@@ -235,7 +234,6 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
 
     const findBest = async () => {
         if (!currentPreset) return
-        console.log("here")
         setResultTarget(hex);
         setResults([])
         setColorsChecked(0)

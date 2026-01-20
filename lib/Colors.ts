@@ -36,6 +36,10 @@ export const DyeColors: { [key: string]: string } = {
     pink: "#F38BAA",
 };
 
+export const DyeColorsReverse = Object.fromEntries(
+    Object.entries(DyeColors).map(([name, hex]) => [hex, name])
+) as Record<string, string>
+
 export const ColorList = Object.values(Colors) as readonly string[]
 
 export const ColorMeta = [

@@ -1,19 +1,16 @@
 "use client"
 
 import React, { useEffect, useMemo } from "react"
-import { createLayerPreview, Pattern } from "@/app/generators/banners/TextureManager"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ColorPicker } from "@/app/generators/banners/editor/BannerGenerator"
 import { Button } from "@/components/ui/button"
-import { DyeColors } from "@/lib/Colors"
+import {DyeColors, DyeColorsReverse} from "@/lib/Colors"
 import {ArrowBigRight} from "lucide-react";
+import {Banner, generateCommand} from "@/app/generators/banners/utils/Utils";
+import {createLayerPreview} from "@/app/generators/banners/utils/TextureManager";
+import {InputField} from "@/components/InputField";
 
 type StringRecord = Record<string, string>
-
-export type Banner = {
-    patterns: Pattern[]
-    baseColor: string
-}
 
 export type UtilInput<T extends StringRecord, K extends keyof T> = {
     key: K
@@ -76,6 +73,13 @@ export default function UtilBase<T extends StringRecord>({title, inputs, getResu
             }
         }
     }, [result, selected])
+    
+    const command = useMemo(() => {
+        if (selected) {
+            return generateCommand("banner", result[selected].patterns, result[selected].baseColor)
+        }
+        return ""
+    }, [result, selected])
 
     return (
         <div>
@@ -88,7 +92,7 @@ export default function UtilBase<T extends StringRecord>({title, inputs, getResu
                 <CardContent className="flex flex-col gap-4">
                     <div className="flex flex-col gap-4">
                         {inputs.map(input => (
-                            <InputField
+                            <BannerInput
                                 key={String(input.key)}
                                 input={input}
                                 value={values[input.key]}
@@ -110,15 +114,19 @@ export default function UtilBase<T extends StringRecord>({title, inputs, getResu
                     <CardTitle>Select a result</CardTitle>
                     <CardDescription>Select a result to get its crafting recipe and command output.</CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-wrap justify-center gap-2 max-h-100 overflow-y-auto">
+                <CardContent className="flex flex-wrap justify-center gap-2 max-h-100 overflow-y-auto py-2">
                     {Object.keys(result).map((name, index) => (
-                        <canvas
-                            key={index}
-                            id={`layer-preview-${name}`}
-                            className="w-20 aspect-1/2 mr-2 border"
-                            style={{imageRendering: 'pixelated'}}
-                            onClick={() => setSelected(name)}
-                        />
+                        <div key={index} className="flex flex-col justify-center">
+                            <div className="w-full mt-2 text-center rounded bg-blue-400">
+                                {name}
+                            </div>
+                            <canvas
+                                id={`layer-preview-${name}`}
+                                className="w-20 aspect-1/2 mt-1 cursor-pointer hover:ring-1"
+                                style={{imageRendering: 'pixelated'}}
+                                onClick={() => setSelected(name)}
+                            />
+                        </div>
                     ))}
                 </CardContent>
             </Card>
@@ -126,7 +134,8 @@ export default function UtilBase<T extends StringRecord>({title, inputs, getResu
             {selected != undefined && (
                 <Card className="mt-4">
                     <CardHeader>
-                        <CardTitle>Output</CardTitle>
+                        <CardTitle>{`${selected} | Crafting Recipe`}</CardTitle>
+                        <CardDescription>Copy the command below, or use the crafting recipe in a loom to get the banner.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex items-center gap-2 overflow-x-auto pb-2">
@@ -150,6 +159,12 @@ export default function UtilBase<T extends StringRecord>({title, inputs, getResu
                                 label="Finished"
                             />
                         </div>
+                        <label className="mt-2 font-bold">Command</label>
+                        <InputField
+                            showCopy
+                            value={command}
+                            readOnly
+                        />
                     </CardContent>
                 </Card>
             )}
@@ -172,7 +187,7 @@ function StepCanvas({ id, label }: { id: string; label: string }) {
     )
 }
 
-function InputField<T extends StringRecord, K extends keyof T>({input, value, setValue}: {
+function BannerInput<T extends StringRecord, K extends keyof T>({input, value, setValue}: {
     input: UtilInput<T, K>
     value: string
     setValue: (key: keyof T, value: string) => void

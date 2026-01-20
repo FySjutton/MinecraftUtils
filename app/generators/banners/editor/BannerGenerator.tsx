@@ -3,7 +3,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import Banner3D from '@/app/generators/banners/editor/preview/Banner3d'
 import Shield3D from '@/app/generators/banners/editor/preview/Shield3d'
-import { patternList } from '@/app/generators/banners/patterns'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -16,7 +15,7 @@ import { Badge } from '@/components/ui/badge'
 import ImageObj from 'next/image'
 import { DyeColors } from '@/lib/Colors'
 
-import { Pattern, createLayerPreview } from '@/app/generators/banners/TextureManager'
+import { createLayerPreview } from '@/app/generators/banners/utils/TextureManager'
 
 import {
     DndContext,
@@ -32,14 +31,13 @@ import { CSS } from '@dnd-kit/utilities'
 import {Eye, EyeOff, GripVertical, X} from "lucide-react";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {InputField} from "@/components/InputField";
+import {generateCommand, Mode, Pattern, patternList} from "@/app/generators/banners/utils/Utils";
 
 type EditTarget =
     | { type: 'base' }
     | { type: 'pattern'; index: number }
     | { type: 'add' }
     | null
-
-export type Mode = "banner" | "shield"
 
 interface PatternWithVisible extends Pattern {
     visible: boolean
@@ -180,13 +178,7 @@ export default function BannerGenerator() {
 
     const bannerColor = Object.keys(DyeColors).find((k) => DyeColors[k] === baseColor) ?? 'white'
 
-    const command = `/give @p minecraft:${mode == "shield" ? "shield" : `${bannerColor}_banner`}[banner_patterns=[${patterns
-        .filter(p => p.visible)
-        .map((p) => {
-            const colorKey =
-                Object.keys(DyeColors).find((k) => DyeColors[k] === p.color) ?? 'white'
-            return `{pattern:${p.pattern},color:${colorKey}}`
-        }).join(',')}]${mode == "shield" ? `, minecraft:base_color="${bannerColor}"` : ""}]`
+    const command = generateCommand(mode, patterns.filter(item => item.visible), bannerColor)
 
     useEffect(() => {
         const handler = (e: MouseEvent) => {
@@ -250,7 +242,7 @@ export default function BannerGenerator() {
                     </CardContent>
                 </Card>
 
-                <Card className="w-1/2 max-[1100]:w-full">
+                <Card className="w-full">
                     <CardHeader className="flex justify-between items-center">
                         <CardTitle>Layers</CardTitle>
                         <Button size="sm" data-add-button variant="outline" onClick={startAdd}>Add Layer</Button>
@@ -368,11 +360,6 @@ export default function BannerGenerator() {
                     />
                 </CardContent>
             </Card>
-            {/* TODO: Temporary margin, this must be minimum later. Add more content until its this height. */}
-            {/* This is for the editing popup on small devices, otherwise causing problems on the footer / scroll height. */}
-            <div className="h-150">
-
-            </div>
         </div>
     )
 }

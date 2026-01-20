@@ -1,10 +1,4 @@
-import {Mode} from "@/app/generators/banners/editor/BannerGenerator";
-import {PatternType} from "@/app/generators/banners/patterns";
-
-export type Pattern = {
-    pattern: PatternType
-    color: string
-}
+import {Mode, Pattern} from "@/app/generators/banners/utils/Utils";
 
 const imageCache = new Map<string, HTMLImageElement>()
 
