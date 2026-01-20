@@ -34,9 +34,8 @@ function tintMasked(ctx: CanvasRenderingContext2D, img: HTMLImageElement, color:
 type CreateLayerPreviewOptions = {
     baseColor?: string
     useBase?: boolean
+    fullsize?: boolean
 }
-
-// TODO: new layer preview destroyed previous 3d; check buildTextureCanvas. displaying as black
 
 export async function createLayerPreview(
     canvas: HTMLCanvasElement,
@@ -47,15 +46,17 @@ export async function createLayerPreview(
     const ctx = canvas.getContext('2d')
     if (!ctx) return
 
-    const { baseColor = undefined, useBase = false } = options
+    const { baseColor = undefined, useBase = false, fullsize = false } = options
     const patternArray = Array.isArray(patterns) ? patterns : [patterns]
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     const baseImg = await loadImage(`/assets/tool/banner/textures/${mode}/base.png`)
 
-    let usableW = 20
-    let usableH = 40
-    let offsetX = 1
-    let offsetY = 1
+    let usableW = fullsize ? baseImg.width : 20
+    let usableH = fullsize ? baseImg.height : 40
+    let offsetX = fullsize ? 0 : 1
+    let offsetY = fullsize ? 0 : 1
     if (mode === 'shield') {
         usableW = 12
         usableH = 22
@@ -89,35 +90,36 @@ export async function createLayerPreview(
     }
 }
 
-export async function buildTextureCanvas(
-    baseColor: string,
-    patterns: Pattern[],
-    mode: Mode
-): Promise<HTMLCanvasElement> {
-    const canvas = document.createElement('canvas')
-    const ctx = canvas.getContext('2d')!
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
+export async function buildTextureCanvas(baseColor: string, patterns: Pattern[], mode: Mode): Promise<HTMLCanvasElement> {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    if (mode === "banner") {
-        const baseImg = await loadImage("/assets/tool/banner/textures/banner/base.png")
-        canvas.width = baseImg.width
-        canvas.height = baseImg.height
-        tintMasked(ctx, baseImg, baseColor, 0, 0, baseImg.width, baseImg.height)
-        await createLayerPreview(canvas, patterns, mode)
-    } else if (mode === "shield") {
-        const shieldBase = await loadImage('/assets/tool/banner/shield_base.png')
-        const baseImg = await loadImage('/assets/tool/banner/textures/shield/base.png')
-        canvas.width = shieldBase.width
-        canvas.height = shieldBase.height
-        ctx.drawImage(shieldBase, 0, 0, shieldBase.width, shieldBase.height)
-        const tmp = document.createElement('canvas')
-        tmp.width = 12
-        tmp.height = 22
-        const tctx = tmp.getContext('2d')!
-        tintMasked(tctx, baseImg, baseColor, 0, 0, baseImg.width, baseImg.height)
-        ctx.drawImage(tmp, 0, 0, 12, 22, 0, 0, 12, 22)
-        await createLayerPreview(canvas, patterns, mode)
+    canvas.width = 64
+    canvas.height = 64
+
+    if (mode === 'shield') {
+        const shieldBase = await loadImage("/assets/tool/banner/shield_base.png");
+
+        ctx.drawImage(shieldBase, 0, 0, shieldBase.width, shieldBase.height);
     }
 
-    return canvas
+    const tmp = document.createElement("canvas");
+    if (mode === 'shield') {
+        tmp.width = 12;
+        tmp.height = 22;
+    } else {
+        tmp.width = 64;
+        tmp.height = 64;
+    }
+
+    await createLayerPreview(tmp, patterns, mode, { fullsize: true, useBase: true, baseColor: baseColor });
+
+    if (mode === 'shield') {
+        ctx.drawImage(tmp, 0, 0, 12, 22, 1, 1, 12, 22);
+    } else {
+        ctx.drawImage(tmp, 0, 0, 64, 64, 0, 0, 64, 64);
+    }
+
+    return canvas;
 }
