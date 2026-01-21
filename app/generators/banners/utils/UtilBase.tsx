@@ -1,14 +1,16 @@
 "use client"
 
-import React, { useEffect, useMemo } from "react"
+import React, {useEffect, useMemo, useState} from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ColorPicker } from "@/app/generators/banners/editor/BannerGenerator"
 import { Button } from "@/components/ui/button"
 import {DyeColors, DyeColorsReverse} from "@/lib/Colors"
 import {ArrowBigRight} from "lucide-react";
-import {Banner, generateCommand} from "@/app/generators/banners/utils/Utils";
+import {Banner, generateCommand, Mode} from "@/app/generators/banners/utils/Utils";
 import {createLayerPreview} from "@/app/generators/banners/utils/TextureManager";
 import {InputField} from "@/components/InputField";
+import UtilSelector from "@/app/generators/banners/UtilSelector";
+import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 
 type StringRecord = Record<string, string>
 
@@ -27,6 +29,8 @@ export type UtilBaseProps<T extends StringRecord> = {
 }
 
 export default function UtilBase<T extends StringRecord>({title, inputs, getResultsAction, livePreview}: UtilBaseProps<T>) {
+    const [mode, setMode] = useState<Mode>("banner")
+
     const [values, setValues] = React.useState<Record<keyof T, string>>(() => {
         const initial = {} as Record<keyof T, string>
         for (const input of inputs) {
@@ -54,52 +58,56 @@ export default function UtilBase<T extends StringRecord>({title, inputs, getResu
             const banner = result[name]
 
             const mainCanvas = document.getElementById(`layer-preview-${name}`) as HTMLCanvasElement | null
-            if (mainCanvas) createLayerPreview(mainCanvas, banner.patterns, "banner", { useBase: true, baseColor: banner.baseColor }).catch(() => {})
+            if (mainCanvas) createLayerPreview(mainCanvas, banner.patterns, mode, { useBase: true, baseColor: banner.baseColor }).catch(() => {})
         }
 
         if (selected) {
             const banner = result[selected]
 
             const mainCanvas = document.getElementById(`layer-preview-final-${selected}`) as HTMLCanvasElement | null
-            if (mainCanvas) createLayerPreview(mainCanvas, banner.patterns, "banner", { useBase: true, baseColor: banner.baseColor }).catch(() => {})
+            if (mainCanvas) createLayerPreview(mainCanvas, banner.patterns, mode, { useBase: true, baseColor: banner.baseColor }).catch(() => {})
 
             const baseCanvas = document.getElementById(`layer-preview-${selected}-base`) as HTMLCanvasElement | null
-            if (baseCanvas) createLayerPreview(baseCanvas, { pattern: "base", color: banner.baseColor }, "banner").catch(() => {})
+            if (baseCanvas) createLayerPreview(baseCanvas, { pattern: "base", color: banner.baseColor }, mode).catch(() => {})
 
             for (let i = 0; i < banner.patterns.length; i++) {
                 const pattern = banner.patterns[i]
                 const canvas = document.getElementById(`layer-preview-${selected}-${i}`) as HTMLCanvasElement | null
-                if (canvas) createLayerPreview(canvas, pattern, "banner", { baseColor: pattern.color == DyeColors.black ? "#737373" : "#1e1e1e" }).catch(() => {})
+                if (canvas) createLayerPreview(canvas, pattern, mode, { baseColor: pattern.color == DyeColors.black ? "#737373" : "#1e1e1e" }).catch(() => {})
             }
         }
-    }, [result, selected])
+    }, [mode, result, selected])
     
     const command = useMemo(() => {
         if (selected) {
-            return generateCommand("banner", result[selected].patterns, result[selected].baseColor)
+            return generateCommand(mode, result[selected].patterns, result[selected].baseColor)
         }
         return ""
-    }, [result, selected])
+    }, [mode, result, selected])
 
     return (
         <div>
             <Card>
                 <CardHeader>
                     <CardTitle>{title}</CardTitle>
-                    <CardDescription>Configure the inputs below and press &#34;Generate&#34; to generate the banners.</CardDescription>
+                    <CardDescription>Configure the inputs below and click on a result for more information like the crafting recipe, and its /give command.</CardDescription>
                 </CardHeader>
 
                 <CardContent className="flex flex-col gap-4">
-                    <div className="flex flex-col gap-4">
-                        {inputs.map(input => (
-                            <BannerInput
-                                key={String(input.key)}
-                                input={input}
-                                value={values[input.key]}
-                                setValue={setValue}
-                            />
-                        ))}
-                    </div>
+                    <Tabs value={mode} onValueChange={v => setMode(v == 'banner' ? v : 'shield')} className="mx-auto">
+                        <TabsList>
+                            <TabsTrigger value="banner">Banner</TabsTrigger>
+                            <TabsTrigger value="shield">Shield</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    {inputs.map(input => (
+                        <BannerInput
+                            key={String(input.key)}
+                            input={input}
+                            value={values[input.key]}
+                            setValue={setValue}
+                        />
+                    ))}
 
                     {!livePreview && (
                         <Button className="min-w-1/2 mx-auto" variant="outline" onClick={() => setManualResult(getResultsAction(values))}>
@@ -168,6 +176,12 @@ export default function UtilBase<T extends StringRecord>({title, inputs, getResu
                     </CardContent>
                 </Card>
             )}
+
+            <h2 className="text-2xl font-bold mb-2 mx-auto mt-2 text-center mt-8">Other Banner Utilities</h2>
+            <p className="px-5 mx-auto w-full text-center">Other banner generators and utilities, like the editor, and more.</p>
+            <div className="w-full flex justify-center mt-4">
+                <UtilSelector ignore={title}/>
+            </div>
         </div>
     )
 }

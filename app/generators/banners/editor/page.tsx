@@ -16,7 +16,7 @@ export default function Page() {
                 <h2 className="text-2xl font-bold mb-2 mx-auto mt-2 text-center">Other Banner Generators</h2>
                 <p className="px-5 mx-auto w-full text-center">Other banner generators, like the alphabet and more.</p>
                 <div className="flex w-full justify-center mt-4">
-                    <UtilSelector />
+                    <UtilSelector ignore={"Banner Editor"}/>
                 </div>
             </div>
         </>

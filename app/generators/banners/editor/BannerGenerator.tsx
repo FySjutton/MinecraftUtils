@@ -117,7 +117,7 @@ const PatternEditorPopup = ({pattern, mode, color, onPatternSelect, onPatternHov
 }
 
 export default function BannerGenerator() {
-    const [mode, setMode] = useState<Mode>("shield")
+    const [mode, setMode] = useState<Mode>("banner")
 
     const [baseColor, setBaseColor] = useState(DyeColors.white)
     const [patterns, setPatterns] = useState<PatternWithVisible[]>([])

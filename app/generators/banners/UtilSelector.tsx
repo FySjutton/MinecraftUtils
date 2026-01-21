@@ -3,11 +3,18 @@ import React from "react";
 import Image from "next/image";
 import Link from "next/link";
 
-export default function UtilSelector() {
+export default function UtilSelector({ ignore }: { ignore?: string }) {
     // All images are to be 16:9 (400x225)
+    // Name must match the "title" given in the generator file!
     const utilities = [
         {
-            name: "Letter Generator",
+            name: "Banner Editor",
+            link: "editor",
+            image: "editor",
+            description: "Generate custom banners and shields for minecraft with interactive editor and command output.",
+        },
+        {
+            name: "Minecraft Banner Letters",
             link: "letters",
             image: "letters",
             description: "Generate letters on banners with custom colors.",
@@ -16,7 +23,7 @@ export default function UtilSelector() {
 
     return (
         <div className="flex">
-            {utilities.map(utility => (
+            {utilities.filter(util => util.name != ignore).map(utility => (
                 <Link href={`/generators/banners/${utility.link}`} key={utility.name}>
                     <Card>
                         <CardHeader>
