@@ -32,6 +32,7 @@ import {Eye, EyeOff, GripVertical, X} from "lucide-react";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {InputField} from "@/components/InputField";
 import {generateCommand, Mode, Pattern, patternList} from "@/app/generators/banners/utils/Utils";
+import {getShareManager} from "@/lib/share/shareManagerPool";
 
 type EditTarget =
     | { type: 'base' }
@@ -117,8 +118,17 @@ const PatternEditorPopup = ({pattern, mode, color, onPatternSelect, onPatternHov
 }
 
 export default function BannerGenerator() {
-    const [mode, setMode] = useState<Mode>("banner")
+    const share = getShareManager("banner");
+    useEffect(() => {
+        share.hydrate();
+        return share.startAutoUrlSync({
+            debounceMs: 300,
+            replace: false,
+        });
+    }, []);
 
+    const [mode, setMode] = useState<Mode>("banner")
+    share.registerString("mode", [mode, (v) => {setMode(v as Mode)}], {defaultValue: "banner"})
     const [baseColor, setBaseColor] = useState(DyeColors.white)
     const [patterns, setPatterns] = useState<PatternWithVisible[]>([])
     const [editing, setEditing] = useState<EditTarget>(null)

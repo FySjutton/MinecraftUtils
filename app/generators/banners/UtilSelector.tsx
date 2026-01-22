@@ -22,7 +22,7 @@ export default function UtilSelector({ ignore }: { ignore?: string }) {
     ]
 
     return (
-        <div className="flex">
+        <div className="flex gap-4 items-stretch flex-wrap">
             {utilities.filter(util => util.name != ignore).map(utility => (
                 <Link href={`/generators/banners/${utility.link}`} key={utility.name}>
                     <Card>
