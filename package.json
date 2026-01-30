@@ -53,6 +53,7 @@
     "embla-carousel-react": "^8.6.0",
     "lucide-react": "^0.555.0",
     "next": "^16.0.7",
+    "nuqs": "^2.8.6",
     "pako": "^2.1.0",
     "radix-ui": "^1.4.3",
     "react": "^19.2.1",

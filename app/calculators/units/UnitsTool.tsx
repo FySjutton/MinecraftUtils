@@ -7,6 +7,8 @@ import {Separator} from "@/components/ui/separator"
 import {InputField} from "@/components/InputField"
 import {getShareManager} from "@/lib/share/shareManagerPool"
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {useQueryState} from "nuqs";
+import {enumParser, stringParser, useUrlUpdateEmitter} from "@/lib/share/urlParsers";
 
 const typeOptions = ["Items", "Stacks (16)", "Stacks (64)", "Shulker Boxes (27 slots)"]
 
@@ -18,8 +20,10 @@ const conversionMap: Record<string, number> = {
 }
 
 export default function UnitsTool() {
-    const [inputValue, setInputValue] = useState("0")
-    const [inputType, setInputType] = useState<string>("Items")
+    useUrlUpdateEmitter()
+    const [inputValue, setInputValue] = useQueryState("value", stringParser.withDefault("0"));
+    const typeParser = enumParser(typeOptions);
+    const [inputType, setInputType] = useQueryState("type", typeParser.withDefault("Items"));
 
     const safeNumber = (val: string) => {
         const n = Number(val.replace(",", "."))
@@ -32,20 +36,6 @@ export default function UnitsTool() {
     const remainingStacks = Math.floor((totalItems - shulkerBoxes * (27 * 64)) / 64)
     const totalStacks = Math.floor(totalItems / 64)
     const remainingItems = totalItems % 64
-
-    const share = getShareManager("units");
-
-    share.registerString("input", [inputValue, setInputValue], {defaultValue: "0"});
-    share.registerString("type", [inputType, setInputType], {defaultValue: "Items"});
-
-    useEffect(() => {
-        share.hydrate();
-
-        return share.startAutoUrlSync({
-            debounceMs: 300,
-            replace: true,
-        });
-    }, []);
 
     return (
         <div className="flex flex-col md:flex-row gap-6">
@@ -114,6 +104,5 @@ export default function UnitsTool() {
                 </CardContent>
             </Card>
         </div>
-
     )
 }

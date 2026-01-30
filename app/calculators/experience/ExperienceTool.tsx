@@ -1,34 +1,22 @@
 "use client"
 
-import {useEffect, useState} from "react";
+import {useState} from "react";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import ImageSlider from "@/app/calculators/experience/ImageSlider";
 import {InputField} from "@/components/InputField";
-import {getShareManager} from "@/lib/share/shareManagerPool";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {useQueryState} from "nuqs";
+import {numberParser, useUrlUpdateEmitter} from "@/lib/share/urlParsers";
 
 export default function ExperienceTool() {
+    useUrlUpdateEmitter()
     // Set initial xp to 9 for a nice look, equals 1 level and about 22% progress.
-    const [xp, setXp] = useState(9)
-    const [level, setLevel] = useState(1)
+    const [xp, setXp] = useQueryState("xp", numberParser.withDefault(9));
+    const [level, setLevel] = useQueryState("level", numberParser.withDefault(1));
     const [progress, setProgress] = useState(22)
 
     const [lastSource, setLastSource] = useState<"slider" | "input" | null>(null)
-
-    const share = getShareManager("xp");
-
-    share.registerNumber("xp", [xp, setXp], {defaultValue: 9});
-    share.registerNumber("level", [level, setLevel], {defaultValue: 1});
-
-    useEffect(() => {
-        share.hydrate();
-
-        return share.startAutoUrlSync({
-            debounceMs: 300,
-            replace: true,
-        });
-    }, []);
 
     return (
         <div className="w-[100%] lg:w-[80%] md:w-[90%] mx-auto">

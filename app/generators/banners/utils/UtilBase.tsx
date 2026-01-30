@@ -11,6 +11,8 @@ import {createLayerPreview} from "@/app/generators/banners/utils/TextureManager"
 import {InputField} from "@/components/InputField";
 import UtilSelector from "@/app/generators/banners/UtilSelector";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {createParser, useQueryState} from "nuqs";
+import {arrayObjectParser, stringParser} from "@/lib/share/urlParsers";
 
 type StringRecord = Record<string, string>
 
@@ -31,7 +33,7 @@ export type UtilBaseProps<T extends StringRecord> = {
 export default function UtilBase<T extends StringRecord>({title, inputs, getResultsAction, livePreview}: UtilBaseProps<T>) {
     const [mode, setMode] = useState<Mode>("banner")
 
-    const [values, setValues] = React.useState<Record<keyof T, string>>(() => {
+    const [values, setValues] = useState<Record<keyof T, string>>(() => {
         const initial = {} as Record<keyof T, string>
         for (const input of inputs) {
             initial[input.key] = input.defaultValue
@@ -39,9 +41,25 @@ export default function UtilBase<T extends StringRecord>({title, inputs, getResu
         return initial
     })
 
-    const [manualResult, setManualResult] = React.useState<Record<string, Banner>>({})
-    const [selected, setSelected] = React.useState<string>()
-    
+    // const defaultValues = Object.fromEntries(
+    //     inputs.map(input => [input.key, input.defaultValue])
+    // ) as unknown as Record<keyof T, string>;
+    //
+    // const valuesParser = createParser<Record<keyof T, string>>({
+    //     serialize: obj => JSON.stringify(obj),
+    //     parse: s => {
+    //         try { return JSON.parse(s); } catch { return null; }
+    //     }
+    // });
+
+    // const [values, setValues] = useQueryState(
+    //     "v",
+    //     valuesParser.withDefault(defaultValues)
+    // );
+
+    const [manualResult, setManualResult] = useState<Record<string, Banner>>({})
+    const [selected, setSelected] = useQueryState("selected")
+
     const result = useMemo(() => {
         return livePreview ? getResultsAction(values) : manualResult
     }, [livePreview, values, manualResult, getResultsAction])

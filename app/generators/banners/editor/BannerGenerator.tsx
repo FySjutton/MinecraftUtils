@@ -32,7 +32,8 @@ import {Eye, EyeOff, GripVertical, X} from "lucide-react";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {InputField} from "@/components/InputField";
 import {generateCommand, Mode, Pattern, patternList} from "@/app/generators/banners/utils/Utils";
-import {getShareManager} from "@/lib/share/shareManagerPool";
+import {arrayObjectParser, enumParser} from "@/lib/share/urlParsers";
+import {useQueryState} from "nuqs";
 
 type EditTarget =
     | { type: 'base' }
@@ -118,21 +119,17 @@ const PatternEditorPopup = ({pattern, mode, color, onPatternSelect, onPatternHov
 }
 
 export default function BannerGenerator() {
-    const share = getShareManager("banner");
-    useEffect(() => {
-        share.hydrate();
-        return share.startAutoUrlSync({
-            debounceMs: 300,
-            replace: false,
-        });
-    }, []);
-
-    const [mode, setMode] = useState<Mode>("banner")
-    share.registerString("mode", [mode, (v) => {setMode(v as Mode)}], {defaultValue: "banner"})
-    const [baseColor, setBaseColor] = useState(DyeColors.white)
-    const [patterns, setPatterns] = useState<PatternWithVisible[]>([])
+    const modeParser = enumParser(["banner", "shield"]);
+    const [mode, setMode] = useQueryState("m", modeParser.withDefault("banner"));
+    const colorParser = enumParser(Object.values(DyeColors));
+    const [baseColor, setBaseColor] = useQueryState("b", colorParser.withDefault(DyeColors.white));
+    const patternsParser = arrayObjectParser<PatternWithVisible>({
+        pattern: Object.keys(patternList),
+        color: Object.values(DyeColors),
+        visible: "bool"
+    });
+    const [patterns, setPatterns] = useQueryState("p", patternsParser.withDefault([]));
     const [editing, setEditing] = useState<EditTarget>(null)
-
     const [addColor, setAddColor] = useState(baseColor == DyeColors.white ? DyeColors.light_gray : DyeColors.white)
 
     const [preview, setPreview] = useState<{

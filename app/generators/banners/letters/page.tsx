@@ -1,5 +1,4 @@
 import {Metadata} from "next";
-import BannerGenerator from "@/app/generators/banners/editor/BannerGenerator";
 import MinecraftBannerLetters from "@/app/generators/banners/letters/LetterGenerator";
 
 export default function Page() {

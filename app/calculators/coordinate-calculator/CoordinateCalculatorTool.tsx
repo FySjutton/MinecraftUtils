@@ -1,14 +1,31 @@
 "use client"
 
-import {useEffect, useState} from "react"
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { InputField } from "@/components/InputField"
-import {getShareManager} from "@/lib/share/shareManagerPool";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {createParser, useQueryState} from "nuqs";
+import {useUrlUpdateEmitter} from "@/lib/share/urlParsers";
 
 export default function CoordinateCalculatorTool() {
-    const [owCoords, setOwCoords] = useState({ x: "0", y: "63", z: "0" })
+    useUrlUpdateEmitter()
+
+    const coordsParser = createParser<{ x: string; y: string; z: string }>({
+        serialize(value) {
+            return `${value.x},${value.y},${value.z}`;
+        },
+        parse(value) {
+            if (!value) return null;
+            const [x, y, z] = value.split(",");
+            if (x === undefined || y === undefined || z === undefined) return null;
+            return { x, y, z };
+        }
+    });
+
+    const [owCoords, setOwCoords] = useQueryState(
+        "c",
+        coordsParser.withDefault({ x: "0", y: "63", z: "0" })
+    );
 
     const safeNumber = (val: string) => {
         if (val === "" || val === "-" || val === ",") return 0
@@ -63,30 +80,6 @@ export default function CoordinateCalculatorTool() {
     }
 
     const reset = () => setOwCoords({ x: "0", y: "63", z: "0" })
-
-    const share = getShareManager("coords");
-
-    share.register<{ x: string, y: string, z: string }>(
-        "cords",
-        [owCoords, setOwCoords],
-        value => `${value.x}|${value.y}|${value.z}`,
-        value => {
-            const values = value.split("|");
-            if (values.length == 3 && /^(-?\d+\|-?\d+\|-?\d+)$/.test(value)) {
-                return { x: values[0], y: values[1], z: values[2] };
-            }
-            return { x: "0", y: "63", z: "0" };
-        }, {defaultValue: { x: "0", y: "63", z: "0" }}
-    );
-
-    useEffect(() => {
-        share.hydrate();
-
-        return share.startAutoUrlSync({
-            debounceMs: 300,
-            replace: true,
-        });
-    }, []);
 
     const renderInputs = (
         values: { x: string; y: string; z: string },
