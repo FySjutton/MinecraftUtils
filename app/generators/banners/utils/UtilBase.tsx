@@ -4,58 +4,53 @@ import React, {useEffect, useMemo, useState} from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { ColorPicker } from "@/app/generators/banners/editor/BannerGenerator"
 import { Button } from "@/components/ui/button"
-import {DyeColors, DyeColorsReverse} from "@/lib/Colors"
+import {DyeColors} from "@/lib/Colors"
 import {ArrowBigRight} from "lucide-react";
 import {Banner, generateCommand, Mode} from "@/app/generators/banners/utils/Utils";
 import {createLayerPreview} from "@/app/generators/banners/utils/TextureManager";
 import {InputField} from "@/components/InputField";
 import UtilSelector from "@/app/generators/banners/UtilSelector";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {createParser, useQueryState} from "nuqs";
-import {arrayObjectParser, stringParser} from "@/lib/share/urlParsers";
+import {useQueryState} from "nuqs";
+import {
+    objectParser, useUrlUpdateEmitter,
+} from "@/lib/share/urlParsers";
+import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 type StringRecord = Record<string, string>
 
-export type UtilInput<T extends StringRecord, K extends keyof T> = {
-    key: K
+export type UtilInput = {
+    key: string
     label: string
     kind: "text" | "color"
     defaultValue: string
 }
 
-export type UtilBaseProps<T extends StringRecord> = {
+export type UtilBaseProps = {
     title: string
-    inputs: UtilInput<T, keyof T>[]
-    getResultsAction: (values: Record<keyof T, string>) => Record<string, Banner>
+    inputs: UtilInput[]
+    getResultsAction: (values: Record<string, string>) => Record<string, Banner>
     livePreview: boolean
 }
 
-export default function UtilBase<T extends StringRecord>({title, inputs, getResultsAction, livePreview}: UtilBaseProps<T>) {
+export default function UtilBase<T extends StringRecord>({title, inputs, getResultsAction, livePreview}: UtilBaseProps) {
+    useUrlUpdateEmitter()
     const [mode, setMode] = useState<Mode>("banner")
 
-    const [values, setValues] = useState<Record<keyof T, string>>(() => {
-        const initial = {} as Record<keyof T, string>
-        for (const input of inputs) {
-            initial[input.key] = input.defaultValue
-        }
-        return initial
-    })
+    const schema = Object.fromEntries(
+        inputs.map(i => {
+            if (i.kind === "color") {
+                return [i.key, Object.values(DyeColors)];
+            }
+            return [i.key, "string"];
+        })
+    );
 
-    // const defaultValues = Object.fromEntries(
-    //     inputs.map(input => [input.key, input.defaultValue])
-    // ) as unknown as Record<keyof T, string>;
-    //
-    // const valuesParser = createParser<Record<keyof T, string>>({
-    //     serialize: obj => JSON.stringify(obj),
-    //     parse: s => {
-    //         try { return JSON.parse(s); } catch { return null; }
-    //     }
-    // });
+    const defaultValues = Object.fromEntries(
+        inputs.map(i => [i.key, i.defaultValue])
+    );
 
-    // const [values, setValues] = useQueryState(
-    //     "v",
-    //     valuesParser.withDefault(defaultValues)
-    // );
+    const [values, setValues] = useQueryState("v", objectParser<Record<string, string>>(schema).withDefault(defaultValues));
 
     const [manualResult, setManualResult] = useState<Record<string, Banner>>({})
     const [selected, setSelected] = useQueryState("selected")
@@ -191,11 +186,12 @@ export default function UtilBase<T extends StringRecord>({title, inputs, getResu
                             value={command}
                             readOnly
                         />
+                        <CopyShareLinkInput className="mt-4" />
                     </CardContent>
                 </Card>
             )}
 
-            <h2 className="text-2xl font-bold mb-2 mx-auto mt-2 text-center mt-8">Other Banner Utilities</h2>
+            <h2 className="text-2xl font-bold mb-2 mx-auto text-center mt-8">Other Banner Utilities</h2>
             <p className="px-5 mx-auto w-full text-center">Other banner generators and utilities, like the editor, and more.</p>
             <div className="w-full flex justify-center mt-4">
                 <UtilSelector ignore={title}/>
@@ -219,8 +215,8 @@ function StepCanvas({ id, label }: { id: string; label: string }) {
     )
 }
 
-function BannerInput<T extends StringRecord, K extends keyof T>({input, value, setValue}: {
-    input: UtilInput<T, K>
+function BannerInput<T extends StringRecord>({input, value, setValue}: {
+    input: UtilInput
     value: string
     setValue: (key: keyof T, value: string) => void
 }) {

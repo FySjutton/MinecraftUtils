@@ -17,7 +17,7 @@ export const Colors = {
     WHITE: "#FFFFFF",
 } as const
 
-export const DyeColors: { [key: string]: string } = {
+export const DyeColors: Record<string, string> = {
     white: "#F9FFFE",
     light_gray: "#9D9D97",
     gray: "#474F52",

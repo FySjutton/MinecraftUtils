@@ -32,8 +32,9 @@ import {Eye, EyeOff, GripVertical, X} from "lucide-react";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {InputField} from "@/components/InputField";
 import {generateCommand, Mode, Pattern, patternList} from "@/app/generators/banners/utils/Utils";
-import {arrayObjectParser, enumParser} from "@/lib/share/urlParsers";
+import {arrayObjectParser, enumParser, useUrlUpdateEmitter} from "@/lib/share/urlParsers";
 import {useQueryState} from "nuqs";
+import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 type EditTarget =
     | { type: 'base' }
@@ -119,6 +120,7 @@ const PatternEditorPopup = ({pattern, mode, color, onPatternSelect, onPatternHov
 }
 
 export default function BannerGenerator() {
+    useUrlUpdateEmitter()
     const modeParser = enumParser(["banner", "shield"]);
     const [mode, setMode] = useQueryState("m", modeParser.withDefault("banner"));
     const colorParser = enumParser(Object.values(DyeColors));
@@ -365,6 +367,14 @@ export default function BannerGenerator() {
                         value={command}
                         readOnly
                     />
+                </CardContent>
+            </Card>
+            <Card className="mt-4">
+                <CardHeader>
+                    <CardTitle>Permanent Share Link</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <CopyShareLinkInput label=""/>
                 </CardContent>
             </Card>
         </div>

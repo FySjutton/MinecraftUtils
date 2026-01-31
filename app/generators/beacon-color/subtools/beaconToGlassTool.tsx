@@ -49,7 +49,7 @@ export function findColorName(rgb: RGB): string {
 
 export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab: 'tool' | 'verify') => void }) {
     const initialValue = "#3263B7"
-    const share = getShareManager("beacon");
+    // const share = getShareManager("beacon");
 
     const [hex, setHex] = useState(initialValue)
     share.registerString("hex", [hex, setHex], {defaultValue: initialValue})

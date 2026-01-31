@@ -1,29 +1,16 @@
 "use client"
 
-import {useEffect, useState} from 'react'
 import BeaconToGlassTool from "@/app/generators/beacon-color/subtools/beaconToGlassTool";
 import GlassToBeaconColor from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {getShareManager} from "@/lib/share/shareManagerPool";
+import {useQueryState} from "nuqs";
+import { enumParser } from "@/lib/share/urlParsers";
 
 const tabs = ["tool", "verify"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function BeaconColorGenerator() {
-    const [tab, setTab] = useState<Tab>('tool');
-
-    const share = getShareManager("beacon");
-
-    share.registerEnum<Tab>("beacon_tab", [tab, setTab], tabs);
-
-    useEffect(() => {
-        share.hydrate();
-
-        return share.startAutoUrlSync({
-            debounceMs: 300,
-            replace: false,
-        });
-    }, []);
+    const [tab, setTab] = useQueryState<Tab>("tab", enumParser(tabs).withDefault("tool"));
 
     return (
         <>
