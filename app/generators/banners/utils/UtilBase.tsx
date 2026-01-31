@@ -13,6 +13,7 @@ import UtilSelector from "@/app/generators/banners/UtilSelector";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {useQueryState} from "nuqs";
 import {
+    enumParser,
     objectParser, useUrlUpdateEmitter,
 } from "@/lib/share/urlParsers";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
@@ -35,22 +36,19 @@ export type UtilBaseProps = {
 
 export default function UtilBase<T extends StringRecord>({title, inputs, getResultsAction, livePreview}: UtilBaseProps) {
     useUrlUpdateEmitter()
-    const [mode, setMode] = useState<Mode>("banner")
+    const [mode, setMode] = useQueryState<Mode>("mode", enumParser(["banner", "shield"]).withDefault("banner"))
 
-    const schema = Object.fromEntries(
-        inputs.map(i => {
-            if (i.kind === "color") {
-                return [i.key, Object.values(DyeColors)];
-            }
-            return [i.key, "string"];
-        })
-    );
+    const schema = useMemo(() => Object.fromEntries(
+        inputs.map(i => i.kind === "color" ? [i.key, Object.values(DyeColors)] : [i.key, "string"])
+    ), [inputs]);
 
-    const defaultValues = Object.fromEntries(
+    const defaultValues = useMemo(() => Object.fromEntries(
         inputs.map(i => [i.key, i.defaultValue])
-    );
+    ), [inputs]);
 
-    const [values, setValues] = useQueryState("v", objectParser<Record<string, string>>(schema).withDefault(defaultValues));
+    const parser = useMemo(() => objectParser<Record<string, string>>(schema).withDefault(defaultValues), [schema, defaultValues]);
+
+    const [values, setValues] = useQueryState("v", parser);
 
     const [manualResult, setManualResult] = useState<Record<string, Banner>>({})
     const [selected, setSelected] = useQueryState("selected")

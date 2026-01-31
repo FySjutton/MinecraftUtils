@@ -1,6 +1,6 @@
 "use client"
 
-import React, {useMemo, useState, useRef, useEffect} from 'react'
+import React, {useMemo, useState, useRef} from 'react'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -14,8 +14,16 @@ import {MultiSelectDropdown} from "@/components/MultiSelectDropdown";
 import Image from "next/image";
 import {toDisplayName, toInternalName} from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
 import {ColorPicker} from "@/components/ColorPicker";
-import {getShareManager} from "@/lib/share/shareManagerPool";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {useQueryState} from "nuqs";
+import {
+    arrayObjectParser,
+    enumArrayParser,
+    enumParser,
+    numberParser,
+    rgbArrayParser,
+    rgbParser
+} from "@/lib/share/urlParsers";
 
 const COLOR_ENTRIES = Object.entries(GLASS_COLORS)
 
@@ -41,101 +49,41 @@ export interface Candidate {
 }
 
 export function findColorName(rgb: RGB): string {
-    const found = COLOR_ENTRIES.find(([_, v]) =>
+    const found = COLOR_ENTRIES.find(([, v]) =>
         v[0] === rgb[0] && v[1] === rgb[1] && v[2] === rgb[2]
     )
     return found?.[0] ?? "Unknown"
 }
 
+const ALL_GLASS_COLORS = Object.keys(GLASS_COLORS).sort();
+
+const presentParser = enumParser(presentTypes).withDefault(presets[2].name)
+const resultsParser = arrayObjectParser<Candidate>({
+    stack: rgbArrayParser,
+    mergedStackColors: rgbArrayParser,
+    color: rgbParser,
+    dist: "number"
+}).withDefault([])
+const maxHeightParser = numberParser.withDefault(6);
+const glassParser = enumArrayParser(ALL_GLASS_COLORS, {reverse: true}).withDefault(ALL_GLASS_COLORS)
+
 export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab: 'tool' | 'verify') => void }) {
     const initialValue = "#3263B7"
-    // const share = getShareManager("beacon");
 
-    const [hex, setHex] = useState(initialValue)
-    share.registerString("hex", [hex, setHex], {defaultValue: initialValue})
+    const [hex, setHex] = useQueryState("hex", {defaultValue: initialValue})
 
-    const [preset, setPreset] = useState(presets[2].name)
-    share.registerEnum("preset", [preset, setPreset], presets.map((s) => s.name), {defaultValue: presets[2].name})
+    const [preset, setPreset] = useQueryState("preset", presentParser)
+    const [results, setResults] = useQueryState("results", resultsParser)
 
-    const [results, setResults] = useState<Candidate[]>([]);
     const [resultTarget, setResultTarget] = useState("");
-
-    share.register("results", [results, setResults],
-        (candidates) => {
-            const packRGB = ([r, g, b]: [number, number, number]) =>
-                ((r << 16) | (g << 8) | b).toString(36);
-
-            const serializedResults = candidates
-                .map(c => {
-                    const stack = c.stack.map(packRGB).join(".");
-                    const merged = c.mergedStackColors
-                        ? c.mergedStackColors.map(packRGB).join(".")
-                        : "";
-                    const color = packRGB(c.color);
-                    const dist = Math.round(c.dist * 1000).toString(36);
-
-                    return `${stack}|${merged}|${color}|${dist}`;
-                })
-                .join("~");
-
-            return `${resultTarget}^${serializedResults}`;
-        },
-        (raw) => {
-            if (!raw) return [];
-
-            const [targetHex, resultsStr] = raw.split("^");
-            setResultTarget(targetHex);
-
-            const unpackRGB = (s: string): [number, number, number] => {
-                const n = parseInt(s, 36);
-                return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
-            };
-
-            return resultsStr
-                ? resultsStr.split("~").map(chunk => {
-                    const [stackS, mergedS, colorS, distS] = chunk.split("|");
-
-                    return {
-                        stack: stackS ? stackS.split(".").map(unpackRGB) : [],
-                        mergedStackColors: mergedS
-                            ? mergedS.split(".").map(unpackRGB)
-                            : undefined,
-                        color: unpackRGB(colorS),
-                        dist: parseInt(distS, 36) / 1000
-                    };
-                })
-                : [];
-        }
-    );
 
     const [colorsChecked, setColorsChecked] = useState(0)
     const [percentFinished, setPercentFinished] = useState(0)
     const [status, setStatus] = useState<string | null>(null)
     const [overrides, setOverrides] = useState<Record<number, boolean>>({})
 
-    const [maxHeight, setMaxHeight] = React.useState(6)
-    share.registerNumber("max", [maxHeight, setMaxHeight], {defaultValue: 6})
-
-    const ALL_GLASS_COLORS = Object.keys(GLASS_COLORS).sort();
-    const [glassColors, setGlassColors] = React.useState<string[]>(ALL_GLASS_COLORS);
-    share.register("colors", [glassColors, setGlassColors],
-        (allowed) => {
-            const allowedSet = new Set(allowed);
-            const disabledIndices: number[] = [];
-            for (let i = 0; i < ALL_GLASS_COLORS.length; i++) {
-                if (!allowedSet.has(ALL_GLASS_COLORS[i])) {
-                    disabledIndices.push(i);
-                }
-            }
-
-            return disabledIndices.join(",");
-        },
-        (raw) => {
-            if (!raw) return ALL_GLASS_COLORS;
-            const disabled = new Set(raw.split(",").map(n => Number(n)).filter(n => Number.isInteger(n)));
-            return ALL_GLASS_COLORS.filter((_, i) => !disabled.has(i));
-        }
-    );
+    const [maxHeight, setMaxHeight] = useQueryState("max", maxHeightParser)
+    const [glassColors, setGlassColors] = useQueryState("colors", glassParser)
 
     const filteredColors = useMemo(() => {
         return COLOR_ENTRIES.filter(([name]) =>
@@ -160,7 +108,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
             stack: [],
             mergedStackColors: [],
             color: [0, 0, 0],
-            dist: deltaE_lab_rgb(target, [0, 0, 0])
+            dist: Math.round(deltaE_lab_rgb(target, [0, 0, 0]) * 100) / 100
         }]
 
         for (let depth = 1; depth <= maxHeight; depth++) {
@@ -173,7 +121,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                     const nextMerged = lastMerged ? beaconColor([lastMerged, rgb]) : rgb
                     newMergedStack.push(nextMerged)
                     const color = beaconColor(newStack)
-                    const dist = deltaE_lab_rgb(target, color)
+                    const dist = Math.round(deltaE_lab_rgb(target, color) * 100) / 100
                     expanded.push({ stack: newStack, mergedStackColors: newMergedStack, color, dist })
                     checked++
                 }

@@ -7,25 +7,22 @@ import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 import {createParser, useQueryState} from "nuqs";
 import {useUrlUpdateEmitter} from "@/lib/share/urlParsers";
 
+const coordsParser = createParser<{ x: string; y: string; z: string }>({
+    serialize(value) {
+        return `${value.x},${value.y},${value.z}`;
+    },
+    parse(value) {
+        if (!value) return null;
+        const [x, y, z] = value.split(",");
+        if (x === undefined || y === undefined || z === undefined) return null;
+        return { x, y, z };
+    }
+}).withDefault({ x: "0", y: "63", z: "0" });
+
 export default function CoordinateCalculatorTool() {
     useUrlUpdateEmitter()
 
-    const coordsParser = createParser<{ x: string; y: string; z: string }>({
-        serialize(value) {
-            return `${value.x},${value.y},${value.z}`;
-        },
-        parse(value) {
-            if (!value) return null;
-            const [x, y, z] = value.split(",");
-            if (x === undefined || y === undefined || z === undefined) return null;
-            return { x, y, z };
-        }
-    });
-
-    const [owCoords, setOwCoords] = useQueryState(
-        "c",
-        coordsParser.withDefault({ x: "0", y: "63", z: "0" })
-    );
+    const [owCoords, setOwCoords] = useQueryState("c", coordsParser);
 
     const safeNumber = (val: string) => {
         if (val === "" || val === "-" || val === ",") return 0

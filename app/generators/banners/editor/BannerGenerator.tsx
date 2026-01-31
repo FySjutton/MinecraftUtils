@@ -119,18 +119,19 @@ const PatternEditorPopup = ({pattern, mode, color, onPatternSelect, onPatternHov
     )
 }
 
+const modeParser = enumParser(["banner", "shield"]).withDefault("banner");
+const colorParser = enumParser(Object.values(DyeColors)).withDefault(DyeColors.white);
+const patternsParser = arrayObjectParser<PatternWithVisible>({
+    pattern: Object.keys(patternList),
+    color: Object.values(DyeColors),
+    visible: "bool"
+}).withDefault([]);
+
 export default function BannerGenerator() {
     useUrlUpdateEmitter()
-    const modeParser = enumParser(["banner", "shield"]);
-    const [mode, setMode] = useQueryState("m", modeParser.withDefault("banner"));
-    const colorParser = enumParser(Object.values(DyeColors));
-    const [baseColor, setBaseColor] = useQueryState("b", colorParser.withDefault(DyeColors.white));
-    const patternsParser = arrayObjectParser<PatternWithVisible>({
-        pattern: Object.keys(patternList),
-        color: Object.values(DyeColors),
-        visible: "bool"
-    });
-    const [patterns, setPatterns] = useQueryState("p", patternsParser.withDefault([]));
+    const [mode, setMode] = useQueryState("m", modeParser);
+    const [baseColor, setBaseColor] = useQueryState("b", colorParser);
+    const [patterns, setPatterns] = useQueryState("p", patternsParser);
     const [editing, setEditing] = useState<EditTarget>(null)
     const [addColor, setAddColor] = useState(baseColor == DyeColors.white ? DyeColors.light_gray : DyeColors.white)
 

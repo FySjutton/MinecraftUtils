@@ -1,14 +1,12 @@
 "use client"
 
-import {useEffect, useState} from "react"
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card"
 import {ComboBox} from "@/components/ComboBox"
 import {Separator} from "@/components/ui/separator"
 import {InputField} from "@/components/InputField"
-import {getShareManager} from "@/lib/share/shareManagerPool"
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
-import {enumParser, stringParser, useUrlUpdateEmitter} from "@/lib/share/urlParsers";
+import {enumParser, useUrlUpdateEmitter} from "@/lib/share/urlParsers";
 
 const typeOptions = ["Items", "Stacks (16)", "Stacks (64)", "Shulker Boxes (27 slots)"]
 
@@ -18,12 +16,12 @@ const conversionMap: Record<string, number> = {
     "Stacks (64)": 64,
     "Shulker Boxes (27 slots)": 27 * 64
 }
+const typeParser = enumParser(typeOptions).withDefault("Items");
 
 export default function UnitsTool() {
     useUrlUpdateEmitter()
-    const [inputValue, setInputValue] = useQueryState("value", stringParser.withDefault("0"));
-    const typeParser = enumParser(typeOptions);
-    const [inputType, setInputType] = useQueryState("type", typeParser.withDefault("Items"));
+    const [inputValue, setInputValue] = useQueryState("value", {defaultValue: "0"});
+    const [inputType, setInputType] = useQueryState("type", typeParser);
 
     const safeNumber = (val: string) => {
         const n = Number(val.replace(",", "."))

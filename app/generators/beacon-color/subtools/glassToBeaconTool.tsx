@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
@@ -11,8 +11,9 @@ import Image from "next/image"
 import {BeaconPreview} from "@/app/generators/beacon-color/preview/BeaconBeam";
 import {ColorPicker} from "@/components/ColorPicker";
 import {Trash2} from "lucide-react";
-import {getShareManager} from "@/lib/share/shareManagerPool";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {useQueryState} from "nuqs";
+import {enumArrayParser} from "@/lib/share/urlParsers";
 
 const COLOR_NAMES = Object.keys(GLASS_COLORS)
 
@@ -33,40 +34,13 @@ export function toInternalName(display?: string) {
     return display.replaceAll(" ", "_").toLowerCase()
 }
 
+const stackParser = enumArrayParser(COLOR_NAMES).withDefault([])
+
 export default function GlassToBeaconColorEditor() {
     const initialValue = '#3263B7'
-    const share = getShareManager("beacon");
 
-    const [stack, setStack] = useState<string[]>([]);
-    const [targetHex, setTargetHex] = useState(initialValue);
-
-    share.register(
-        "stack",
-        [stack, setStack],
-        (stackArray) => {
-            const indices = stackArray
-                .map(color => COLOR_NAMES.indexOf(color))
-                .filter(idx => idx >= 0)
-                .join(".");
-
-            return `${targetHex}^${indices}`;
-        },
-        (raw) => {
-            if (!raw) return [];
-
-            const [loadedTargetHex, stackStr] = raw.split("^");
-            setTargetHex(loadedTargetHex);
-
-            if (!stackStr) return [];
-            return stackStr
-                .split(".")
-                .map(idxStr => {
-                    const idx = Number(idxStr);
-                    return COLOR_NAMES[idx] ?? null;
-                })
-                .filter(Boolean) as string[];
-        }
-    );
+    const [stack, setStack] = useQueryState("layers", stackParser);
+    const [targetHex, setTargetHex] = useQueryState("target", {defaultValue: initialValue});
 
     const targetRgb: RGB = useMemo(() => {
         const h = targetHex.startsWith('#') ? targetHex.slice(1) : targetHex

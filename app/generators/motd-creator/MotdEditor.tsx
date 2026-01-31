@@ -16,17 +16,17 @@ import {ToolbarProvider} from '@/components/editor/toolbar-provider'
 import {Obfuscated} from "@/components/editor/Obfuscated";
 
 import "@/components/editor/editor.css"
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useMemo, useRef, useState} from "react";
 import {Colors} from "@/lib/Colors";
 import {PasteColorFilter} from "@/components/editor/PasteColorFilter";
 import {MaxLines} from "@/components/editor/MaxLines";
 import {Upload} from "lucide-react";
 import {tiptapToMinecraftText} from "@/lib/converters/tiptapToMinecraftText";
 import {minecraftTextToString} from "@/lib/converters/minecraftTextToString";
-import {getShareManager} from "@/lib/share/shareManagerPool";
 import {minecraftTextToTiptap} from "@/lib/converters/minecraftTextToTiptap";
 import {JSONContent} from "@tiptap/core";
 import Image from "next/image";
+import {createParser, useQueryState} from "nuqs";
 
 export default function MotdEditor({ output, setOutputAction }: { output: string, setOutputAction: React.Dispatch<React.SetStateAction<string>> }) {
     const editor = useEditor({
@@ -96,47 +96,37 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
         immediatelyRender: false
     })
 
-    const share = getShareManager("motd");
+    const DEFAULT_CONTENT = useMemo(() => {
+        return {
+            type: 'doc',
+            content: [
+                {
+                    type: 'paragraph',
+                    content: [
+                        {
+                            type: 'text',
+                            text: 'Click here and type to edit!',
+                            marks: [{type: 'textStyle', attrs: {color: Colors.GRAY}}],
+                        },
+                    ],
+                },
+            ],
+        }
+    }, [])
 
-    const DEFAULT_CONTENT = {
-        type: 'doc',
-        content: [
-            {
-                type: 'paragraph',
-                content: [
-                    {
-                        type: 'text',
-                        text: 'Click here and type to edit!',
-                        marks: [{ type: 'textStyle', attrs: { color: Colors.GRAY } }],
-                    },
-                ],
-            },
-        ],
-    };
-
-    const [editorContent, setEditorContent] = useState<JSONContent>(() => editor?.getJSON() ?? DEFAULT_CONTENT);
-
-    share.register(
-        "motd",
-        [editorContent, setEditorContent],
-        (json) => {
+    const jsonParser = useMemo(() => createParser<JSONContent>({
+        serialize: (json) => {
             const minecraftLines = tiptapToMinecraftText(json, 4);
             return minecraftTextToString(minecraftLines, "\u00a7");
         },
-        (raw) => {
+        parse: (raw) => {
             if (!raw) return DEFAULT_CONTENT;
             return minecraftTextToTiptap(raw);
         }
-    );
+        }).withDefault(editor?.getJSON() ?? DEFAULT_CONTENT),
+    [DEFAULT_CONTENT, editor]);
 
-    useEffect(() => {
-        share.hydrate();
-
-        return share.startAutoUrlSync({
-            debounceMs: 300,
-            replace: true,
-        });
-    }, []);
+    const [editorContent, setEditorContent] = useQueryState("motd", jsonParser)
 
     useEffect(() => {
         if (!editor) return;
@@ -151,7 +141,7 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
         return () => {
             editor.off('update', updateListener);
         };
-    }, [editor]);
+    }, [editor, setEditorContent]);
 
     useEffect(() => {
         if (!editor) return;
@@ -177,7 +167,7 @@ export default function MotdEditor({ output, setOutputAction }: { output: string
         return () => {
             editor.off('update', updateListener);
         };
-    }, [editor]);
+    }, [editor, setOutputAction]);
 
     // Automatic scaling for MOTD widget
     const containerRef = useRef<HTMLDivElement>(null)

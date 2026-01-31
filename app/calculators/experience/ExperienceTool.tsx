@@ -9,11 +9,13 @@ import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
 import {numberParser, useUrlUpdateEmitter} from "@/lib/share/urlParsers";
 
+const xpParser = numberParser.withDefault(9)
+
 export default function ExperienceTool() {
     useUrlUpdateEmitter()
     // Set initial xp to 9 for a nice look, equals 1 level and about 22% progress.
-    const [xp, setXp] = useQueryState("xp", numberParser.withDefault(9));
-    const [level, setLevel] = useQueryState("level", numberParser.withDefault(1));
+    const [xp, setXp] = useQueryState("xp", xpParser);
+    const [level, setLevel] = useState(1);
     const [progress, setProgress] = useState(22)
 
     const [lastSource, setLastSource] = useState<"slider" | "input" | null>(null)
