@@ -3,6 +3,7 @@
 import * as React from "react"
 import * as SliderPrimitive from "@radix-ui/react-slider"
 import { cn } from "@/lib/utils"
+import {useState} from "react";
 
 interface StepSliderProps
     extends Omit<
@@ -27,7 +28,7 @@ const StepSlider: React.FC<StepSliderProps> = ({
                                                    className,
                                                    ...props
                                                }) => {
-    const [internalValue, setInternalValue] = React.useState<number>(
+    const [internalValue, setInternalValue] = useState<number>(
         value ?? defaultValue ?? min
     )
 

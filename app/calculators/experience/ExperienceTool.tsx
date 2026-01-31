@@ -7,7 +7,7 @@ import ImageSlider from "@/app/calculators/experience/ImageSlider";
 import {InputField} from "@/components/InputField";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
-import {numberParser, useUrlUpdateEmitter} from "@/lib/share/urlParsers";
+import {numberParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 
 const xpParser = numberParser.withDefault(9)
 

@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { InputField } from "@/components/InputField"
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 import {createParser, useQueryState} from "nuqs";
-import {useUrlUpdateEmitter} from "@/lib/share/urlParsers";
+import {useUrlUpdateEmitter} from "@/lib/urlParsers";
 
 const coordsParser = createParser<{ x: string; y: string; z: string }>({
     serialize(value) {

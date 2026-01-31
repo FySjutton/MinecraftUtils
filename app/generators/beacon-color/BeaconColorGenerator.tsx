@@ -4,12 +4,13 @@ import BeaconToGlassTool from "@/app/generators/beacon-color/subtools/beaconToGl
 import GlassToBeaconColor from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
 import {Tabs, TabsContent, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {useQueryState} from "nuqs";
-import { enumParser } from "@/lib/share/urlParsers";
+import {enumParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 
 const tabs = ["tool", "verify"] as const;
 type Tab = (typeof tabs)[number];
 
 export default function BeaconColorGenerator() {
+    useUrlUpdateEmitter()
     const [tab, setTab] = useQueryState<Tab>("tab", enumParser(tabs).withDefault("tool"));
 
     return (

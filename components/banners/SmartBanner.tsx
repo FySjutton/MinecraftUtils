@@ -1,6 +1,6 @@
 'use client';
 
-import React from "react";
+import React, {useState} from "react";
 import {
     Banner,
     BannerIcon,
@@ -23,7 +23,7 @@ export type SmartBannerProps = {
 };
 
 export default function SmartBanner({id, title, icon: IconComp, iconClassName = "bg-white/20 text-white", bgColor = "#333", textColor = "white", actionLabel, actionUrl, expireDays = 30,}: SmartBannerProps) {
-    const [show, setShow] = React.useState(false);
+    const [show, setShow] = useState(false);
 
     React.useEffect(() => {
         const key = `banner:${id}`;

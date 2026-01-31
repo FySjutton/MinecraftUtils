@@ -32,7 +32,7 @@ import {Eye, EyeOff, GripVertical, X} from "lucide-react";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {InputField} from "@/components/InputField";
 import {generateCommand, Mode, Pattern, patternList} from "@/app/generators/banners/utils/Utils";
-import {arrayObjectParser, enumParser, useUrlUpdateEmitter} from "@/lib/share/urlParsers";
+import {arrayObjectParser, enumParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 import {useQueryState} from "nuqs";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
@@ -124,7 +124,7 @@ const colorParser = enumParser(Object.values(DyeColors)).withDefault(DyeColors.w
 const patternsParser = arrayObjectParser<PatternWithVisible>({
     pattern: Object.keys(patternList),
     color: Object.values(DyeColors),
-    visible: "bool"
+    visible: {type: "bool", default: true}
 }).withDefault([]);
 
 export default function BannerGenerator() {

@@ -1,5 +1,5 @@
-import { createParser, SingleParser } from "nuqs";
-import { useEffect } from "react";
+import {createParser, SingleParser} from "nuqs";
+import {useEffect} from "react";
 
 const BASE62_CHARS = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const toB62 = (n: number) => BASE62_CHARS[n] ?? "0";
@@ -105,12 +105,12 @@ export function enumArrayParser<T extends string>(
 }
 
 type FieldDef<T> =
-    T extends boolean ? "bool" :
-        T extends number ? "number" :
-            T extends string ? "string" | string[] :
-                SingleParser<T>;
+    T extends boolean ? "bool" | { type: "bool"; default?: boolean } | { type: SingleParser<boolean>; default?: boolean } :
+        T extends number ? "number" | { type: "number"; default?: number } | { type: SingleParser<number>; default?: number } :
+            T extends string ? "string" | { type: "string"; default?: string } | readonly string[] | { type: SingleParser<string>; default?: string } :
+                SingleParser<T> | { type: SingleParser<T>; default?: T };
 
-type Schema<T> = {
+export type Schema<T> = {
     [K in keyof T]?: FieldDef<T[K]> | SingleParser<T[K]>;
 };
 
@@ -175,42 +175,91 @@ function parseKV<T>(
     return obj;
 }
 
+function asStringParser<T>(
+    parser?: SingleParser<T>,
+    enumValues?: readonly string[]
+): SingleParser<T> {
+    if (enumValues) return enumParser(enumValues) as SingleParser<T>;
+    if (!parser) throw new Error("Missing parser");
+    return parser;
+}
+
+// --- mask encode/decode helpers (numbers only, no BigInt)
+function encodeMask(bits: boolean[]): string {
+    let n = 0;
+    for (let i = 0; i < bits.length; i++) {
+        n = n * 2 + (bits[i] ? 1 : 0);
+    }
+    if (n === 0) return "";
+    let out = "";
+    while (n > 0) {
+        const idx = n % 62;
+        out = BASE62_CHARS[idx] + out;
+        n = Math.floor(n / 62);
+    }
+    return out;
+}
+
+function decodeMask(s: string, length: number): boolean[] {
+    if (!s) return new Array(length).fill(false);
+    let n = 0;
+    for (const ch of s) {
+        const idx = BASE62_CHARS.indexOf(ch);
+        if (idx === -1) throw new Error("invalid mask char");
+        n = n * 62 + idx;
+    }
+    const bits: boolean[] = new Array(length).fill(false);
+    for (let i = length - 1; i >= 0; i--) {
+        bits[i] = (n % 2) === 1;
+        n = Math.floor(n / 2);
+    }
+    return bits;
+}
+
 export function recordParser<T extends Record<string, any>>(options: {
     valueParser?: SingleParser<any>;
     keyValues?: readonly string[];
     valueValues?: readonly string[];
 }) {
-    const valueParser = options.valueParser ?? numberParser;
-    const keyParser = options.keyValues ? enumParser(options.keyValues) : null;
-    const valEnumParser = options.valueValues ? enumParser(options.valueValues) : null;
+    const keyParser = options.keyValues
+        ? enumParser(options.keyValues)
+        : null;
+
+    const valueParser = asStringParser(
+        options.valueParser ?? numberParser,
+        options.valueValues
+    );
 
     return createParser<T>({
         serialize(obj) {
-            return serializeKV(obj, (v, key) => {
-                const keyStr = keyParser && key ? keyParser.serialize(key) : key!;
+            const mapped: Record<string, any> = {};
 
-                let valueStr: string;
-                if (valEnumParser) valueStr = valEnumParser.serialize(v);
-                if (typeof valueParser.serialize !== "function") throw new Error("Unknown Error");
-                else valueStr = valueParser.serialize(v);
+            for (const k in obj) {
+                const key = keyParser ? keyParser.serialize(k) : k;
+                mapped[key] = obj[k];
+            }
 
-                return keyStr.length + ":" + keyStr + valueStr.length + ":" + valueStr;
+            return serializeKV(mapped, (v) => {
+                if (valueParser.serialize == null) throw new Error("Error")
+                const tmp = valueParser.serialize(v);
+                if (tmp == null) throw new Error("Serialize returned null");
+                return tmp;
             });
         },
+
         parse(str) {
-            return parseKV(str, (v, key) => {
-                let parsedKey = key;
-                if (keyParser && key) {
-                    parsedKey = keyParser.parse(key) as string;
-                    if (!parsedKey) return null;
-                }
+            const parsed = parseKV(str, (v) => valueParser.parse(v));
+            if (!parsed) return null;
 
-                let parsedValue;
-                if (valEnumParser) parsedValue = valEnumParser.parse(v);
-                else parsedValue = valueParser.parse(v);
+            if (!keyParser) return parsed as T;
 
-                return parsedValue;
-            }) as T | null;
+            const out: Record<string, any> = {};
+            for (const k in parsed) {
+                const key = keyParser.parse(k);
+                if (!key) return null;
+                out[key] = parsed[k];
+            }
+            return out as T;
         },
     });
 }
@@ -218,7 +267,9 @@ export function recordParser<T extends Record<string, any>>(options: {
 export function objectParser<T extends Record<string, any>>(schema: Schema<T>) {
     const keys = Object.keys(schema) as (keyof T)[];
     const enumData: Record<keyof T, { index: Record<string, number>; values: string[] } | null> = {} as any;
+    const defaults: Partial<T> = {};
 
+    // detect enums and defaults
     for (const k of keys) {
         const def = schema[k];
         if (Array.isArray(def)) {
@@ -226,44 +277,110 @@ export function objectParser<T extends Record<string, any>>(schema: Schema<T>) {
         } else {
             enumData[k] = null;
         }
+
+        if (typeof def === "object" && def !== null && "default" in def) {
+            (defaults as any)[k] = (def as any).default;
+        }
     }
+
+    const defaultsUsed = Object.keys(defaults).length > 0;
 
     return createParser<T>({
         serialize(obj) {
-            return serializeKV(obj, (v, key) => {
-                const def = schema[key as keyof T];
-                if (isParser(def)) {
-                    if (typeof def.serialize !== "function") throw new Error("Unknown Error");
-                    return def.serialize(v);
+            const getParser = (def: any) => isParser(def) ? def : (def && def.type && isParser(def.type)) ? def.type : null;
+            const serializeValue = (key: keyof T, v: any) => {
+                const def = schema[key];
+                const parser = getParser(def);
+                if (parser) {
+                    if (parser.serialize == null) throw new Error("Serialize returned null");
+                    return parser.serialize(v);
                 }
-                if (def === "bool") return v ? "1" : "0";
-                if (def === "number") return `${v}`;
+                if (def === "bool" || (def as any)?.type === "bool") return v ? "1" : "0";
+                if (def === "number" || (def as any)?.type === "number") return `${v}`;
                 if (Array.isArray(def)) {
-                    const idx = enumData[key as keyof T]!.index[v as string];
+                    const idx = enumData[key]!.index[v as string];
                     return toB62(idx ?? 0);
                 }
-                const encoded = encodeString(v as string);
-                return encoded;
-            });
-        },
-        parse(str) {
-            return parseKV(str, (val, key) => {
-                const def = schema[key as keyof T];
-                if (!def) return null;
+                return encodeString(v as string);
+            };
 
-                if (isParser(def)) return def.parse(val);
-                if (def === "bool") return val === "1" ? true : val === "0" ? false : null;
-                if (def === "number") {
-                    const n = parseFloat(val);
-                    return Number.isFinite(n) ? n : null;
+            if (!defaultsUsed) {
+                return keys.map(key => {
+                    const v = (obj as any)[key];
+                    const token = serializeValue(key, v);
+                    return `${token.length}:${token}`;
+                }).join("");
+            } else {
+                const bits: boolean[] = [];
+                const vals: string[] = [];
+
+                for (const key of keys) {
+                    const v = (obj as any)[key];
+                    const hasDefault = (defaults as any)[key] !== undefined;
+                    const isDifferent = !hasDefault || (defaults as any)[key] !== v;
+                    bits.push(isDifferent);
+
+                    if (isDifferent) {
+                        const token = serializeValue(key, v);
+                        vals.push(`${token.length}:${token}`);
+                    }
                 }
-                if (Array.isArray(def)) {
-                    const idx = fromB62(val);
-                    const values = enumData[key as keyof T]!.values;
-                    return idx !== -1 && values[idx] ? values[idx] : values[0];
+
+                const mask = encodeMask(bits);
+                return `${mask.length}:${mask}` + vals.join("");
+            }
+        },
+
+        parse(str) {
+            const getParser = (def: any) => isParser(def) ? def : (def && def.type && isParser(def.type)) ? def.type : null;
+            const parseValue = (key: keyof T, token: string | null) => {
+                const def = schema[key];
+                const parser = getParser(def);
+                let parsed: any = null;
+
+                if (token != null) {
+                    if (parser) parsed = parser.parse(token);
+                    else if (def === "bool" || (def as any)?.type === "bool") parsed = token === "1" ? true : token === "0" ? false : null;
+                    else if (def === "number" || (def as any)?.type === "number") parsed = Number.isFinite(parseFloat(token)) ? parseFloat(token) : null;
+                    else if (Array.isArray(def)) {
+                        const idx = fromB62(token);
+                        const values = enumData[key]!.values;
+                        parsed = idx !== -1 && values[idx] ? values[idx] : values[0];
+                    } else parsed = decodeString(token);
                 }
-                return decodeString(val);
-            }) as T | null;
+
+                if ((parsed === null || parsed === undefined) && (defaults as any)[key] !== undefined) parsed = (defaults as any)[key];
+                return parsed;
+            };
+
+            const out: any = {};
+            let pos = 0;
+            let bits: boolean[] = new Array(keys.length).fill(true);
+
+            if (defaultsUsed) {
+                const maskRes = helper(str, pos);
+                if (maskRes) {
+                    pos = maskRes[0];
+                    bits = decodeMask(maskRes[1], keys.length);
+                }
+            }
+
+            for (let i = 0; i < keys.length; ++i) {
+                const key = keys[i];
+                let token: string | null = null;
+
+                if (!defaultsUsed || bits[i]) {
+                    const valRes = helper(str, pos);
+                    if (valRes) {
+                        token = valRes[1];
+                        pos = valRes[0];
+                    }
+                }
+
+                out[key as string] = parseValue(key, token);
+            }
+
+            return out as T;
         },
     });
 }

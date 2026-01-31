@@ -15,7 +15,7 @@ import {
     SidebarMenuSubItem,
     SidebarMenuAction,
 } from "@/components/ui/sidebar";
-import React from "react";
+import React, {useState} from "react";
 import Link from "next/link";
 import {Badge} from "@/components/ui/badge";
 import {renderIcon, ToolCategory} from "@/app/AppStructure";
@@ -29,7 +29,7 @@ export function NavTools({tools, search, activeCategory, activePage, title, filt
     title?: string;
     filterAlpha: boolean;
 }) {
-    const [openCategories, setOpenCategories] = React.useState<Record<string, boolean>>(
+    const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(
         () =>
             tools.reduce(
                 (acc, tool) => ({

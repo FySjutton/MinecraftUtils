@@ -17,18 +17,46 @@ import {
     isShapeFilled,
     ShapeOptions,
     createDefaults,
-    getShapeOptions, generators
+    getShapeOptions, generators, ShapeMode, shapeModes
 } from "./ShapeGenerator";
 import { InteractiveShapeGroups } from "./ShapeSvg";
 
 import { ShapeInputs } from "./ShapeInputs";
+import {enumParser, objectParser, Schema, useUrlUpdateEmitter} from "@/lib/urlParsers";
+import {useQueryState} from "nuqs";
 
 export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean }) {
-    const [shape, setShape] = useState<Shape>(circleOnly ? "Circle" : "Hexagon");
+    useUrlUpdateEmitter()
+
+    const shapeParser = useMemo(() => enumParser(shapes).withDefault(circleOnly ? "Circle" : "Hexagon"), [circleOnly]);
+    const [shape, setShape] = useQueryState("shape", shapeParser);
+   // const [shape, setShape] = useState<Shape>(circleOnly ? "Circle" : "Hexagon");
     const [checks, setChecks] = useState<Map<string, boolean>>(new Map());
     const svgRef = useRef<SVGSVGElement>(null);
 
-    const [options, setOptions] = useState<ShapeOptions>(getShapeOptions(circleOnly ? "Circle" : "Hexagon"));
+    const defaults = createDefaults(shape);
+    const optionsParser = useMemo(() => objectParser<ShapeOptions>({
+        shape: { type: enumParser(shapes), default: defaults.shape },
+        mode: { type: enumParser(shapeModes), default: defaults.mode },
+        rotation: { type: "number", default: defaults.rotation },
+        thickness: { type: "number", default: defaults.thickness },
+        width: { type: "number", default: defaults.width },
+        height: { type: "number", default: defaults.height },
+
+        // Circle-specific
+        lockRatio: { type: "bool", default: defaults.lockRatio },
+
+        // Polygon-specific
+        sides: { type: "number", default: defaults.sides },
+
+        // Quadrilateral-specific
+        topWidth: { type: "number", default: defaults.topWidth },
+        bottomWidth: { type: "number", default: defaults.bottomWidth },
+        skew: { type: "number", default: defaults.skew },
+    }).withDefault(getShapeOptions(circleOnly ? "Circle" : "Hexagon")), [circleOnly, defaults]);
+    const [options, setOptions] = useQueryState("options", optionsParser);
+    console.log(options)
+    // const [options, setOptions] = useState<ShapeOptions>(getShapeOptions(circleOnly ? "Circle" : "Hexagon"));
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [theme, setTheme] = useState<ThemeName>(defaultTheme);
 

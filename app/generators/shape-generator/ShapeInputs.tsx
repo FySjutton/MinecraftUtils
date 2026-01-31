@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, {useState} from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -72,8 +72,13 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
         setOptionsAction(prev => ({ ...prev, rotation: rot }));
     };
 
-    const getValue = (key: keyof ShapeOptions) =>
-        pendingOptions.get(key as string) ?? options[key] as string | number;
+    const getValue = (key: keyof ShapeOptions) => {
+        const keyStr = key as string;
+        if (pendingOptions.has(keyStr)) {
+            return pendingOptions.get(keyStr);
+        }
+        return String(options[key] ?? "");
+    };
 
     return (
         <>
@@ -205,7 +210,7 @@ export const ShapeInputs = ({ shape, options, setOptionsAction }: Props) => {
                 </div>
 
                 <AngleSlider
-                    defaultValue={[0]}
+                    value={[options.rotation]}
                     max={360}
                     min={0}
                     step={45}

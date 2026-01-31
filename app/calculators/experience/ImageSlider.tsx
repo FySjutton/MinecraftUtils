@@ -4,6 +4,7 @@ import * as React from "react"
 import Image from "next/image"
 import {Button} from "@/components/ui/button";
 import {IconArrowBigLeftLine, IconArrowBigRightLine} from "@tabler/icons-react";
+import {useState} from "react";
 
 type ExperienceBarProps = {
     xp: number
@@ -12,8 +13,8 @@ type ExperienceBarProps = {
 }
 
 export default function ExperienceBar({ xp, lastSource, onSliderAction }: ExperienceBarProps) {
-    const [value, setValue] = React.useState(0) // % bar
-    const [level, setLevel] = React.useState(0)
+    const [value, setValue] = useState(0) // % bar
+    const [level, setLevel] = useState(0)
 
     const xpToLevel = (exp: number) => {
         if (exp >= 1508) {
@@ -51,7 +52,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
         return exp
     }
 
-    const [isEditing, setIsEditing] = React.useState(false)
+    const [isEditing, setIsEditing] = useState(false)
 
     React.useEffect(() => {
         if (!isEditing && lastSource !== "slider") {

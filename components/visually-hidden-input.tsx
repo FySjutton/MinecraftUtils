@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import {useState} from "react";
 
 type InputValue = string[] | string;
 
@@ -51,7 +52,7 @@ function VisuallyHiddenInput<T = InputValue>(
     return prevValueRef.current.previous;
   }, [isCheckInput, value, checked]);
 
-  const [controlSize, setControlSize] = React.useState<{
+  const [controlSize, setControlSize] = useState<{
     width?: number;
     height?: number;
   }>({});

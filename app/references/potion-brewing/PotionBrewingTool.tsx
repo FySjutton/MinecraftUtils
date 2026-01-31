@@ -11,7 +11,7 @@ import { toTitleCase } from "@/app/generators/beacon-color/ResultCard"
 import {Separator} from "@/components/ui/separator";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
-import {enumParser, numberParser, objectParser, recordParser} from "@/lib/share/urlParsers";
+import {enumParser, numberParser, recordParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 
 type PotionName = string
 type IngredientName = string
@@ -161,10 +161,11 @@ function PotionCard({ selectedPotion, potionType }: { selectedPotion: PotionName
 const potionNames = Object.keys(POTIONS)
 
 const potionParser = enumParser(potionNames).withDefault(potionNames[0])
-const optionParser = recordParser<Record<string, number>>({valueParser: numberParser, keyValues: potionNames}).withDefault({}) // TODO: key values no working
+const optionParser = recordParser<Record<string, number>>({valueParser: numberParser, keyValues: potionNames}).withDefault({})
 const potionTypeParser = enumParser(["normal", "splash", "lingering"]).withDefault("normal")
 
 export default function PotionBrewingTool() {
+    useUrlUpdateEmitter()
     const [selectedPotion, setSelectedPotion] = useQueryState("potion", potionParser)
     const [options, setOptions] = useQueryState("options", optionParser)
     const [potionType, setPotionType] = useQueryState("type", potionTypeParser)

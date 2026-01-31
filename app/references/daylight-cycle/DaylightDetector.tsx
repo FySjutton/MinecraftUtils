@@ -5,6 +5,7 @@ import powerData from "./daylight_detector.json"
 import { ComboBox } from "@/components/ComboBox"
 import {InputField} from "@/components/InputField";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
+import {useState} from "react";
 
 type Weather = "Clear" | "Rain" | "Thunder"
 
@@ -13,8 +14,8 @@ interface DaylightDetectorProps {
 }
 
 export function DaylightDetector({ tick }: DaylightDetectorProps) {
-    const [weather, setWeather] = React.useState<Weather>("Clear")
-    const [currentPower, setCurrentPower] = React.useState<number>(0)
+    const [weather, setWeather] = useState<Weather>("Clear")
+    const [currentPower, setCurrentPower] = useState<number>(0)
 
     React.useEffect(() => {
         const weatherData = powerData[weather]

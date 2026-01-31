@@ -134,7 +134,7 @@ export default function DaylightCycleTool() {
     };
 
     const imageRef = React.useRef<HTMLImageElement | null>(null)
-    const [sliderSize, setSliderSize] = React.useState(150)
+    const [sliderSize, setSliderSize] = useState(150)
 
     React.useEffect(() => {
         const updateSize = () => {

@@ -13,7 +13,7 @@ import {ColorPicker} from "@/components/ColorPicker";
 import {Trash2} from "lucide-react";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
-import {enumArrayParser} from "@/lib/share/urlParsers";
+import {enumArrayParser} from "@/lib/urlParsers";
 
 const COLOR_NAMES = Object.keys(GLASS_COLORS)
 

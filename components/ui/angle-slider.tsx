@@ -6,6 +6,7 @@ import * as React from "react";
 import { useComposedRefs } from "@/lib/compose-refs";
 import { cn } from "@/lib/utils";
 import { VisuallyHiddenInput } from "@/components/visually-hidden-input";
+import {useState} from "react";
 
 const ROOT_NAME = "AngleSlider";
 const THUMB_NAME = "AngleSliderThumb";
@@ -435,7 +436,7 @@ function AngleSliderRoot(props: AngleSliderRootProps) {
 
   const dir = useDirection(dirProp);
 
-  const [sliderElement, setSliderElement] = React.useState<RootElement | null>(
+  const [sliderElement, setSliderElement] = useState<RootElement | null>(
     null,
   );
   const composedRef = useComposedRefs(ref, setSliderElement);
@@ -766,7 +767,7 @@ function AngleSliderThumb(props: AngleSliderThumbProps) {
   const size = useStore((state) => state.size);
 
   const thumbId = React.useId();
-  const [thumbElement, setThumbElement] = React.useState<ThumbElement | null>(
+  const [thumbElement, setThumbElement] = useState<ThumbElement | null>(
     null,
   );
   const composedRef = useComposedRefs(ref, setThumbElement);

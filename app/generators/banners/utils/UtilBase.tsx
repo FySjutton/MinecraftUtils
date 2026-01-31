@@ -15,7 +15,7 @@ import {useQueryState} from "nuqs";
 import {
     enumParser,
     objectParser, useUrlUpdateEmitter,
-} from "@/lib/share/urlParsers";
+} from "@/lib/urlParsers";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 type StringRecord = Record<string, string>

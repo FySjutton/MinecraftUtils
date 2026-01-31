@@ -5,14 +5,15 @@ import { Input } from "@/components/ui/input"
 import {Card, CardHeader, CardTitle, CardContent, CardDescription} from "@/components/ui/card"
 import { Clock } from "lucide-react"
 import {InputField} from "@/components/InputField";
+import {useState} from "react";
 
 interface TimeTickConverterProps {
     initialTick?: number
 }
 
 export function TimeTickConverter({ initialTick = 0 }: TimeTickConverterProps) {
-    const [date, setDate] = React.useState<Date>(() => ticksToDate(initialTick))
-    const [tick, setTick] = React.useState<number>(initialTick)
+    const [date, setDate] = useState<Date>(() => ticksToDate(initialTick))
+    const [tick, setTick] = useState<number>(initialTick)
     const timeInputRef = React.useRef<HTMLInputElement>(null)
 
     React.useEffect(() => setTick(dateToTicks(date)), [date])

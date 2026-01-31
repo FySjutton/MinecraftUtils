@@ -8,6 +8,7 @@ export enum ShapeMode {
     Thin = "thin",
     Thick = "thick",
 }
+export const shapeModes: string[] = Object.values(ShapeMode);
 
 export const polygons = [
     { name: "Equilateral Triangle", sides: 3 },

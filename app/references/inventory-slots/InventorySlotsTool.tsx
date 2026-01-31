@@ -73,9 +73,9 @@ export default function InventorySlotsTool() {
 
 
     const labels = inventories.map(i => ( i.label ))
-    const [selectedLabel, setSelectedLabel] = React.useState("Player Inventory")
+    const [selectedLabel, setSelectedLabel] = useState("Player Inventory")
 
-    const [api, setApi] = React.useState<CarouselApi>()
+    const [api, setApi] = useState<CarouselApi>()
 
     React.useEffect(() => {
         if (!api || !selectedLabel) return

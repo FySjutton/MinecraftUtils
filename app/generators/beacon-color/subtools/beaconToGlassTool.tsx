@@ -23,7 +23,7 @@ import {
     numberParser,
     rgbArrayParser,
     rgbParser
-} from "@/lib/share/urlParsers";
+} from "@/lib/urlParsers";
 
 const COLOR_ENTRIES = Object.entries(GLASS_COLORS)
 

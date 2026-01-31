@@ -17,6 +17,7 @@ import {
     PopoverTrigger,
 } from "@/components/ui/popover"
 import { IconCheck, IconSelector } from "@tabler/icons-react"
+import {useState} from "react";
 
 type ItemsInput =
     | string[]
@@ -34,7 +35,7 @@ interface ComboBoxProps {
 }
 
 export function ComboBox({items, value, onChange, placeholder = "Select...", placeholderSearch = "Search...", className, renderItem, renderIcon}: ComboBoxProps) {
-    const [open, setOpen] = React.useState(false)
+    const [open, setOpen] = useState(false)
 
     const normalizedItems = React.useMemo(() => {
         if (Array.isArray(items)) {

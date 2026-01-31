@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/popover"
 import { Switch } from "@/components/ui/switch"
 import { IconSelector } from "@tabler/icons-react"
+import {useState} from "react";
 
 interface MultiSelectDropdownProps {
     items: string[]
@@ -30,8 +31,8 @@ interface MultiSelectDropdownProps {
 }
 
 export function MultiSelectDropdown({items, selected, onChange, placeholder = "Select items...", placeholderSearch = "Search...", className, renderIcon}: MultiSelectDropdownProps) {
-    const [open, setOpen] = React.useState(false)
-    const [search, setSearch] = React.useState("")
+    const [open, setOpen] = useState(false)
+    const [search, setSearch] = useState("")
 
     const filteredItems = items.filter((item) =>
         item.toLowerCase().includes(search.toLowerCase())

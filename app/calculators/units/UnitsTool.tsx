@@ -6,7 +6,7 @@ import {Separator} from "@/components/ui/separator"
 import {InputField} from "@/components/InputField"
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
-import {enumParser, useUrlUpdateEmitter} from "@/lib/share/urlParsers";
+import {enumParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 
 const typeOptions = ["Items", "Stacks (16)", "Stacks (64)", "Shulker Boxes (27 slots)"]
 
