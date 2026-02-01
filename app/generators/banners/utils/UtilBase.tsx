@@ -34,9 +34,11 @@ export type UtilBaseProps = {
     livePreview: boolean
 }
 
+const modeParser = enumParser(["banner", "shield"]).withDefault("banner")
+
 export default function UtilBase<T extends StringRecord>({title, inputs, getResultsAction, livePreview}: UtilBaseProps) {
     useUrlUpdateEmitter()
-    const [mode, setMode] = useQueryState<Mode>("mode", enumParser(["banner", "shield"]).withDefault("banner"))
+    const [mode, setMode] = useQueryState<Mode>("mode", modeParser)
 
     const schema = useMemo(() => Object.fromEntries(
         inputs.map(i => i.kind === "color" ? [i.key, Object.values(DyeColors)] : [i.key, "string"])
