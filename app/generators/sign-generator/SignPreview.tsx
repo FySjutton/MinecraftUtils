@@ -3,7 +3,6 @@
 import { Canvas, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
-import { MinecraftText } from '@/lib/MinecraftText'
 import {useEffect, useMemo, useRef, useState} from 'react'
 import { drawMinecraftSignToCanvas } from '@/app/generators/sign-generator/canvasRenderer'
 import assert from 'node:assert'

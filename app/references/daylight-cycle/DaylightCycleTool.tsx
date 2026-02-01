@@ -12,6 +12,7 @@ import {Button} from "@/components/ui/button";
 import {DaylightDetector} from "@/app/references/daylight-cycle/DaylightDetector";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {TimeTickConverter} from "@/app/references/daylight-cycle/TimeTickConverter";
+import ImageObj from "next/image";
 
 export default function DaylightCycleTool() {
     const videoEastRef = useRef<HTMLVideoElement | null>(null)
@@ -163,11 +164,13 @@ export default function DaylightCycleTool() {
         <div className="relative flex flex-col items-center gap-6 w-full h-full p-4">
             <div className="relative w-[90vmin] h-[90vmin] sm:w-[80vmin] sm:h-[80vmin] md:w-[70vmin] md:h-[70vmin] lg:w-[600px] lg:h-[600px] mb-10 mt-5">
 
-                <img
+                <ImageObj
                     ref={imageRef}
                     src="/assets/tool/daycycle/background.png"
                     alt="background"
                     className="absolute inset-0 top-[50%] left-[50%] translate-[-50%] w-full h-full object-contain z-0 border-2"
+                    width={1305}
+                    height={1305}
                 />
 
                 <AngleSlider

@@ -82,7 +82,7 @@ export default function InventorySlotsTool() {
 
         const index = inventories.findIndex(i => i.label === selectedLabel)
         if (index >= 0) api.scrollTo(index)
-    }, [selectedLabel, api])
+    }, [selectedLabel, api, inventories])
 
     React.useEffect(() => {
         if (!api) return
@@ -92,7 +92,7 @@ export default function InventorySlotsTool() {
             const label = inventories[index]?.label
             if (label) setSelectedLabel(label)
         })
-    }, [api])
+    }, [api, inventories])
 
     const reset = () => {
         setSelectedLabel("Player Inventory")

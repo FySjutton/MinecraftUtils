@@ -10,6 +10,7 @@ import { buildTextureCanvas } from '@/app/generators/banners/utils/TextureManage
 import {Toggle} from "@/components/ui/toggle";
 import {Check, X} from "lucide-react";
 import {Pattern} from "@/app/generators/banners/utils/Utils";
+import {applyTexture} from "@/app/generators/banners/editor/preview/Shield3d";
 
 interface Banner3DProps {
     baseColor: string
@@ -70,24 +71,7 @@ function BannerScene({baseColor, patterns, animate}: {
 
         ;(async () => {
             const canvas = await buildTextureCanvas(baseColor, patterns, "banner")
-            if (cancelled) return
-
-            const texture = new THREE.CanvasTexture(canvas)
-            texture.colorSpace = THREE.SRGBColorSpace
-            texture.minFilter = THREE.NearestFilter
-            texture.magFilter = THREE.NearestFilter
-            texture.needsUpdate = true
-
-            main.traverse((child) => {
-                if (!(child instanceof THREE.Mesh)) return
-                const materials = Array.isArray(child.material) ? child.material : [child.material]
-                materials.forEach((material) => {
-                    if (material instanceof THREE.Material && 'map' in material) {
-                        ;(material as THREE.MeshStandardMaterial).map = texture
-                        material.needsUpdate = true
-                    }
-                })
-            })
+            applyTexture(cancelled, canvas, main)
         })()
 
         return () => {

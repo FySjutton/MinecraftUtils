@@ -72,7 +72,7 @@ function Beacon({ segments, beamTextures }: BeaconProps) {
 
     const allSegments: SegmentTuple[] = [[null, ''], ...segments]
 
-    const meshes = allSegments.map(([_, __], i) => {
+    const meshes = allSegments.map(([,], i) => {
         const yPos = segmentYPositions[i]
         const map = beamTextures[i]
         if (map) {

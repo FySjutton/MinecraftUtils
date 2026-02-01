@@ -1,6 +1,6 @@
 "use client"
 
-import React, {SetStateAction, useEffect} from "react"
+import React from "react"
 import Image from "next/image"
 import potionsRaw from "./potions.json"
 

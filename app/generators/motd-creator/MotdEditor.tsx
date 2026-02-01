@@ -29,7 +29,7 @@ import Image from "next/image";
 import {createParser, useQueryState} from "nuqs";
 import {useUrlUpdateEmitter} from "@/lib/urlParsers";
 
-export default function MotdEditor({ output, setOutputAction }: { output: string, setOutputAction: React.Dispatch<React.SetStateAction<string>> }) {
+export default function MotdEditor({setOutputAction }: { output: string, setOutputAction: React.Dispatch<React.SetStateAction<string>> }) {
     useUrlUpdateEmitter()
     const editor = useEditor({
         extensions: [

@@ -102,7 +102,7 @@ export default function SignEditor({ output, setOutputAction, signType }: SignEd
         return () => {
             editor.off('update', updateListener);
         };
-    }, [editor]);
+    }, [editor, setOutputAction]);
 
     if (editor == null) return null;
 

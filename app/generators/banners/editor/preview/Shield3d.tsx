@@ -14,6 +14,27 @@ interface Shield3DProps {
     patterns: Pattern[]
 }
 
+export function applyTexture(cancelled: boolean, canvas: HTMLCanvasElement, main: THREE.Group) {
+    if (cancelled) return
+
+    const texture = new THREE.CanvasTexture(canvas)
+    texture.colorSpace = THREE.SRGBColorSpace
+    texture.minFilter = THREE.NearestFilter
+    texture.magFilter = THREE.NearestFilter
+    texture.needsUpdate = true
+
+    main.traverse((child) => {
+        if (!(child instanceof THREE.Mesh)) return
+        const materials = Array.isArray(child.material) ? child.material : [child.material]
+        materials.forEach((material) => {
+            if (material instanceof THREE.Material && 'map' in material) {
+                ;(material as THREE.MeshStandardMaterial).map = texture
+                material.needsUpdate = true
+            }
+        })
+    })
+}
+
 function ShieldScene({ baseColor, patterns }: { baseColor: string; patterns: Pattern[] }) {
     const mainRef = useRef<THREE.Group | null>(null)
     const [main, setMain] = useState<THREE.Group | null>(null)
@@ -42,24 +63,7 @@ function ShieldScene({ baseColor, patterns }: { baseColor: string; patterns: Pat
 
         ;(async () => {
             const canvas = await buildTextureCanvas(baseColor, patterns, "shield")
-            if (cancelled) return
-
-            const texture = new THREE.CanvasTexture(canvas)
-            texture.colorSpace = THREE.SRGBColorSpace
-            texture.minFilter = THREE.NearestFilter
-            texture.magFilter = THREE.NearestFilter
-            texture.needsUpdate = true
-
-            main.traverse((child) => {
-                if (!(child instanceof THREE.Mesh)) return
-                const materials = Array.isArray(child.material) ? child.material : [child.material]
-                materials.forEach((material) => {
-                    if (material instanceof THREE.Material && 'map' in material) {
-                        ;(material as THREE.MeshStandardMaterial).map = texture
-                        material.needsUpdate = true
-                    }
-                })
-            })
+            applyTexture(cancelled, canvas, main)
         })()
 
         return () => {

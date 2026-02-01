@@ -1,9 +1,10 @@
 import {Metadata} from "next";
 import BeaconColorGenerator from "@/app/generators/beacon-color/BeaconColorGenerator";
+import {ClientWrapper} from "@/components/ClientLoadingWrapper";
 
 export default function Page() {
     return (
-        <BeaconColorGenerator />
+        <ClientWrapper component={BeaconColorGenerator} />
     )
 }
 

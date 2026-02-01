@@ -37,8 +37,8 @@ import {useQueryState} from "nuqs";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 
 type EditTarget =
-    | { type: 'base' }
-    | { type: 'pattern'; index: number }
+    | { type: 'base'; anchor: HTMLElement }
+    | { type: 'pattern'; index: number; anchor: HTMLElement }
     | { type: 'add' }
     | null
 
@@ -152,6 +152,9 @@ export default function BannerGenerator() {
     const startAdd = () => {
         setAddColor(baseColor == DyeColors.white ? DyeColors.light_gray : DyeColors.white)
         setEditing({type: 'add'})
+        if (layersScrollRef.current != null) {
+            layersScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' })
+        }
     }
 
     const commitAdd = (pattern: string) => {
@@ -214,6 +217,34 @@ export default function BannerGenerator() {
 
     }, [bannerColor, mode, patterns])
 
+    const layersScrollRef = React.useRef<HTMLDivElement>(null)
+    const popupRef = React.useRef<HTMLDivElement | null>(null)
+
+    // auto scroll so the popup is visible
+    useEffect(() => {
+        if (!popupRef.current || !layersScrollRef.current || !editing || !('anchor' in editing)) return
+
+        const bottom = popupRef.current.offsetTop + popupRef.current.offsetHeight
+        let t = layersScrollRef.current.scrollTop
+
+        if (popupRef.current.offsetHeight <= layersScrollRef.current.clientHeight) {
+            if (bottom - editing.anchor.offsetTop <= layersScrollRef.current.clientHeight) {
+                if (editing.anchor.offsetTop < t) t = editing.anchor.offsetTop
+                else if (bottom > t + layersScrollRef.current.clientHeight) t = bottom - layersScrollRef.current.clientHeight
+            } else {
+                t = bottom - layersScrollRef.current.clientHeight
+            }
+        } else {
+            t = popupRef.current.offsetTop
+        }
+
+        t = Math.max(0, Math.min(t, layersScrollRef.current.scrollHeight - layersScrollRef.current.clientHeight))
+
+        if (t !== layersScrollRef.current.scrollTop) {
+            layersScrollRef.current.scrollTo({ top: t, behavior: 'smooth' })
+        }
+    }, [editing])
+
     return (
         <div>
             {/* Toolbar */}
@@ -258,11 +289,11 @@ export default function BannerGenerator() {
                         <Button size="sm" data-add-button variant="outline" onClick={startAdd}>Add Layer</Button>
                     </CardHeader>
 
-                    <CardContent className="relative px-0 mx-6">
-                        <div className="max-h-170 min-h-100 overflow-y-auto space-y-3 overflow-x-hidden pr-2">
+                    <CardContent className="px-0 mx-6">
+                        <div ref={layersScrollRef} className="relative max-h-170 min-h-100 overflow-y-auto space-y-3 overflow-x-hidden pr-2">
                             {/* Add popup */}
                             {editing?.type === 'add' && (
-                                <div data-popup-container className="absolute mt-1 w-full z-1">
+                                <div data-popup-container className="mt-1 w-full z-1">
                                     <Card>
                                         <CardContent>
                                             <p className="mb-1 text-sm font-medium mt-2">Color</p>
@@ -282,7 +313,7 @@ export default function BannerGenerator() {
                             )}
 
                             {/* Base layer */}
-                            <Card className="relative cursor-pointer p-0 overflow-hidden" onClick={() => setEditing({type: 'base'})}>
+                            <Card className="relative cursor-pointer p-0 overflow-hidden" data-base-button onClick={(e) => {setEditing({ type: 'base', anchor: e.currentTarget })}}>
                                 <CardContent className="flex gap-3 p-0 flex-wrap items-stretch">
                                     <div style={{ backgroundColor: baseColor}} className="w-2 rounded"></div>
                                     <canvas
@@ -295,7 +326,7 @@ export default function BannerGenerator() {
                             </Card>
 
                             {editing?.type === 'base' && (
-                                <div data-popup-container className="absolute mt-1 w-full z-1">
+                                <div ref={popupRef} data-popup-container className="mt-1 w-full z-1">
                                     <Card>
                                         <CardContent>
                                             <p className="mb-1 text-sm font-medium">Color</p>
@@ -328,7 +359,7 @@ export default function BannerGenerator() {
                                                 setEditing={setEditing}
                                             />
                                             {editing?.type === 'pattern' && editing.index === index && (
-                                                <div data-popup-container className="absolute mt-1 w-full z-70">
+                                                <div ref={popupRef} data-popup-container className="mt-1 w-full z-70">
                                                     <Card>
                                                         <CardContent>
                                                             <PatternEditorPopup
@@ -397,7 +428,13 @@ function SortableLayer({index, pattern, setPatterns, setEditing}: {
     }
 
     return (
-        <Card ref={setNodeRef} data-layer style={style} {...attributes} onClick={() => setEditing({type: 'pattern', index})} className={`relative cursor-pointer p-0 overflow-hidden ${index > 5 ? "border-2 border-red-400 border-l-0" : ""}`}>
+        <Card ref={setNodeRef} data-layer style={style} {...attributes} onClick={(e) => {
+            setEditing({
+                type: 'pattern',
+                index,
+                anchor: e.currentTarget,
+            })
+        }} className={`relative cursor-pointer p-0 overflow-hidden ${index > 5 ? "border-2 border-red-400 border-l-0" : ""}`}>
             <CardContent className="flex gap-3 p-0 items-stretch">
                 <div style={{ backgroundColor: pattern.color}} className="w-2 rounded"></div>
                 <Button

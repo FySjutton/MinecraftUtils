@@ -510,7 +510,7 @@ function AngleSliderRoot(props: AngleSliderRootProps) {
           isPageKey || (event.shiftKey && ARROW_KEYS.includes(event.key));
         const multiplier = isSkipKey ? 10 : 1;
 
-        let direction = 0;
+        let direction: number;
         const isDecreaseKey = ["ArrowLeft", "ArrowUp", "PageUp"].includes(
           event.key,
         );

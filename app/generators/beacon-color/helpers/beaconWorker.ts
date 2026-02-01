@@ -61,7 +61,7 @@ self.onmessage = (ev: MessageEvent<WorkerMessage>) => {
 
             if (len === maxHeight) return
 
-            for (const [_, rgb] of COLOR_ENTRIES) {
+            for (const [, rgb] of COLOR_ENTRIES) {
                 recurse([...stack, rgb])
                 checked++
                 if (checked % 1000 === 0) {

@@ -12,7 +12,6 @@ export const MaxLines = Extension.create({
     },
 
     addProseMirrorPlugins() {
-        const { maxLines, onLimit } = this.options
         const key = new PluginKey('maxLines')
 
         return [
