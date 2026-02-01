@@ -17,21 +17,25 @@ import {
     isShapeFilled,
     ShapeOptions,
     createDefaults,
-    getShapeOptions, generators, ShapeMode, shapeModes
+    getShapeOptions, generators, shapeModes
 } from "./ShapeGenerator";
-import { InteractiveShapeGroups } from "./ShapeSvg";
+import {InteractiveShapeGroups} from "./ShapeSvg";
 
 import { ShapeInputs } from "./ShapeInputs";
-import {enumParser, objectParser, Schema, useUrlUpdateEmitter} from "@/lib/urlParsers";
+import {
+    enumParser,
+    objectParser,
+    useUrlUpdateEmitter
+} from "@/lib/urlParsers";
 import {useQueryState} from "nuqs";
+import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {checksParser} from "@/app/generators/shape-generator/urlCheckParser";
 
 export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean }) {
     useUrlUpdateEmitter()
 
     const shapeParser = useMemo(() => enumParser(shapes).withDefault(circleOnly ? "Circle" : "Hexagon"), [circleOnly]);
     const [shape, setShape] = useQueryState("shape", shapeParser);
-   // const [shape, setShape] = useState<Shape>(circleOnly ? "Circle" : "Hexagon");
-    const [checks, setChecks] = useState<Map<string, boolean>>(new Map());
     const svgRef = useRef<SVGSVGElement>(null);
 
     const defaults = createDefaults(shape);
@@ -55,17 +59,18 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
         skew: { type: "number", default: defaults.skew },
     }).withDefault(getShapeOptions(circleOnly ? "Circle" : "Hexagon")), [circleOnly, defaults]);
     const [options, setOptions] = useQueryState("options", optionsParser);
-    console.log(options)
-    // const [options, setOptions] = useState<ShapeOptions>(getShapeOptions(circleOnly ? "Circle" : "Hexagon"));
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [theme, setTheme] = useState<ThemeName>(defaultTheme);
 
+    const { width, height } = useMemo(() => generators[options.shape].getSize(options), [options]);
+    const checkParser = useMemo(() => checksParser(width, height).withDefault([]), [height, width]);
+    const [checks, setChecks] = useQueryState("checks", checkParser);
+
     const shapeMap = useMemo(() => {
         const newMap = new Map<string, boolean>();
-        const oldChecks = new Map(checks);
+        const checksSet = new Set(checks);
 
-        const width = options.width;
-        const height = options.height;
+        const { width, height } = options;
 
         const centerX = Math.floor(width / 2);
         const centerY = Math.floor(height / 2);
@@ -77,7 +82,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
 
                 if (isShapeFilled(cx, cy, shape, options)) {
                     const key = `${cx},${cy}`;
-                    newMap.set(key, oldChecks.get(key) ?? false);
+                    newMap.set(key, checksSet.has(key));
                 }
             }
         }
@@ -88,7 +93,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     const reset = () => {
         setOptions(createDefaults(shape));
         setShape(circleOnly ? "Circle" : "Hexagon");
-        setChecks(new Map());
+        setChecks([]);
     };
 
     const setShapeAction = (shape: Shape) => {
@@ -97,7 +102,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
     };
 
     const totalSlots = shapeMap.size;
-    const checkedSlots = Array.from(checks.entries()).filter(([key, value]) => value && checks.has(key)).length
+    const checkedSlots = checks.length
 
     return (
         <div className="space-y-6">
@@ -150,6 +155,15 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                     </div>
 
                     <ExportCard shapeMap={shapeMap} width={options.width} height={options.height} circleOnly={circleOnly} svgRef={svgRef} />
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Copy current shape and progress</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <CopyShareLinkInput label="" />
                 </CardContent>
             </Card>
 

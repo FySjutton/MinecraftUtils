@@ -9,14 +9,14 @@ const CELL = 14;
 const GAP = 2;
 const PADDING = 6;
 
-interface Cell {
+export interface Cell {
     x: number;
     y: number;
 }
 
 type Orientation = "horizontal" | "vertical";
 
-interface Group {
+export interface Group {
     cells: Cell[];
     orientation: Orientation;
 }
@@ -25,10 +25,12 @@ interface Props {
     shape: Shape;
     options: ShapeOptions;
     theme: ThemeName;
-    checks: Map<string, boolean>;
-    setChecks: React.Dispatch<React.SetStateAction<Map<string, boolean>>>;
+    checks: string[];
+    setChecks: React.Dispatch<React.SetStateAction<string[]>>;
     ref?: React.RefObject<SVGSVGElement>;
 }
+
+const cellKey = (x: number, y: number) => `${x},${y}`;
 
 export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape, options, theme, checks, setChecks }, ref) => {
     const { width, height } = generators[options.shape].getSize(options);
@@ -98,23 +100,35 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
     }, [groups]);
 
     const toggleCell = (x: number, y: number) => {
-        setChecks(prev => {
-            const newMap = new Map(prev);
-            const key = `${x},${y}`;
-            newMap.set(key, !newMap.get(key));
-            return newMap;
-        });
+        const key = cellKey(x, y);
+
+        setChecks(prev =>
+            prev.includes(key)
+                ? prev.filter(k => k !== key)
+                : [...prev, key]
+        );
     };
 
     const toggleGroup = (g: Group) => {
         setChecks(prev => {
-            const newMap = new Map(prev);
-            const trueCount = g.cells.filter(c => newMap.get(`${c.x},${c.y}`)).length;
+            const prevSet = new Set(prev);
+
+            const trueCount = g.cells.filter(c =>
+                prevSet.has(cellKey(c.x, c.y))
+            ).length;
+
             const majorityIsTrue = trueCount > g.cells.length / 2;
             const nextValue = !majorityIsTrue;
 
-            g.cells.forEach(c => newMap.set(`${c.x},${c.y}`, nextValue));
-            return newMap;
+            const next = new Set(prevSet);
+
+            g.cells.forEach(c => {
+                const key = cellKey(c.x, c.y);
+                if (nextValue) next.add(key);
+                else next.delete(key);
+            });
+
+            return Array.from(next);
         });
     };
 
@@ -158,7 +172,7 @@ export const InteractiveShapeGroups = forwardRef<SVGSVGElement, Props>(({ shape,
                         if (!isShapeFilled(sx, sy, shape, options)) return null;
 
                         const key = `${ix},${iy}`;
-                        const isBuilt = checks.get(key) ?? false;
+                        const isBuilt = checks.includes(key);
 
                         const gGroup = cellToGroup.get(key) ?? null;
                         const inGroup = hoveredGroup?.cells.some(c => c.x === ix && c.y === iy);

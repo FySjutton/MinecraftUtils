@@ -51,15 +51,34 @@ export const QuadrilateralGenerator: ShapeGenerator = {
         const insideAt = (ox: number, oy: number) => pointInPolygon(x + ox, y + oy, verts);
 
         if (opts.mode === "filled") return true;
-        if (opts.mode === "thin") return !(insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0));
+        if (opts.mode === "thin") {
+            return !(insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0));
+        }
+
         if (opts.mode === "thick") {
-            const core = insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0);
-            if (!core) return true;
-            return !(insideAt(-1, -1) && insideAt(1, -1) && insideAt(-1, 1) && insideAt(1, 1));
+            const t = opts.thickness ?? 1;
+
+            if (t === 1) {
+                const core = insideAt(0, -1) && insideAt(0, 1) && insideAt(-1, 0) && insideAt(1, 0);
+                if (!core) return true;
+                return !(insideAt(-1, -1) && insideAt(1, -1) && insideAt(-1, 1) && insideAt(1, 1));
+            }
+
+            for (let dx = -t; dx <= t; dx++) {
+                for (let dy = -t; dy <= t; dy++) {
+                    if (dx === 0 && dy === 0) continue;
+                    if (Math.sqrt(dx * dx + dy * dy) > t) continue;
+
+                    if (!insideAt(dx, dy)) return true;
+                }
+            }
+
+            return false;
         }
 
         return false;
     },
+
     getSize: (opts) => {
         const verts = quadVerts(
             opts.topWidth,
