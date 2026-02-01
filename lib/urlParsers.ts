@@ -21,23 +21,29 @@ export function useUrlUpdateEmitter() {
     useEffect(() => {
         if (typeof window === "undefined") return;
 
-        const dispatchUpdate = () => window.dispatchEvent(new CustomEvent("share-url-updated"));
+        const dispatchUpdate = () => {
+            // defer to next tick to let nuqs hydrate first
+            setTimeout(() => {
+                window.dispatchEvent(new CustomEvent("share-url-updated"));
+            }, 0);
+        };
 
         const origPush = history.pushState;
         history.pushState = function (data: any, unused: string, url?: string | URL | null) {
             origPush.call(this, data, unused, url);
-            window.dispatchEvent(new CustomEvent("share-url-updated"));
+            dispatchUpdate();
             return;
         };
 
         const origReplace = history.replaceState;
         history.replaceState = function (data: any, unused: string, url?: string | URL | null) {
             origReplace.call(this, data, unused, url);
-            window.dispatchEvent(new CustomEvent("share-url-updated"));
+            dispatchUpdate();
             return;
         };
 
         window.addEventListener("popstate", dispatchUpdate);
+
         return () => {
             history.pushState = origPush;
             history.replaceState = origReplace;
