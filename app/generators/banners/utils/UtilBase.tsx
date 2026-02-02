@@ -221,6 +221,7 @@ function BannerInput<T extends StringRecord>({input, value, setValue}: {
     setValue: (key: keyof T, value: string) => void
 }) {
     return (
+        // TODO: CENTER ALL VALUES; COLOR PICKER. PHONE MODE
         <div className="flex flex-wrap justify-center">
             <label className="w-full text-center mb-2 font-bold">{input.label}</label>
 

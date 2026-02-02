@@ -1,4 +1,4 @@
-import type { EnchantMap, SearchResult } from "./bestOrder";
+import type {EnchantMap, SearchResult, Trace} from "./bestOrder";
 
 type Node = {
     l: number;
@@ -37,61 +37,72 @@ type MergeTrace = {
 
 const MAXIMUM_MERGE_LEVELS = 39;
 
-function stateKey(state: BeamState, mode: "levels" | "prior_work"): string {
-    // Create a signature for this state to detect duplicates
-    const itemsSignature = state.items
-        .map(item => {
-            const enchantKeys = Object.keys(item.enchants).sort();
-            return `${enchantKeys.join(',')}:${item.w}:${item.isTarget ? 1 : 0}`;
-        })
-        .sort()
-        .join('|');
+function stateKey(state: BeamState): string {
+    // Create a canonical key that's independent of the order items appear in the array
+    // This prevents counting the same configuration multiple times
+    const itemKeys = state.items.map(item => {
+        // Sort enchantment keys for consistency
+        const enchantKeys = Object.keys(item.enchants).sort();
+        const enchantLevels = enchantKeys.map(k => item.enchants[k]);
 
-    return `${itemsSignature}`;
+        // Create a signature: enchantments, their levels, work, and target status
+        return `${enchantKeys.join(',')}:${enchantLevels.join(',')}:w${item.w}:t${item.isTarget ? 1 : 0}`;
+    }).sort().join('|');
+
+    return itemKeys;
 }
 
-function compareStates(a: BeamState, b: BeamState, mode: "levels" | "prior_work"): number {
+function compareStates(a: BeamState, b: BeamState, mode: "levels" | "xp" | "prior_work"): number {
     if (mode === "levels") {
+        // Optimize for fewest levels
         if (a.totalLevels !== b.totalLevels) return a.totalLevels - b.totalLevels;
         if (a.totalXp !== b.totalXp) return a.totalXp - b.totalXp;
         // Prefer solutions with fewer items remaining (closer to done)
         return a.items.length - b.items.length;
+    } else if (mode === "xp") {
+        // Optimize for least experience points
+        if (a.totalXp !== b.totalXp) return a.totalXp - b.totalXp;
+        if (a.totalLevels !== b.totalLevels) return a.totalLevels - b.totalLevels;
+        return a.items.length - b.items.length;
     } else {
-        // For prior work mode, prefer lower max work among items
+        // Optimize for least prior work penalty
         const maxWorkA = Math.max(...a.items.map(i => i.w));
         const maxWorkB = Math.max(...b.items.map(i => i.w));
         if (maxWorkA !== maxWorkB) return maxWorkA - maxWorkB;
         if (a.totalLevels !== b.totalLevels) return a.totalLevels - b.totalLevels;
+        if (a.totalXp !== b.totalXp) return a.totalXp - b.totalXp;
         return a.items.length - b.items.length;
     }
 }
 
 export async function findBestOrderBeamOptimized(
+    target: string,
     nodes: Node[],
-    mode: "levels" | "prior_work",
+    mode: "levels" | "xp" | "prior_work",
     beamWidth: number,
     {
         experienceForLevels,
         priorWorkPenaltyFromWork,
         enchantmentCost,
         combineEnchantsMaps,
-        buildHumanSteps,
+        buildSteps,
     }: {
         experienceForLevels: (levels: number) => number;
         priorWorkPenaltyFromWork: (work: number) => number;
         enchantmentCost: (target: EnchantMap, sacrifice: EnchantMap) => number;
         combineEnchantsMaps: (left: EnchantMap, right: EnchantMap) => EnchantMap;
-        buildHumanSteps: (traceOrder: any[], nodes: Node[]) => any[];
+        buildSteps: (traceOrder: any[], nodes: Node[]) => any[];
     },
     onProgress?: (explored: number, progress: string) => void
 ): Promise<SearchResult> {
     const n = nodes.length;
     if (n === 0) {
-        return { totalLevels: 0, totalXp: 0, finalWork: 0, steps: [], combinedEnchants: {}, statesExplored: 0 };
+        return { totalLevels: 0, totalXp: 0, finalWork: 0, steps: [], targetItemName: target, combinedEnchants: {}, statesExplored: 0 };
     }
 
     let statesExplored = 0;
     let lastYield = Date.now();
+    let lastProgressUpdate = Date.now();
 
     // Initialize: each node is a separate item
     const initialItems: CombinedItem[] = nodes.map((node, idx) => ({
@@ -109,9 +120,13 @@ export async function findBestOrderBeamOptimized(
         totalXp: 0,
     }];
 
+    let iterationCount = 0;
+
     // Continue until we have states with only 1 item
     while (beam.length > 0 && beam[0].items.length > 1) {
-        const newStates: BeamState[] = [];
+        iterationCount++;
+
+        // Use a Map to deduplicate by canonical state key
         const seenKeys = new Map<string, BeamState>();
 
         for (const state of beam) {
@@ -145,14 +160,17 @@ export async function findBestOrderBeamOptimized(
                                 totalXp: state.totalXp + merged.xp,
                             };
 
-                            const key = stateKey(newState, mode);
+                            const key = stateKey(newState);
                             const existing = seenKeys.get(key);
 
+                            // Only keep this state if it's better than what we've seen
                             if (!existing || compareStates(newState, existing, mode) < 0) {
                                 seenKeys.set(key, newState);
+                                // Only count as explored if it's a NEW unique state
+                                if (!existing) {
+                                    statesExplored++;
+                                }
                             }
-
-                            statesExplored++;
                         }
                     }
 
@@ -180,14 +198,17 @@ export async function findBestOrderBeamOptimized(
                                 totalXp: state.totalXp + merged.xp,
                             };
 
-                            const key = stateKey(newState, mode);
+                            const key = stateKey(newState);
                             const existing = seenKeys.get(key);
 
+                            // Only keep this state if it's better than what we've seen
                             if (!existing || compareStates(newState, existing, mode) < 0) {
                                 seenKeys.set(key, newState);
+                                // Only count as explored if it's a NEW unique state
+                                if (!existing) {
+                                    statesExplored++;
+                                }
                             }
-
-                            statesExplored++;
                         }
                     }
                 }
@@ -195,48 +216,53 @@ export async function findBestOrderBeamOptimized(
         }
 
         // Collect unique states and sort
-        for (const state of seenKeys.values()) {
-            newStates.push(state);
+        const newStates = Array.from(seenKeys.values());
+
+        // If no valid merges were found, we can't combine everything
+        if (newStates.length === 0) {
+            break;
         }
+
         newStates.sort((a, b) => compareStates(a, b, mode));
 
         // Keep only top beamWidth states
         beam = newStates.slice(0, beamWidth);
 
-        if (onProgress && beam.length > 0) {
+        // Update progress more frequently but still yield regularly
+        const now = Date.now();
+        if (onProgress && now - lastProgressUpdate > 100) {
             const remainingItems = beam[0].items.length;
             onProgress(statesExplored, `${n - remainingItems + 1}/${n} items merged`);
+            lastProgressUpdate = now;
         }
 
-        // Yield to browser
-        const now = Date.now();
-        if (now - lastYield > 50) {
+        // Yield to browser more frequently for better responsiveness
+        if (now - lastYield > 16) { // ~60fps
             await new Promise(resolve => setTimeout(resolve, 0));
             lastYield = now;
-        }
-
-        // Safety check
-        if (newStates.length === 0) {
-            break;
         }
     }
 
     // Find best final state
-    if (beam.length === 0) {
-        return { totalLevels: Infinity, totalXp: Infinity, finalWork: Infinity, steps: [], combinedEnchants: {}, statesExplored };
+    if (beam.length === 0 || beam[0].items.length !== 1) {
+        // Couldn't combine everything - return error state
+        return {
+            totalLevels: Infinity,
+            totalXp: Infinity,
+            finalWork: Infinity,
+            steps: [],
+            targetItemName: target,
+            combinedEnchants: {},
+            statesExplored,
+            error: "No valid solution found - enchantments may be impossible to combine with current settings"
+        };
     }
 
     const bestState = beam[0];
-
-    if (bestState.items.length !== 1) {
-        // Couldn't combine everything
-        return { totalLevels: Infinity, totalXp: Infinity, finalWork: Infinity, steps: [], combinedEnchants: {}, statesExplored };
-    }
-
     const finalItem = bestState.items[0];
 
     // Reconstruct steps from trace
-    const traceOrder: any[] = [];
+    const traceOrder: Trace[] = [];
     function collectTrace(item: CombinedItem) {
         if (!item.trace) return;
 
@@ -259,13 +285,14 @@ export async function findBestOrderBeamOptimized(
     }
 
     collectTrace(finalItem);
-    const steps = buildHumanSteps(traceOrder, nodes);
+    const steps = buildSteps(traceOrder, nodes);
 
     return {
         totalLevels: bestState.totalLevels,
         totalXp: Math.round(bestState.totalXp),
         finalWork: finalItem.w,
         steps,
+        targetItemName: target,
         combinedEnchants: finalItem.enchants,
         statesExplored,
     };

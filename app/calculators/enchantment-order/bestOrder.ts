@@ -1,15 +1,17 @@
-import { data as rawData } from "./data";
-import { findBestOrderBeamOptimized } from "./beamSearch";
+import {data as rawData} from "./data";
+import {findBestOrderBeamOptimized} from "./beamSearch";
 
 export type EnchantMap = Record<string, number>;
 export type BookInput = { id?: string; enchants: EnchantMap; initialWork?: number };
 export type TargetInput = { name?: string; enchants?: EnchantMap; initialWork?: number };
 
-export type HumanStep = {
-    description: string;
+export type Step = {
     costLevels: number;
     costXp: number;
-    resultingPriorWorkPenaltyAfterMerge: number;
+    resultingPriorPenalty: number;
+    targetedItem: boolean;
+    targetItemEnchants: EnchantMap;
+    sacrificeItemEnchants: EnchantMap;
     resultingEnchants: EnchantMap;
 };
 
@@ -17,10 +19,21 @@ export type SearchResult = {
     totalLevels: number;
     totalXp: number;
     finalWork: number;
-    steps: HumanStep[];
+    steps: Step[];
     combinedEnchants: EnchantMap;
+    targetItemName: string;
     statesExplored?: number;
+    error?: string;
 };
+
+export type Trace = {
+    leftMask: number;
+    rightMask: number;
+    leftIsTarget: boolean;
+    leftWork: number;
+    rightWork: number;
+    nodeMask: number;
+}
 
 type EnchantMeta = { levelMax: string; weight: string; incompatible: string[]; items: string[] };
 type DataShape = { enchants: Record<string, EnchantMeta>; items: string[] };
@@ -119,13 +132,21 @@ type DPEntry = {
 
 type Work2Entry = Record<number, DPEntry>;
 
-function pickBetterEntry(a: DPEntry, b: DPEntry, mode: "levels" | "prior_work"): DPEntry {
+function pickBetterEntry(a: DPEntry, b: DPEntry, mode: "levels" | "xp" | "prior_work"): DPEntry {
     if (mode === "levels") {
+        // Optimize for fewest levels
         if (a.totalLevels !== b.totalLevels) return a.totalLevels < b.totalLevels ? a : b;
         if (a.x !== b.x) return a.x < b.x ? a : b;
         if (a.w !== b.w) return a.w < b.w ? a : b;
         return a;
+    } else if (mode === "xp") {
+        // Optimize for least experience points
+        if (a.x !== b.x) return a.x < b.x ? a : b;
+        if (a.totalLevels !== b.totalLevels) return a.totalLevels < b.totalLevels ? a : b;
+        if (a.w !== b.w) return a.w < b.w ? a : b;
+        return a;
     } else {
+        // Optimize for least prior work penalty
         if (a.w !== b.w) return a.w < b.w ? a : b;
         if (a.totalLevels !== b.totalLevels) return a.totalLevels < b.totalLevels ? a : b;
         if (a.x !== b.x) return a.x < b.x ? a : b;
@@ -134,40 +155,24 @@ function pickBetterEntry(a: DPEntry, b: DPEntry, mode: "levels" | "prior_work"):
 }
 
 async function findBestOrderExhaustive(
+    name: string,
     target: TargetInput | null,
     books: BookInput[],
-    mode: "levels" | "prior_work",
+    mode: "levels" | "xp" | "prior_work",
     onProgress?: (explored: number, progress: string) => void
 ): Promise<SearchResult> {
-    const nodes: Node[] = books.map((b) => ({
-        l: valueOfEnchants(b.enchants),
-        w: b.initialWork ?? 0,
-        x: 0,
-        enchants: { ...b.enchants },
-        id: b.id ?? `Book (${Object.keys(b.enchants).map(k => `${k} ${b.enchants[k]}`).join(", ") || "Empty"})`,
-        isTarget: false,
-    }));
-
-    if (target) {
-        nodes.push({
-            l: valueOfEnchants(target.enchants ?? {}),
-            w: target.initialWork ?? 0,
-            x: 0,
-            enchants: { ...(target.enchants ?? {}) },
-            id: target.name ?? "Target",
-            isTarget: true,
-        });
-    }
+    const nodes = prepareNodes(target, books)
 
     const n = nodes.length;
     if (n === 0) {
-        return { totalLevels: 0, totalXp: 0, finalWork: 0, steps: [], combinedEnchants: {}, statesExplored: 0 };
+        return { totalLevels: 0, totalXp: 0, finalWork: 0, steps: [], targetItemName: name, combinedEnchants: {}, statesExplored: 0 };
     }
 
     const fullMask = (1 << n) - 1;
     const dp: Array<Work2Entry | null> = new Array(1 << n).fill(null);
     let statesExplored = 0;
     let lastYield = Date.now();
+    let lastProgressUpdate = Date.now();
 
     for (let i = 0; i < n; i++) {
         const m = 1 << i;
@@ -260,11 +265,16 @@ async function findBestOrderExhaustive(
         }
 
         const now = Date.now();
-        if (now - lastYield > 50) {
-            if (onProgress) {
-                const progress = (mask / fullMask * 100).toFixed(1);
-                onProgress(statesExplored, `${progress}% complete`);
-            }
+
+        // Update progress more frequently
+        if (onProgress && now - lastProgressUpdate > 100) {
+            const progress = (mask / fullMask * 100).toFixed(1);
+            onProgress(statesExplored, `${progress}% complete`);
+            lastProgressUpdate = now;
+        }
+
+        // Yield to browser more frequently for better responsiveness
+        if (now - lastYield > 16) { // ~60fps
             await new Promise(resolve => setTimeout(resolve, 0));
             lastYield = now;
         }
@@ -272,7 +282,16 @@ async function findBestOrderExhaustive(
 
     const finalWork2Entry = dp[fullMask];
     if (!finalWork2Entry) {
-        return { totalLevels: Infinity, totalXp: Infinity, finalWork: Infinity, steps: [], combinedEnchants: {}, statesExplored };
+        return {
+            totalLevels: Infinity,
+            totalXp: Infinity,
+            finalWork: Infinity,
+            steps: [],
+            targetItemName: name,
+            combinedEnchants: {},
+            statesExplored,
+            error: "No valid solution found - enchantments may be impossible to combine"
+        };
     }
 
     let bestEntry: DPEntry | null = null;
@@ -283,7 +302,16 @@ async function findBestOrderExhaustive(
     }
 
     if (!bestEntry) {
-        return { totalLevels: Infinity, totalXp: Infinity, finalWork: Infinity, steps: [], combinedEnchants: {}, statesExplored };
+        return {
+            totalLevels: Infinity,
+            totalXp: Infinity,
+            finalWork: Infinity,
+            steps: [],
+            targetItemName: name,
+            combinedEnchants: {},
+            statesExplored,
+            error: "No valid solution found - enchantments may be impossible to combine"
+        };
     }
 
     const traceOrder: { leftMask: number; rightMask: number; leftIsTarget: boolean; leftWork: number; rightWork: number; nodeMask: number }[] = [];
@@ -308,90 +336,75 @@ async function findBestOrderExhaustive(
     }
 
     collect(bestEntry.mask, bestEntry);
-    const steps = buildHumanSteps(traceOrder, nodes);
+    const steps = buildSteps(traceOrder, nodes);
 
     return {
         totalLevels: bestEntry.totalLevels,
         totalXp: Math.round(bestEntry.x),
         finalWork: bestEntry.w,
         steps,
+        targetItemName: name,
         combinedEnchants: bestEntry.enchants,
         statesExplored,
     };
 }
 
-export function buildHumanSteps(
-    traceOrder: { leftMask: number; rightMask: number; leftIsTarget: boolean; leftWork: number; rightWork: number; nodeMask: number }[],
-    nodes: Node[]
-): HumanStep[] {
+export function buildSteps(traceOrder: Trace[], nodes: Node[]): Step[] {
     const maskEnchants: Record<number, EnchantMap> = {};
-    const maskW: Record<number, number> = {};
-    const maskLabel: Record<number, string> = {};
+    const maskWork: Record<number, number> = {};
+    const maskIsRealItem: Record<number, boolean> = {};
 
-    const n = nodes.length;
-    for (let i = 0; i < n; i++) {
+    for (let i = 0; i < nodes.length; i++) {
         const m = 1 << i;
         maskEnchants[m] = { ...nodes[i].enchants };
-        maskW[m] = nodes[i].w;
-        maskLabel[m] = nodes[i].id;
+        maskWork[m] = nodes[i].w;
+        maskIsRealItem[m] = nodes[i].isTarget;
     }
 
-    const humanSteps: HumanStep[] = [];
+    const steps: Step[] = [];
 
     for (const step of traceOrder) {
-        const { leftMask, rightMask, leftIsTarget } = step;
-        const targetMask = leftIsTarget ? leftMask : rightMask;
-        const sacrificeMask = leftIsTarget ? rightMask : leftMask;
+        const targetMask = step.leftIsTarget ? step.leftMask : step.rightMask;
+        const sacrificeMask = step.leftIsTarget ? step.rightMask : step.leftMask;
 
         const targetEnchants = maskEnchants[targetMask];
         const sacrificeEnchants = maskEnchants[sacrificeMask];
 
-        if (!targetEnchants || !sacrificeEnchants) {
-            console.error("Missing enchants data for mask", { targetMask, sacrificeMask, maskEnchants });
-            continue;
-        }
+        const targetWork = maskWork[targetMask] ?? 0;
+        const sacrificeWork = maskWork[sacrificeMask] ?? 0;
 
-        const targetW = maskW[targetMask] ?? 0;
-        const sacrificeW = maskW[sacrificeMask] ?? 0;
+        const costLevels =
+            enchantmentCost(targetEnchants, sacrificeEnchants) +
+            priorWorkPenaltyFromWork(targetWork) +
+            priorWorkPenaltyFromWork(sacrificeWork);
 
-        const enchCost = enchantmentCost(targetEnchants, sacrificeEnchants);
-        const mergeLevelCost = enchCost + priorWorkPenaltyFromWork(targetW) + priorWorkPenaltyFromWork(sacrificeW);
-        const mergeXp = experienceForLevels(Math.round(mergeLevelCost));
-        const resultingWork = Math.max(targetW, sacrificeW) + 1;
-        const resultingPenalty = priorWorkPenaltyFromWork(resultingWork);
+        const costXp = experienceForLevels(Math.round(costLevels));
+        const resultingWork = Math.max(targetWork, sacrificeWork) + 1;
+        const resultingPriorPenalty = priorWorkPenaltyFromWork(resultingWork);
 
-        const resultingEnchants = combineEnchantsMaps(targetEnchants, sacrificeEnchants);
+        const resultingEnchants = combineEnchantsMaps(
+            targetEnchants,
+            sacrificeEnchants
+        );
 
-        const targetLabel = Object.keys(targetEnchants).length > 0
-            ? `${maskLabel[targetMask].split(' (')[0]} (${formatEnchants(targetEnchants)})`
-            : maskLabel[targetMask];
-        const sacrificeLabel = Object.keys(sacrificeEnchants).length > 0
-            ? `${maskLabel[sacrificeMask].split(' (')[0]} (${formatEnchants(sacrificeEnchants)})`
-            : maskLabel[sacrificeMask];
+        const targetedItem = maskIsRealItem[targetMask];
 
-        const description = `Combine ${targetLabel} with ${sacrificeLabel}`;
-
-        humanSteps.push({
-            description,
-            costLevels: Math.round(mergeLevelCost),
-            costXp: Math.round(mergeXp),
-            resultingPriorWorkPenaltyAfterMerge: resultingPenalty,
+        steps.push({
+            costLevels: Math.round(costLevels),
+            costXp: Math.round(costXp),
+            resultingPriorPenalty,
+            targetedItem,
+            targetItemEnchants: { ...targetEnchants },
+            sacrificeItemEnchants: { ...sacrificeEnchants },
             resultingEnchants,
         });
 
         maskEnchants[step.nodeMask] = resultingEnchants;
-        maskW[step.nodeMask] = resultingWork;
-
-        const baseLabel = maskLabel[targetMask]?.split(' (')[0] ?? "Unknown";
-        maskLabel[step.nodeMask] = baseLabel;
+        maskWork[step.nodeMask] = resultingWork;
+        maskIsRealItem[step.nodeMask] = targetedItem;
     }
 
-    return humanSteps;
-}
-
-function formatEnchants(e: EnchantMap): string {
-    const arr = Object.entries(e).map(([k, v]) => `${k} ${v}`);
-    return arr.length ? arr.join(", ") : "none";
+    return steps;
 }
 
 function prepareNodes(target: TargetInput | null, books: BookInput[]): Node[] {
@@ -419,22 +432,23 @@ function prepareNodes(target: TargetInput | null, books: BookInput[]): Node[] {
 }
 
 export async function findBestOrder(
+    name: string,
     target: TargetInput | null,
     books: BookInput[],
-    mode: "levels" | "prior_work" = "levels",
+    mode: "levels" | "xp" | "prior_work" = "levels",
     beamWidth: number | null = null,
     onProgress?: (explored: number, progress: string) => void
 ): Promise<SearchResult> {
     if (beamWidth === null) {
-        return findBestOrderExhaustive(target, books, mode, onProgress);
+        return findBestOrderExhaustive(name, target, books, mode, onProgress);
     } else {
         const nodes = prepareNodes(target, books);
-        return findBestOrderBeamOptimized(nodes, mode, beamWidth, {
+        return findBestOrderBeamOptimized(name, nodes, mode, beamWidth, {
             experienceForLevels,
             priorWorkPenaltyFromWork,
             enchantmentCost,
             combineEnchantsMaps,
-            buildHumanSteps,
+            buildSteps,
         }, onProgress);
     }
 }

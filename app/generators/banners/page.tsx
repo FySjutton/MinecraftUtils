@@ -16,6 +16,7 @@ export default function Page() {
                 <Link href="/generators/banners/editor">
                     <Card>
                         <CardContent className="flex flex-col">
+                            {/*TODO: NOT PHONE-ADAPTIVE: LOOKS TERRIBLE*/}
                             <div className="relative h-80 flex">
                                 <Image
                                     src={`/assets/tool/banner/utils/editor.png`}
