@@ -30,11 +30,12 @@ interface ComboBoxProps {
     placeholder?: string
     placeholderSearch?: string
     className?: string
+    getDisplayName?: (value: string) => string
     renderItem?: (item: string) => React.ReactNode
     renderIcon?: (item: string) => React.ReactNode
 }
 
-export function ComboBox({items, value, onChange, placeholder = "Select...", placeholderSearch = "Search...", className, renderItem, renderIcon}: ComboBoxProps) {
+export function ComboBox({items, value, onChange, getDisplayName, placeholder = "Select...", placeholderSearch = "Search...", className, renderItem, renderIcon}: ComboBoxProps) {
     const [open, setOpen] = useState(false)
 
     const normalizedItems = React.useMemo(() => {
@@ -63,12 +64,12 @@ export function ComboBox({items, value, onChange, placeholder = "Select...", pla
                     <div className="flex items-center gap-2 truncate">
                         {renderIcon && value && (
                             <span className="flex-shrink-0">
-                {renderIcon(value)}
-              </span>
+                                {renderIcon(value)}
+                            </span>
                         )}
                         <span className="truncate">
-              {value || placeholder}
-            </span>
+                            {value ? (getDisplayName ? getDisplayName(value) : value) : placeholder}
+                        </span>
                     </div>
 
                     <div className="flex items-center gap-2 ml-2 shrink-0">
@@ -111,7 +112,7 @@ export function ComboBox({items, value, onChange, placeholder = "Select...", pla
                                     )}
 
                                     <span className="flex-1 truncate">
-                                        {item}
+                                        {getDisplayName ? getDisplayName(item) : item}
                                     </span>
 
                                     {renderItem?.(item)}

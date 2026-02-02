@@ -10,7 +10,7 @@ interface ClientWrapperProps<T extends object> {
 }
 
 function LoadingScreen() {
-    return <div>Loading...</div>;
+    return <div>Loading...</div>
 }
 
 export function ClientWrapper<T extends object>({component, props, fallback = <LoadingScreen />}: ClientWrapperProps<T>) {
