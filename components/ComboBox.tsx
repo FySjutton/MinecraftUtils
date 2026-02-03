@@ -63,7 +63,7 @@ export function ComboBox({items, value, onChange, getDisplayName, placeholder = 
                 >
                     <div className="flex items-center gap-2 truncate">
                         {renderIcon && value && (
-                            <span className="flex-shrink-0">
+                            <span className="relative w-6 h-6 flex-shrink-0">
                                 {renderIcon(value)}
                             </span>
                         )}
@@ -106,7 +106,7 @@ export function ComboBox({items, value, onChange, getDisplayName, placeholder = 
                                     className="flex items-center gap-2"
                                 >
                                     {renderIcon && (
-                                        <span className="flex-shrink-0">
+                                        <span className="relative w-6 h-6 flex-shrink-0">
                                           {renderIcon(item)}
                                         </span>
                                     )}

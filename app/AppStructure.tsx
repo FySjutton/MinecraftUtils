@@ -84,6 +84,7 @@ export const tools: ToolCategory[] = [
         url: "/calculators",
         defaultOpen: true,
         pages: [
+            { name: "Enchanting Calculator", url: "enchanting-order", icon: "enchanted_book", description: "Calculate the cheapest way to enchant a specific item while avoiding the too expensive error.", type: "beta" },
             { name: "Unit Calculator", url: "units", icon: "shulkerbox", description: "Convert units and measurements quickly." },
             { name: "XP to Level Calculator", url: "experience", icon: "xp-bottle", description: "Calculate how much XP each level is through an interactive experience bar." },
             { name: "Coordinate Calculator", url: "coordinate-calculator", icon: "filled_map", description: "Convert coordinates between the overworld, chunks, regions as well as nether coordinates." },
@@ -163,6 +164,7 @@ export const externals: ToolCategory[] = [
 
 export const featuredHomePage: PageItem[] = [
     getPage(tools, "Shape Generator"),
+    getPage(tools, "Enchanting Calculator"),
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
     getPage(tools, "Beacon Generator"),
@@ -178,6 +180,7 @@ export const featuredHomePage: PageItem[] = [
 ]
 
 export const featuredCalculators: PageItem[] = [
+    getPage(tools, "Enchanting Calculator"),
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
     getPage(tools, "Coordinate Calculator")

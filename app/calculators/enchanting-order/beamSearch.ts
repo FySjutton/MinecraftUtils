@@ -40,7 +40,7 @@ const MAXIMUM_MERGE_LEVELS = 39;
 function stateKey(state: BeamState): string {
     // Create a canonical key that's independent of the order items appear in the array
     // This prevents counting the same configuration multiple times
-    const itemKeys = state.items.map(item => {
+    return state.items.map(item => {
         // Sort enchantment keys for consistency
         const enchantKeys = Object.keys(item.enchants).sort();
         const enchantLevels = enchantKeys.map(k => item.enchants[k]);
@@ -48,8 +48,6 @@ function stateKey(state: BeamState): string {
         // Create a signature: enchantments, their levels, work, and target status
         return `${enchantKeys.join(',')}:${enchantLevels.join(',')}:w${item.w}:t${item.isTarget ? 1 : 0}`;
     }).sort().join('|');
-
-    return itemKeys;
 }
 
 function compareStates(a: BeamState, b: BeamState, mode: "levels" | "xp" | "prior_work"): number {
@@ -72,6 +70,35 @@ function compareStates(a: BeamState, b: BeamState, mode: "levels" | "xp" | "prio
         if (a.totalLevels !== b.totalLevels) return a.totalLevels - b.totalLevels;
         if (a.totalXp !== b.totalXp) return a.totalXp - b.totalXp;
         return a.items.length - b.items.length;
+    }
+}
+
+function checkMerge(merged: { item: CombinedItem; levels: number; xp: number } | null, state: BeamState, i: number, j: number, seenKeys: Map<string, BeamState>, statesExplored: { value: number }, mode: "levels" | "xp" | "prior_work") {
+    if (merged) {
+        const newItems = [
+            ...state.items.slice(0, i),
+            ...state.items.slice(i + 1, j),
+            ...state.items.slice(j + 1),
+            merged.item
+        ];
+
+        const newState: BeamState = {
+            items: newItems,
+            totalLevels: state.totalLevels + merged.levels,
+            totalXp: state.totalXp + merged.xp,
+        };
+
+        const key = stateKey(newState);
+        const existing = seenKeys.get(key);
+
+        // Only keep this state if it's better than what we've seen
+        if (!existing || compareStates(newState, existing, mode) < 0) {
+            seenKeys.set(key, newState);
+            // Only count as explored if it's a NEW unique state
+            if (!existing) {
+                statesExplored.value++;
+            }
+        }
     }
 }
 
@@ -100,7 +127,7 @@ export async function findBestOrderBeamOptimized(
         return { totalLevels: 0, totalXp: 0, finalWork: 0, steps: [], targetItemName: target, combinedEnchants: {}, statesExplored: 0 };
     }
 
-    let statesExplored = 0;
+    const statesExplored = { value: 0 };
     let lastYield = Date.now();
     let lastProgressUpdate = Date.now();
 
@@ -120,12 +147,8 @@ export async function findBestOrderBeamOptimized(
         totalXp: 0,
     }];
 
-    let iterationCount = 0;
-
     // Continue until we have states with only 1 item
     while (beam.length > 0 && beam[0].items.length > 1) {
-        iterationCount++;
-
         // Use a Map to deduplicate by canonical state key
         const seenKeys = new Map<string, BeamState>();
 
@@ -146,32 +169,7 @@ export async function findBestOrderBeamOptimized(
                             combineEnchantsMaps,
                         });
 
-                        if (merged) {
-                            const newItems = [
-                                ...state.items.slice(0, i),
-                                ...state.items.slice(i + 1, j),
-                                ...state.items.slice(j + 1),
-                                merged.item
-                            ];
-
-                            const newState: BeamState = {
-                                items: newItems,
-                                totalLevels: state.totalLevels + merged.levels,
-                                totalXp: state.totalXp + merged.xp,
-                            };
-
-                            const key = stateKey(newState);
-                            const existing = seenKeys.get(key);
-
-                            // Only keep this state if it's better than what we've seen
-                            if (!existing || compareStates(newState, existing, mode) < 0) {
-                                seenKeys.set(key, newState);
-                                // Only count as explored if it's a NEW unique state
-                                if (!existing) {
-                                    statesExplored++;
-                                }
-                            }
-                        }
+                        checkMerge(merged, state, i, j, seenKeys, statesExplored, mode)
                     }
 
                     // Try right as target
@@ -184,32 +182,7 @@ export async function findBestOrderBeamOptimized(
                             combineEnchantsMaps,
                         });
 
-                        if (merged) {
-                            const newItems = [
-                                ...state.items.slice(0, i),
-                                ...state.items.slice(i + 1, j),
-                                ...state.items.slice(j + 1),
-                                merged.item
-                            ];
-
-                            const newState: BeamState = {
-                                items: newItems,
-                                totalLevels: state.totalLevels + merged.levels,
-                                totalXp: state.totalXp + merged.xp,
-                            };
-
-                            const key = stateKey(newState);
-                            const existing = seenKeys.get(key);
-
-                            // Only keep this state if it's better than what we've seen
-                            if (!existing || compareStates(newState, existing, mode) < 0) {
-                                seenKeys.set(key, newState);
-                                // Only count as explored if it's a NEW unique state
-                                if (!existing) {
-                                    statesExplored++;
-                                }
-                            }
-                        }
+                        checkMerge(merged, state, i, j, seenKeys, statesExplored, mode)
                     }
                 }
             }
@@ -232,7 +205,7 @@ export async function findBestOrderBeamOptimized(
         const now = Date.now();
         if (onProgress && now - lastProgressUpdate > 100) {
             const remainingItems = beam[0].items.length;
-            onProgress(statesExplored, `${n - remainingItems + 1}/${n} items merged`);
+            onProgress(statesExplored.value, `${n - remainingItems + 1}/${n} items merged`);
             lastProgressUpdate = now;
         }
 
@@ -253,7 +226,7 @@ export async function findBestOrderBeamOptimized(
             steps: [],
             targetItemName: target,
             combinedEnchants: {},
-            statesExplored,
+            statesExplored: statesExplored.value,
             error: "No valid solution found - enchantments may be impossible to combine with current settings"
         };
     }
@@ -294,7 +267,7 @@ export async function findBestOrderBeamOptimized(
         steps,
         targetItemName: target,
         combinedEnchants: finalItem.enchants,
-        statesExplored,
+        statesExplored: statesExplored.value,
     };
 }
 
