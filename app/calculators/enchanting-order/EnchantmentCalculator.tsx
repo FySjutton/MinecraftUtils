@@ -13,6 +13,8 @@ import {Sparkles, Trash2, Play, StopCircle, XCircle, ArrowBigRight, Plus} from "
 import { ComboBox } from "@/components/ComboBox";
 import ImageObj from "next/image";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {createParser, useQueryState} from "nuqs";
+import {arrayObjectParser, boolParser, enumParser, objectParser} from "@/lib/urlParsers";
 
 type EnchantNamespace = keyof typeof data.enchants;
 
@@ -33,17 +35,29 @@ const searchPresets = [
     { name: 'Thorough', beamWidth: 5000, description: 'More accurate' },
     { name: 'Exhaustive', beamWidth: null, description: 'All combinations' },
 ];
+const presets = searchPresets.map(p => p.name)
 
 const formatEnchantName = (enchantNamespace: string): string => {
     return (data.enchants as Record<string, {name: string}>)[enchantNamespace].name;
 };
 
+const availableItems = Object.keys(data.items);
+
+const selectedItemParser = enumParser(availableItems).withDefault("");
+const selectedEnchantsParser = arrayObjectParser<SelectedEnchant>({
+    namespace: availableItems,
+    level: "number"
+}).withDefault([]);
+const allowIncompatibleParser = boolParser.withDefault(false);
+const modeParser = enumParser(["levels", "xp", "prior_work"]).withDefault("xp");
+const presetParser = enumParser(presets).withDefault("Exhaustive");
+
 export const EnchantmentPlanner: React.FC = () => {
-    const [selectedItem, setSelectedItem] = useState<string>("");
-    const [selectedEnchants, setSelectedEnchants] = useState<SelectedEnchant[]>([]);
-    const [allowIncompatible, setAllowIncompatible] = useState(false);
-    const [optimizeMode, setOptimizeMode] = useState<"levels" | "xp" | "prior_work">("xp");
-    const [searchPreset, setSearchPreset] = useState<string>("Exhaustive");
+    const [selectedItem, setSelectedItem] = useQueryState("item", selectedItemParser);
+    const [selectedEnchants, setSelectedEnchants] = useQueryState("enchants", selectedEnchantsParser);
+    const [allowIncompatible, setAllowIncompatible] = useQueryState("ai", allowIncompatibleParser);
+    const [optimizeMode, setOptimizeMode] = useQueryState("mode", modeParser);
+    const [searchPreset, setSearchPreset] = useQueryState("preset", presetParser);
 
     const [result, setResult] = useState<SearchResult | null>(null);
     const [isCalculating, setIsCalculating] = useState(false);
@@ -57,8 +71,6 @@ export const EnchantmentPlanner: React.FC = () => {
         currentProgress: string;
     }>({ statesExplored: 0, currentProgress: '' });
     const [error, setError] = useState<string | null>(null);
-
-    const availableItems = useMemo(() => Object.keys(data.items) || [], []);
 
     const currentPreset = useMemo(() =>
             searchPresets.find(p => p.name === searchPreset),
@@ -353,7 +365,7 @@ export const EnchantmentPlanner: React.FC = () => {
                     <CardContent className="space-y-4">
                         <p className="text-sm"><span className="font-semibold">Select which search preset you want to use.</span> A measurement between accuracy and speed. Exhaustive recommended for most inputs.</p>
                         <ComboBox
-                            items={searchPresets.map(p => p.name)}
+                            items={presets}
                             value={searchPreset}
                             onChange={setSearchPreset}
                             placeholder="Select preset"
