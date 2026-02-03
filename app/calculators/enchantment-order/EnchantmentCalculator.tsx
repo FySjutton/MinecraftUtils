@@ -1,19 +1,18 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {findBestOrder, type EnchantMap, type BookInput, type TargetInput, type SearchResult, Step} from "./bestOrder";
+import {findBestOrder, type EnchantMap, type BookInput, type TargetInput, type SearchResult} from "./bestOrder";
 import { data } from "./data";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {Sparkles, Trash2, AlertCircle, Play, StopCircle, XCircle, ArrowBigRight, Plus} from "lucide-react";
+import {Sparkles, Trash2, Play, StopCircle, XCircle, ArrowBigRight, Plus} from "lucide-react";
 import { ComboBox } from "@/components/ComboBox";
 import ImageObj from "next/image";
-import {useSortable} from "@dnd-kit/sortable";
 
 type EnchantNamespace = keyof typeof data.enchants;
 
@@ -22,13 +21,16 @@ interface SelectedEnchant {
     level: number;
 }
 
+type EnchantEntry = [EnchantNamespace, number];
+type EnchantGroup = EnchantEntry[];
+
 const ENCHANTMENT_LIMIT = 10;
 const BEAM_SEARCH_THRESHOLD = 10;
 
 const searchPresets = [
     { name: 'Very Fast', beamWidth: 100, description: 'Quick approximation' },
     { name: 'Fast', beamWidth: 500, description: 'Good balance' },
-    { name: 'Normal', beamWidth: 2000, description: 'Recommended' },
+    { name: 'Normal', beamWidth: 2000, description: 'Middle ground' },
     { name: 'Thorough', beamWidth: 5000, description: 'More accurate' },
     { name: 'Exhaustive', beamWidth: null, description: 'All combinations' },
 ];
@@ -38,7 +40,7 @@ const formatEnchantName = (enchantNamespace: string): string => {
 };
 
 export const EnchantmentPlanner: React.FC = () => {
-    const [selectedItem, setSelectedItem] = useState<string>("diamond_pickaxe");
+    const [selectedItem, setSelectedItem] = useState<string>("");
     const [selectedEnchants, setSelectedEnchants] = useState<SelectedEnchant[]>([]);
     const [allowIncompatible, setAllowIncompatible] = useState(false);
     const [allowMoreThan10, setAllowMoreThan10] = useState(false);
@@ -127,22 +129,47 @@ export const EnchantmentPlanner: React.FC = () => {
         }
     };
 
-    const applicableEnchants = useMemo(() => {
-        const enchantments: Array<{ namespace: EnchantNamespace; maxLevel: number; incompatible: string[] }> = [];
+    const applicableEnchants = useMemo<EnchantGroup[]>(() => {
+        const entries: {
+            namespace: EnchantNamespace;
+            maxLevel: number;
+            incompatible: EnchantNamespace[];
+        }[] = [];
 
         for (const [namespace, enchantData] of Object.entries(data.enchants)) {
             const items = enchantData.items as string[];
-            if (items.includes(selectedItem) || selectedItem === "book") {
-                enchantments.push({
-                    namespace: namespace as EnchantNamespace,
-                    maxLevel: Number(enchantData.levelMax),
-                    incompatible: enchantData.incompatible as string[],
-                });
-            }
+
+            if (!items.includes(selectedItem) && selectedItem !== "book") continue;
+
+            entries.push({
+                namespace: namespace as EnchantNamespace,
+                maxLevel: Number(enchantData.levelMax),
+                incompatible: (enchantData.incompatible as EnchantNamespace[]) ?? [],
+            });
         }
 
-        enchantments.sort((a, b) => a.namespace.localeCompare(b.namespace));
-        return enchantments;
+        const groups: EnchantGroup[] = [];
+
+        for (const entry of entries) {
+            let group = groups.find(g =>
+                g.some(([ns]) => entry.incompatible.includes(ns))
+            );
+
+            if (!group) {
+                group = [];
+                groups.push(group);
+            }
+
+            group.push([entry.namespace, entry.maxLevel]);
+        }
+
+        for (const group of groups) {
+            group.sort((a, b) => b[1] - a[1]);
+        }
+
+        groups.sort((a, b) => b[0][1] - a[0][1]);
+
+        return groups;
     }, [selectedItem]);
 
     const isIncompatibleWithSelected = (namespace: EnchantNamespace, incompatibleList: string[]): boolean => {
@@ -220,6 +247,7 @@ export const EnchantmentPlanner: React.FC = () => {
                         }}
                         getDisplayName={(value) => (data.items as Record<string, string>)[value]}
                         placeholder="Select an item"
+                        placeholderSearch="Select an item"
                     />
                 </CardContent>
             </Card>
@@ -280,78 +308,76 @@ export const EnchantmentPlanner: React.FC = () => {
             </Card>
 
             {/* Enchantment Selection */}
-            <Card className="mb-6">
-                <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>3. Select Enchantments</CardTitle>
-                            <CardDescription>Click level buttons to select enchantments</CardDescription>
-                        </div>
-                        {selectedEnchants.length > 0 && (
-                            <Button variant="destructive" size="sm" onClick={clearAll}>
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Clear All
-                            </Button>
-                        )}
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-3">
-                        {applicableEnchants.map(({ namespace, maxLevel, incompatible }) => {
-                            const isDisabled = isIncompatibleWithSelected(namespace, incompatible) && !hasEnchant(namespace);
+            { selectedItem && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>3. Select Enchantments</CardTitle>
+                        <CardDescription>Click level buttons to select enchantments</CardDescription>
+                        <CardAction>
+                            {selectedEnchants.length > 0 && (
+                                <Button variant="destructive" size="sm" onClick={clearAll}>
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Clear All
+                                </Button>
+                            )}
+                        </CardAction>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-3">
+                            {applicableEnchants.map((group, groupIndex) => (
+                                <React.Fragment key={groupIndex}>
+                                    {group.map(([namespace, maxLevel]) => {
+                                        const incompatible = group
+                                            .map(([ns]) => ns)
+                                            .filter(ns => ns !== namespace);
 
-                            return (
-                                <div
-                                    key={namespace}
-                                    className={`flex flex-col sm:flex-row sm:items-center gap-3 p-3 rounded-lg border transition-all ${
-                                        hasEnchant(namespace)
-                                            ? 'bg-primary/10 border-primary'
-                                            : isDisabled
-                                                ? 'bg-muted/50 border-muted opacity-60'
-                                                : 'bg-card border-border'
-                                    }`}
-                                >
-                                    <span className={`min-w-[200px] font-medium ${hasEnchant(namespace) ? 'text-primary' : ''}`}>
-                                        {formatEnchantName(namespace)}
-                                    </span>
-                                    <div className="flex gap-2 flex-wrap">
-                                        {Array.from({ length: maxLevel }, (_, i) => i + 1).map(level => (
-                                            <Button
-                                                key={level}
-                                                size="sm"
-                                                variant={isSelected(namespace, level) ? "default" : "outline"}
-                                                onClick={() => toggleEnchant(namespace, level, incompatible)}
-                                                disabled={isDisabled}
-                                                className="min-w-[40px]"
+                                        const isDisabled = isIncompatibleWithSelected(namespace, incompatible) && !hasEnchant(namespace);
+
+                                        return (
+                                            <Card
+                                                key={namespace}
+                                                className={`flex flex-row flex-wrap gap-3 px-3 py-1 items-center ${groupIndex % 2 == 0 ? "bg-popover" : "bg-accent"} ${isDisabled ? "bg-muted/50 border-muted opacity-60" : ""}`}
                                             >
-                                                {level}
-                                            </Button>
-                                        ))}
-                                    </div>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </CardContent>
-            </Card>
+                                                <span className="min-w-[200px] w-fit font-medium">
+                                                    {formatEnchantName(namespace)}
+                                                </span>
+
+                                                <div className="flex gap-2 flex-wrap w-fit bg-card p-2 rounded-xl pr-auto">
+                                                    {Array.from({ length: maxLevel }, (_, i) => i + 1).map(
+                                                        level => (
+                                                            <Button key={level} size="sm" variant={isSelected(namespace, level) ? "default" : "outline"} onClick={() => toggleEnchant(namespace, level, incompatible)} disabled={isDisabled} className="min-w-[40px]">
+                                                                {level}
+                                                            </Button>
+                                                        )
+                                                    )}
+                                                </div>
+                                            </Card>
+                                        );
+                                    })}
+                                </React.Fragment>
+                            ))}
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
 
             {/* Selected Enchantments Summary */}
             {selectedEnchants.length > 0 && (
-                <Alert className="mb-6">
-                    <Sparkles className="h-4 w-4" />
-                    <AlertDescription>
-                        <div className="font-semibold mb-2">
+                <Card className="flex gap-0 p-4">
+                    <CardContent className="flex flex-wrap items-center p-0 pl-2">
+                        <Sparkles className="h-4 w-4" />
+                        <div className="w-fit font-semibold ml-2">
                             Selected: {selectedEnchants.length} enchantment{selectedEnchants.length !== 1 ? 's' : ''}
                         </div>
-                        <div className="flex flex-wrap gap-2">
+                        <div className="w-full flex flex-wrap gap-2 mt-2">
                             {selectedEnchants.map((e) => (
                                 <Badge key={e.namespace} variant="secondary">
                                     {formatEnchantName(e.namespace)} {e.level}
                                 </Badge>
                             ))}
                         </div>
-                    </AlertDescription>
-                </Alert>
+                    </CardContent>
+                </Card>
             )}
 
             {/* Calculate Section */}
@@ -359,6 +385,7 @@ export const EnchantmentPlanner: React.FC = () => {
                 <Card>
                     <CardHeader>
                         <CardTitle>4. Calculate Order</CardTitle>
+                        <CardDescription>Select which search preset you want to use. A measurement between accuracy and speed. Exhaustive recommended for most inputs.</CardDescription>
                         {shouldWarnExhaustive && (
                             <CardDescription>
                                 <span className="text-yellow-500">
@@ -369,13 +396,12 @@ export const EnchantmentPlanner: React.FC = () => {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div>
-                            <Label className="text-sm font-semibold mb-2 block">Search Preset:</Label>
                             <ComboBox
                                 items={searchPresets.map(p => p.name)}
                                 value={searchPreset}
                                 onChange={setSearchPreset}
                                 placeholder="Select preset"
-                                className="w-[300px]"
+                                className="w-full"
                                 renderItem={item => {
                                     const preset = searchPresets.find(p => p.name === item);
                                     return (
@@ -445,111 +471,77 @@ export const EnchantmentPlanner: React.FC = () => {
 
             {/* Results Display */}
             {result && !error && (
-                <div className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Summary</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div className="space-y-1">
-                                    <p className="text-sm text-muted-foreground">Total Levels</p>
-                                    <p className="text-2xl font-bold">{result.totalLevels}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-sm text-muted-foreground">Total XP</p>
-                                    <p className="text-2xl font-bold">{result.totalXp.toLocaleString()}</p>
-                                </div>
-                                <div className="space-y-1">
-                                    <p className="text-sm text-muted-foreground">Final Prior Work</p>
-                                    <p className="text-2xl font-bold">{Math.pow(2, result.finalWork) - 1} levels</p>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
+                <div className="space-y-0">
                     <Card>
                         <CardHeader>
                             <CardTitle>Optimal Order</CardTitle>
                             <CardDescription>Follow these steps in order</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <ol className="space-y-4">
-                                {result.steps.map((step, idx) => (
-                                    <div key={idx}>
-                                        <Card className="flex">
-                                            <CardHeader>
-                                                <CardTitle>Step {idx + 1}</CardTitle>
-                                            </CardHeader>
-                                            <CardContent>
-                                                <div className="flex flex-wrap gap-y-4 items-center">
-                                                    <EnchantingEntry
-                                                        image={step.targetedItem ? result.targetItemName : "enchanted_book"}
-                                                        targetedItem={step.targetedItem}
-                                                        enchants={step.targetItemEnchants}
-                                                        result={result}
-                                                    />
+                            <Card className="mb-2 py-2">
+                                <CardContent className="px-2">
+                                    <div className="flex gap-2 justify-evenly text-center flex-wrap">
+                                        <div className="">
+                                            <p className="text-sm text-muted-foreground">Total Levels</p>
+                                            <p className="text-xl font-bold">{result.totalLevels}</p>
+                                        </div>
+                                        <div className="">
+                                            <p className="text-sm text-muted-foreground">Total XP</p>
+                                            <p className="text-xl font-bold">{result.totalXp.toLocaleString()}</p>
+                                        </div>
+                                        <div className="">
+                                            <p className="text-sm text-muted-foreground">Final Prior Work</p>
+                                            <p className="text-xl font-bold">{Math.pow(2, result.finalWork) - 1} levels</p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                            {result.steps.map((step, idx) => (
+                                <div key={idx}>
+                                    <Card className="flex py-4 gap-2">
+                                        <CardHeader>
+                                            <CardTitle>Step {idx + 1}</CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="px-4 max-[400]:px-2">
+                                            <div className="flex flex-wrap gap-y-4 items-center">
+                                                <EnchantingEntry
+                                                    image={step.targetedItem ? result.targetItemName : "enchanted_book"}
+                                                    targetedItem={step.targetedItem}
+                                                    enchants={step.targetItemEnchants}
+                                                    result={result}
+                                                />
 
+                                                <div className="flex items-center">
                                                     <Plus className="w-6" />
-
                                                     <EnchantingEntry
                                                         image="enchanted_book"
                                                         targetedItem={false}
                                                         enchants={step.sacrificeItemEnchants}
                                                         result={result}
                                                     />
-
-                                                    <div className="flex items-center">
-                                                        <ArrowBigRight className="w-6" />
-
-                                                        <EnchantingEntry
-                                                            image={step.targetedItem ? result.targetItemName : "enchanted_book"}
-                                                            targetedItem={step.targetedItem}
-                                                            enchants={step.resultingEnchants}
-                                                            result={result}
-                                                        />
-                                                    </div>
                                                 </div>
-                                            </CardContent>
-                                        </Card>
-                                    </div>
 
-
-
-                                    // <li key={idx} className="border-l-4 border-primary pl-4">
-                                    //     <div className="font-semibold text-base mb-2">
-                                    //         {idx + 1}. {step.description}
-                                    //     </div>
-                                    //     <div className="space-y-1 text-sm text-muted-foreground">
-                                    //         <div>
-                                    //             💰 Cost: <span className="font-semibold text-foreground">{step.costLevels} levels</span> ({step.costXp.toLocaleString()} xp)
-                                    //         </div>
-                                    //         <div>
-                                    //             ⚙️ Prior Work Penalty After: <span className="font-semibold text-foreground">{step.resultingPriorWorkPenaltyAfterMerge} levels</span>
-                                    //         </div>
-                                    //         <div>
-                                    //             ✨ Result: <span className="text-foreground">{formatEnchants(step.resultingEnchants)}</span>
-                                    //         </div>
-                                    //     </div>
-                                    // </li>
-                                ))}
-                            </ol>
+                                                <div className="flex items-center">
+                                                    <ArrowBigRight className="w-6" />
+                                                    <EnchantingEntry
+                                                        image={step.targetedItem ? result.targetItemName : "enchanted_book"}
+                                                        targetedItem={step.targetedItem}
+                                                        enchants={step.resultingEnchants}
+                                                        result={result}
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div className="ml-2 mt-2 flex text-xs gap-x-4 flex-wrap whitespace-nowrap">
+                                                <div><span className="font-bold">Cost:</span> <span className="font-semibold text-gray-300">{step.costLevels} levels</span> <span className="text-blue-200">({step.costXp.toLocaleString()} xp)</span></div>
+                                                <div className="font-bold">Work Penalty After: <span className="font-semibold text-gray-300">{step.resultingPriorPenalty} levels</span></div>
+                                             </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            ))}
                         </CardContent>
                     </Card>
                 </div>
-            )}
-
-            {!result && !error && selectedEnchants.length === 0 && (
-                <Card>
-                    <CardContent className="flex items-center justify-center py-12">
-                        <div className="text-center space-y-2">
-                            <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground" />
-                            <p className="text-lg text-muted-foreground">
-                                Select an item and enchantments above to calculate the optimal anvil order
-                            </p>
-                        </div>
-                    </CardContent>
-                </Card>
             )}
         </div>
     );
@@ -558,8 +550,8 @@ export const EnchantmentPlanner: React.FC = () => {
 function EnchantingEntry({image, targetedItem, enchants}: { image: string, targetedItem: boolean, enchants: EnchantMap, result: SearchResult }) {
     return (
         <Card className="mx-2 p-0 py-2">
-            <CardContent className="flex h-16 items-center px-3">
-                <div className="relative min-w-16 h-16">
+            <CardContent className="flex min-h-10 max-h-18 items-center pl-3 pr-1">
+                <div className="relative min-w-8 h-8">
                     <ImageObj
                         src={`/assets/tool/enchanting/${image}.png`}
                         alt={image}
@@ -568,12 +560,12 @@ function EnchantingEntry({image, targetedItem, enchants}: { image: string, targe
                         className="image-pixelated"
                     />
                 </div>
-                <div className={`flex w-full h-full flex-col flex-wrap content-start justify-center gap-x-4 ${!targetedItem ? "ml-4" : ""}`}>
-                    {!targetedItem && enchants && Object.keys(enchants).length > 0 ? (
+                <div className={`flex flex-wrap gap-x-1 gap-y-1 max-h-19 overflow-y-auto w-min pr-2 ${!targetedItem ? "ml-1" : ""}`}>
+                    {enchants && Object.keys(enchants).length > 0 ? (
                         Object.entries(enchants).map(([name, level], index) => (
-                            <p key={index} className="w-fit">
+                            <Badge key={index} variant="outline" className="w-fit flex-shrink-0">
                                 {formatEnchantName(name)} {level}
-                            </p>
+                            </Badge>
                         ))
                     ) : null}
                 </div>
