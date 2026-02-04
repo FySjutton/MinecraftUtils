@@ -42,10 +42,11 @@ const formatEnchantName = (enchantNamespace: string): string => {
 };
 
 const availableItems = Object.keys(data.items);
+const enchantList = Object.keys(data.enchants);
 
 const selectedItemParser = enumParser(availableItems).withDefault("");
 const selectedEnchantsParser = arrayObjectParser<SelectedEnchant>({
-    namespace: availableItems,
+    namespace: enchantList,
     level: "number"
 }).withDefault([]);
 const allowIncompatibleParser = boolParser.withDefault(false);
@@ -303,10 +304,7 @@ export const EnchantmentPlanner: React.FC = () => {
                                         const isDisabled = isIncompatibleWithSelected(namespace, incompatible) && !hasEnchant(namespace);
 
                                         return (
-                                            <Card
-                                                key={namespace}
-                                                className={`flex flex-row flex-wrap gap-3 px-3 py-1 items-center ${groupIndex % 2 == 0 ? "bg-popover" : "bg-accent"} ${isDisabled ? "bg-muted/50 border-muted opacity-60" : ""}`}
-                                            >
+                                            <Card key={namespace} className={`flex flex-row flex-wrap gap-1 px-3 py-1 items-center ${groupIndex % 2 == 0 ? "bg-popover" : "bg-accent"} ${isDisabled ? "bg-muted/50 border-muted opacity-60" : ""}`}>
                                                 <span className="min-w-[200px] w-fit font-medium">
                                                     {formatEnchantName(namespace)}
                                                 </span>
@@ -474,7 +472,7 @@ export const EnchantmentPlanner: React.FC = () => {
                                                 <CardTitle>Step {idx + 1}</CardTitle>
                                             </CardHeader>
                                             <CardContent className="px-4 max-[400]:px-2">
-                                                <div className="flex flex-wrap gap-y-4 items-center">
+                                                <div className="flex flex-wrap gap-y-2 items-center text-center">
                                                     <EnchantingEntry
                                                         image={step.targetedItem ? result.targetItemName : "enchanted_book"}
                                                         targetedItem={step.targetedItem}
@@ -483,7 +481,7 @@ export const EnchantmentPlanner: React.FC = () => {
                                                     />
 
                                                     <div className="flex items-center">
-                                                        <Plus className="w-6" />
+                                                        <Plus className="w-6 mx-2 max-[400]:ml-0" />
                                                         <EnchantingEntry
                                                             image="enchanted_book"
                                                             targetedItem={false}
@@ -493,7 +491,7 @@ export const EnchantmentPlanner: React.FC = () => {
                                                     </div>
 
                                                     <div className="flex items-center">
-                                                        <ArrowBigRight className="w-6" />
+                                                        <ArrowBigRight className="w-6 mx-2 max-[400]:ml-0" />
                                                         <EnchantingEntry
                                                             image={step.targetedItem ? result.targetItemName : "enchanted_book"}
                                                             targetedItem={step.targetedItem}
@@ -561,7 +559,7 @@ export const EnchantmentPlanner: React.FC = () => {
 
 function EnchantingEntry({image, targetedItem, enchants}: { image: string, targetedItem: boolean, enchants: EnchantMap, result: SearchResult }) {
     return (
-        <Card className="mx-2 p-0 py-2">
+        <Card className="p-0 py-2">
             <CardContent className="flex min-h-10 max-h-18 items-center pl-3 pr-1">
                 <div className="relative min-w-8 h-8">
                     <ImageObj

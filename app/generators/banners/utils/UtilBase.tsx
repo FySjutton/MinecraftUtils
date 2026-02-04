@@ -221,7 +221,6 @@ function BannerInput<T extends StringRecord>({input, value, setValue}: {
     setValue: (key: keyof T, value: string) => void
 }) {
     return (
-        // TODO: CENTER ALL VALUES; COLOR PICKER. PHONE MODE
         <div className="flex flex-wrap justify-center">
             <label className="w-full text-center mb-2 font-bold">{input.label}</label>
 
@@ -234,7 +233,7 @@ function BannerInput<T extends StringRecord>({input, value, setValue}: {
             )}
 
             {input.kind === "color" && (
-                <ColorPicker selected={value} onSelectAction={value => {setValue(input.key, value)}}/>
+                <ColorPicker selected={value} onSelectAction={value => {setValue(input.key, value)}} />
             )}
         </div>
     )

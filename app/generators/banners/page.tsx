@@ -16,21 +16,20 @@ export default function Page() {
                 <Link href="/generators/banners/editor">
                     <Card>
                         <CardContent className="flex flex-col">
-                            {/*TODO: NOT PHONE-ADAPTIVE: LOOKS TERRIBLE*/}
-                            <div className="relative h-80 flex">
+                            <div className="flex flex-wrap justify-center gap-x-6">
                                 <Image
                                     src={`/assets/tool/banner/utils/editor.png`}
                                     alt={"Banner Editor"}
                                     width={500}
                                     height={358}
-                                    className="w-auto h-full"
+                                    className="w-auto h-80 max-[700]:h-auto max-[700]:w-full mb-3"
                                 />
-                                <div className="flex flex-col justify-center text-center ml-6 max-w-70">
+                                <div className="flex flex-col justify-center text-center max-w-70">
                                     <p className="font-bold">Banner Editor</p>
                                     <p>Generate custom banners and shields for minecraft with interactive editor and command output.</p>
                                 </div>
                             </div>
-                            <Button className="mt-6 mx-auto cursor-pointer">Click to open editor!</Button>
+                            <Button className="mt-3 mx-auto cursor-pointer">Click to open editor!</Button>
                         </CardContent>
                     </Card>
                 </Link>

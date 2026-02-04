@@ -47,7 +47,7 @@ interface PatternWithVisible extends Pattern {
 }
 
 export const ColorPicker = ({selected, onSelectAction, onHoverAction, onLeaveAction}: { selected: string, onSelectAction: (hex: string) => void, onHoverAction?: (hex: string) => void, onLeaveAction?: () => void }) => (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-wrap gap-2 justify-center">
         {Object.keys(DyeColors).map((colorKey) => {
             const hex = DyeColors[colorKey]
             return (
@@ -213,8 +213,7 @@ export default function BannerGenerator() {
         })
         const canvas = document.getElementById(`layer-preview-base`) as HTMLCanvasElement | null
         if (!canvas) return
-        createLayerPreview(canvas, { pattern: "base", color: bannerColor }, mode, { baseColor: "#1e1e1e" }).catch(() => {})
-
+        createLayerPreview(canvas, { pattern: "base", color: DyeColors[bannerColor] }, mode, { baseColor: "#1e1e1e" }).catch(() => {})
     }, [bannerColor, mode, patterns])
 
     const layersScrollRef = React.useRef<HTMLDivElement>(null)
