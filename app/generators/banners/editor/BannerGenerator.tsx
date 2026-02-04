@@ -23,7 +23,7 @@ import {
     PointerSensor,
     useSensor,
     useSensors,
-    DragEndEvent
+    DragEndEvent, TouchSensor
 } from '@dnd-kit/core'
 import { arrayMove, SortableContext, verticalListSortingStrategy, useSortable } from '@dnd-kit/sortable'
 import {restrictToParentElement, restrictToVerticalAxis} from '@dnd-kit/modifiers'
@@ -163,7 +163,20 @@ export default function BannerGenerator() {
         setPreview(null)
     }
 
-    const sensors = useSensors(useSensor(PointerSensor))
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 250,
+                tolerance: 5,
+            },
+        })
+    )
+
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event
         if (over && active.id !== over.id) {
@@ -427,7 +440,7 @@ function SortableLayer({index, pattern, setPatterns, setEditing}: {
     }
 
     return (
-        <Card ref={setNodeRef} data-layer style={style} {...attributes} onClick={(e) => {
+        <Card ref={setNodeRef} data-layer style={style} onClick={(e) => {
             setEditing({
                 type: 'pattern',
                 index,
@@ -457,7 +470,7 @@ function SortableLayer({index, pattern, setPatterns, setEditing}: {
                         <Badge variant="secondary" className="my-auto">{patternList[pattern.pattern]}</Badge>
 
                         <div className="flex gap-2 items-center ml-auto mr-6 max-[430]:mx-auto">
-                            <div {...listeners} className="cursor-grab text-lg select-none px-2 flex items-center my-auto py-3"><GripVertical /></div>
+                            <div {...listeners}  {...attributes} className="cursor-grab text-lg select-none px-2 flex items-center my-auto py-3" style={{ touchAction: 'none'}} onDragStart={(e) => e.preventDefault()}><GripVertical /></div>
 
                             <Button
                                 size="sm"
