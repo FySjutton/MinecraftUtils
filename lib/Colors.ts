@@ -36,11 +36,34 @@ export const DyeColors: Record<string, string> = {
     pink: "#F38BAA",
 };
 
+
 export const DyeColorsReverse = Object.fromEntries(
     Object.entries(DyeColors).map(([name, hex]) => [hex, name])
 ) as Record<string, string>
 
 export const ColorList = Object.values(Colors) as readonly string[]
+
+export const FireworkColors = {
+    BLACK: 0x1e1b1b,
+    RED: 0xb3312c,
+    GREEN: 0x3b511a,
+    BROWN: 0x51301a,
+    BLUE: 0x253192,
+    PURPLE: 0x7b2fbe,
+    CYAN: 0x287697,
+    LIGHT_GRAY: 0xabab9f,
+    GRAY: 0x434343,
+    PINK: 0xd88198,
+    LIME: 0x41cd34,
+    YELLOW: 0xdecf2a,
+    LIGHT_BLUE: 0x6689d3,
+    MAGENTA: 0xc354cd,
+    ORANGE: 0xeb8844,
+    WHITE: 0xf0f0f0,
+} as const;
+export const FireworkColorsReverse = Object.fromEntries(
+    Object.entries(FireworkColors).map(([name, hex]) => [hex, name])
+) as Record<string, string>
 
 export const ColorMeta = [
     { key: "BLACK", name: "Black", formatting: "§0", motd: "\\u00A70" },
