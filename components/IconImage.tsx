@@ -1,11 +1,12 @@
 "use client"
 import Image from 'next/image'
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 export function IconImage({name, size = 32}: { name: string, size?: number }) {
     return (
         <span className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
             <Image
-                src={`/assets/icons/${name}.png`}
+                src={findImageAsset(name, "icons")}
                 alt={name}
                 fill
                 style={{ objectFit: 'contain' }}

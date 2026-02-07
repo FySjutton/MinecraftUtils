@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
 type CraftingGrid = (string | null)[][];
 
@@ -34,7 +35,7 @@ export function CraftingCanvas({ inputs, output }: CraftingCanvasProps) {
         ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
         const bg = new Image();
-        bg.src = '/assets/shared/crafting_table.png';
+        bg.src = getImageAsset("shared_crafting_table");
 
         bg.onload = () => {
             ctx.drawImage(bg, 0, 0);

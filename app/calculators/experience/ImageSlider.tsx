@@ -5,6 +5,7 @@ import Image from "next/image"
 import {Button} from "@/components/ui/button";
 import {IconArrowBigLeftLine, IconArrowBigRightLine} from "@tabler/icons-react";
 import {useState} from "react";
+import {getImageAsset} from "@/lib/images/getImageAsset";
 
 type ExperienceBarProps = {
     xp: number
@@ -117,7 +118,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
 
             <div className="relative w-full">
                 <Image
-                    src="/assets/tool/experience/empty.png"
+                    src={getImageAsset("empty")}
                     alt=""
                     width={0}
                     height={0}
@@ -127,7 +128,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
 
                 <div className="absolute left-0 top-0 h-full w-full overflow-hidden pointer-events-none">
                     <Image
-                        src="/assets/tool/experience/filled.png"
+                        src={getImageAsset("filled")}
                         alt=""
                         width={0}
                         height={0}
@@ -152,7 +153,7 @@ export default function ExperienceBar({ xp, lastSource, onSliderAction }: Experi
 
                 <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 z-40 pointer-events-none h-[120%] flex items-center justify-center" style={{ left: `${value}%` }}>
                     <Image
-                        src="/assets/tool/experience/dragger.png"
+                        src={getImageAsset("dragger")}
                         alt="thumb"
                         width={9}
                         height={9}

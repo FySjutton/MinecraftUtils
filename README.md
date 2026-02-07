@@ -13,11 +13,12 @@ If you want to support the project or chat with the team, join our Discord:
 `minecraftutils.com` is an open source website, and all developers are allowed to contribute to it. All edits are to be done in a fork using pull requests, or in a separate branch to avoid issues. All contributors are appreciated! 
 
 ### Project uses:
-- Next.js v16.0.4
-- React v19.2.0
+- Next.js v16.0.7
+- React v19.2.1
 - Tailwind CSS v4
 - TypeScript v5
 - Tabler Icons v3.35.0
+- Lucide Icons v0.555.0
 - ESLint v9
 
 Some components are also based on premade shadcn components, with some edits made.
@@ -57,5 +58,14 @@ Each utility gets its own folder under the correct category in `/app`. All compo
 For more reference, look at the other utilities already added, or ask for help in the discord server.
 
 Make sure to always use the same theme, the same base-components when possible, and some nice looking Tabler icons!
+
+### Images
+All image assets are to be located under an appropriate folder inside `/assets`. When referencing the images inside your tool, do NOT use a direct path, instead use the:
+- `@/lib/images/getImageAsset` - when the name is known, a static string
+- `@/lib/images/findImageAsset` - when its dynamic, it also takes a fallback directory, which is the inner path name
+
+For example, an image like `/assets/minecraft/item/tools/bow.png` can be accessed by `findImageAsset("bow", "tools")`, where "tools" just helps it find the correct one in the case of duplicates.
+
+All image paths are defined inside `/lib/images/itemAssets.ts`, this file should not be manually edited. When editing an image, please run `npm run assets` or `npm run assets:all` to refresh the file.
 
 **Thanks for contributing!**

@@ -14,6 +14,7 @@ import {Trash2} from "lucide-react";
 import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
 import {enumArrayParser} from "@/lib/urlParsers";
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 const COLOR_NAMES = Object.keys(GLASS_COLORS)
 
@@ -114,7 +115,7 @@ export default function GlassToBeaconColorEditor() {
                         {stack.map((name, idx) => (
                             <div key={idx} className="w-full flex items-center gap-2 box-sizing">
                                 {name && GLASS_COLORS[name] ? (
-                                    <Image src={`/assets/tool/beacon/glass/${name}.png`} alt={name} width={20} height={20} className="w-6 h-6 border" />
+                                    <Image src={findImageAsset(name)} alt={name} width={20} height={20} className="w-6 h-6 border" />
                                 ) : (
                                     <div className="w-6 h-6 border bg-white/10" />
                                 )}
@@ -128,7 +129,7 @@ export default function GlassToBeaconColorEditor() {
                                     placeholderSearch="Select glass..."
                                     renderIcon={item => (
                                         <Image
-                                            src={`/assets/tool/beacon/glass/${toInternalName(item)}.png`}
+                                            src={findImageAsset(toInternalName(item))}
                                             alt={item}
                                             width={20}
                                             height={20}

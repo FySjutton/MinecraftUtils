@@ -2,6 +2,7 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 export default function UtilSelector({ ignore }: { ignore?: string }) {
     // All images are to be 16:9 (400x225)
@@ -32,7 +33,7 @@ export default function UtilSelector({ ignore }: { ignore?: string }) {
                         </CardHeader>
                         <CardContent className="relative h-40 flex">
                             <Image
-                                src={`/assets/tool/banner/utils/${utility.image}.png`}
+                                src={findImageAsset(utility.image)}
                                 alt={utility.name}
                                 width={400}
                                 height={225}

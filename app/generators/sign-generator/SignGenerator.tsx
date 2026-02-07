@@ -12,6 +12,7 @@ import Image from "next/image";
 import SignSelector, {SignState} from "@/app/generators/sign-generator/SignSelector";
 import {InputField} from "@/components/inputs/InputField";
 import {generateSignCommand} from "@/app/generators/sign-generator/signCommandGenerator";
+import {getImageAsset} from "@/lib/images/getImageAsset";
 
 export interface SignSide {
     lines: MinecraftText[][]
@@ -104,8 +105,8 @@ export default function SignGenerator() {
                                         >
                                             <Image
                                                 src={signData.front.glowing
-                                                    ? "/assets/tool/sign/glow_ink_sac.png"
-                                                    : "/assets/tool/sign/ink_sac.png"}
+                                                    ? getImageAsset("glow_ink_sac")
+                                                    : getImageAsset("ink_sac")}
                                                 alt="glowing icon"
                                                 width={16}
                                                 height={16}
@@ -129,8 +130,8 @@ export default function SignGenerator() {
                                         >
                                             <Image
                                                 src={signData.front.waxed
-                                                    ? "/assets/tool/sign/honey_comb.png"
-                                                    : "/assets/tool/sign/empty_honey_comb.png"}
+                                                    ? getImageAsset("honey_comb")
+                                                    : getImageAsset("empty_honey_comb")}
                                                 alt="waxed icon"
                                                 width={16}
                                                 height={16}
@@ -186,8 +187,8 @@ export default function SignGenerator() {
                                         >
                                             <Image
                                                 src={signData.back.glowing
-                                                    ? "/assets/tool/sign/glow_ink_sac.png"
-                                                    : "/assets/tool/sign/ink_sac.png"}
+                                                    ? getImageAsset("glow_ink_sac")
+                                                    : getImageAsset("ink_sac")}
                                                 alt="glowing icon"
                                                 width={16}
                                                 height={16}
@@ -211,8 +212,8 @@ export default function SignGenerator() {
                                         >
                                             <Image
                                                 src={signData.back.waxed
-                                                    ? "/assets/tool/sign/honey_comb.png"
-                                                    : "/assets/tool/sign/empty_honey_comb.png"}
+                                                    ? getImageAsset("honey_comb")
+                                                    : getImageAsset("empty_honey_comb")}
                                                 alt="waxed icon"
                                                 width={16}
                                                 height={16}

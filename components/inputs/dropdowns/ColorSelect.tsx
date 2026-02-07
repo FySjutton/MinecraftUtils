@@ -9,6 +9,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 const COLORS = [
     "none",
@@ -48,7 +49,7 @@ export default function ColorSelect({ value, onChange }: ColorSelectProps) {
                         <SelectItem key={color} value={color} className="flex items-center gap-2">
                             <div className="flex items-center gap-2">
                                 <Image
-                                    src={`/assets/dyes/${color}.png`}
+                                    src={findImageAsset(color)}
                                     alt={color}
                                     width={20}
                                     height={20}

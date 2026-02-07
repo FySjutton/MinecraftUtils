@@ -24,6 +24,7 @@ import {
     rgbArrayParser,
     rgbParser
 } from "@/lib/urlParsers";
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 const COLOR_ENTRIES = Object.entries(GLASS_COLORS)
 
@@ -296,7 +297,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                             selected={glassColors.map(value => toDisplayName(value))} onChange={values => setGlassColors(values.map(value => toInternalName(value)))}
                             renderIcon={item => {
                                 return <Image
-                                    src={`/assets/tool/beacon/glass/${toInternalName(item)}.png`}
+                                    src={findImageAsset(toInternalName(item))}
                                     alt={item}
                                     width={20}
                                     height={20}

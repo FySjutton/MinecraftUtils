@@ -1,5 +1,6 @@
 import {DyeColors} from "@/lib/Colors";
 import ImageObj from "next/image";
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 export default function DyePicker({selected, onSelectAction, onHoverAction, onLeaveAction, colorList = DyeColors}: { selected: string[], onSelectAction: (hex: string) => void, onHoverAction?: (hex: string) => void, onLeaveAction?: () => void, colorList?: Record<string, string>}) {
     return (
@@ -16,7 +17,7 @@ export default function DyePicker({selected, onSelectAction, onHoverAction, onLe
                         onClick={() => onSelectAction(hex)}
                     >
                         <ImageObj
-                            src={`/assets/dyes/${colorKey}.png`}
+                            src={findImageAsset(colorKey)}
                             alt={colorKey}
                             width={16}
                             height={16}

@@ -14,5 +14,5 @@ export default function Page() {
 
 export const metadata: Metadata = {
     title: "Units Converter",
-    description: "Convert items, stacks and shulker boxes into each other for easy Minecraft inventory calculations."
+    description: "Convert item, stacks and shulker boxes into each other for easy Minecraft inventory calculations."
 };

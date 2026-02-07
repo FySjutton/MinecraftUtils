@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useEffect, useRef } from 'react'
+import {getImageAsset} from "@/lib/images/getImageAsset";
 
 interface BeaconPreviewProps extends React.HTMLAttributes<HTMLDivElement> {
     color?: string
@@ -9,7 +10,7 @@ interface BeaconPreviewProps extends React.HTMLAttributes<HTMLDivElement> {
     src?: string
 }
 
-export function BeaconPreview({color = '#ffffff', width = 64, height = 64, src = '/assets/tool/beacon/beacon_beam.png', className, ...props
+export function BeaconPreview({color = '#ffffff', width = 64, height = 64, src = getImageAsset("beacon_beam"), className, ...props
 }: BeaconPreviewProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null)
 

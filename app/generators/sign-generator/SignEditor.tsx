@@ -22,6 +22,7 @@ import {MaxLines} from "@/components/editor/MaxLines";
 import {MinecraftText} from "@/lib/MinecraftText";
 import {tiptapToMinecraftText} from "@/lib/converters/tiptapToMinecraftText";
 import {SignState} from "@/app/generators/sign-generator/SignSelector";
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 interface SignEditorProps {
     output: MinecraftText[][]
@@ -119,7 +120,7 @@ export default function SignEditor({ output, setOutputAction, signType }: SignEd
             <div
                 className="h-25 pl-2"
                 style={{
-                    backgroundImage: `url('/assets/tool/sign/textures/${signType.signMaterial}/front_preview.png')`,
+                    backgroundImage: `url('${findImageAsset(signType.signMaterial + "_front_preview")}')`,
                     backgroundSize: 'auto 100%',
                     backgroundRepeat: 'repeat',
                     backgroundPosition: 'center',

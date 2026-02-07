@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { FireworkParticle } from '@/app/generators/fireworks/base/particle';
 import {createExplosion, FireworkExplosion} from '@/app/generators/fireworks/base/algorithms';
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 const MAX_PARTICLES = 5000;
 
@@ -56,7 +57,7 @@ export class FireworkScene {
         const loadPromises: Promise<THREE.Texture>[] = [];
         for (let i = 0; i < 8; i++) {
             loadPromises.push(new Promise((resolve, reject) => {
-                loader.load(`/assets/tool/fireworks/particles/spark_${i}.png`,
+                loader.load(findImageAsset(`spark_${i}`),
                     (tex) => {
                         tex.minFilter = THREE.NearestFilter;
                         tex.magFilter = THREE.NearestFilter;

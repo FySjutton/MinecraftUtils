@@ -9,9 +9,9 @@ type Node = {
     isTarget: boolean;
 };
 
-// Represents a partial solution with some items combined
+// Represents a partial solution with some item combined
 type BeamState = {
-    // The current set of "items" we have (some might be pre-merged)
+    // The current set of "item" we have (some might be pre-merged)
     items: CombinedItem[];
     totalLevels: number;
     totalXp: number;
@@ -38,7 +38,7 @@ type MergeTrace = {
 const MAXIMUM_MERGE_LEVELS = 39;
 
 function stateKey(state: BeamState): string {
-    // Create a canonical key that's independent of the order items appear in the array
+    // Create a canonical key that's independent of the order item appear in the array
     // This prevents counting the same configuration multiple times
     return state.items.map(item => {
         // Sort enchantment keys for consistency
@@ -55,7 +55,7 @@ function compareStates(a: BeamState, b: BeamState, mode: "levels" | "xp" | "prio
         // Optimize for fewest levels
         if (a.totalLevels !== b.totalLevels) return a.totalLevels - b.totalLevels;
         if (a.totalXp !== b.totalXp) return a.totalXp - b.totalXp;
-        // Prefer solutions with fewer items remaining (closer to done)
+        // Prefer solutions with fewer item remaining (closer to done)
         return a.items.length - b.items.length;
     } else if (mode === "xp") {
         // Optimize for least experience points
@@ -153,7 +153,7 @@ export async function findBestOrderBeamOptimized(
         const seenKeys = new Map<string, BeamState>();
 
         for (const state of beam) {
-            // Try merging each pair of items
+            // Try merging each pair of item
             for (let i = 0; i < state.items.length; i++) {
                 for (let j = i + 1; j < state.items.length; j++) {
                     const left = state.items[i];

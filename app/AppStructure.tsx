@@ -96,12 +96,12 @@ export const tools: ToolCategory[] = [
         url: "/generators",
         defaultOpen: true,
         pages: [
-            { name: "Beacon Generator", url: "beacon-color", icon: "beacon", description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
+            { name: "Beacon Generator", url: "beacon-color", icon: "3d_beacon", description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
             { name: "Circle Generator", url: "circle-generator", icon: "circle-generator", description: "Generate pixel perfect circles for minecraft.", type: "beta" },
             { name: "Firework Generator", url: "fireworks", icon: "firework", description: "Generate advanced fireworks with preview, instructions, and output command.", type: "beta" },
             { name: "Shape Generator", url: "shape-generator", icon: "shape-generator", description: "Generate pixel perfect shapes for minecraft.", type: "beta" },
             { name: "Banner Generator", url: "banners", icon: "banner", description: "Create banners through an interactive editor with command and crafting instructions output.", type: "beta" },
-            { name: "Sign Generator", url: "sign-generator", icon: "sign", description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
+            { name: "Sign Generator", url: "sign-generator", icon: "3d_sign", description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
             { name: "Motd Creator", url: "motd-creator", icon: "motd", description: "Generate server motds through an interactive editor." },
         ],
     },
@@ -113,7 +113,7 @@ export const tools: ToolCategory[] = [
         pages: [
             { name: "Daylight Cycle", url: "daylight-cycle", icon: "sun", description: "Interactive daylight cycle viewer, with video, daylight detector output, and time converter." },
             { name: "Potion Brewing", url: "potion-brewing", icon: "potion", description: "View instructions how to brew a specific potion." },
-            { name: "Inventory Slots", url: "inventory-slots", icon: "chest", description: "Visual guide to inventory slot positions." },
+            { name: "Inventory Slots", url: "inventory-slots", icon: "3d_chest", description: "Visual guide to inventory slot positions." },
             { name: "Color Codes", url: "color-codes", icon: "colors", description: "A list of all formatting codes in Minecraft." },
         ],
     },

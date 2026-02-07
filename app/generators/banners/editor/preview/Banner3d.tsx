@@ -11,6 +11,7 @@ import {Toggle} from "@/components/ui/toggle";
 import {Check, X} from "lucide-react";
 import {Pattern} from "@/app/generators/banners/utils/Utils";
 import {applyTexture} from "@/app/generators/banners/editor/preview/Shield3d";
+import {getImageAsset} from "@/lib/images/getImageAsset";
 
 interface Banner3DProps {
     baseColor: string
@@ -48,7 +49,7 @@ function BannerScene({baseColor, patterns, animate}: {
     useEffect(() => {
         if (!stand) return
 
-        const tex = new THREE.TextureLoader().load('/assets/tool/banner/banner_base.png')
+        const tex = new THREE.TextureLoader().load(getImageAsset("banner_base"))
         tex.colorSpace = THREE.SRGBColorSpace
         tex.minFilter = THREE.NearestFilter
         tex.magFilter = THREE.NearestFilter

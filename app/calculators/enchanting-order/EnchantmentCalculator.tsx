@@ -13,8 +13,9 @@ import {Sparkles, Trash2, Play, StopCircle, XCircle, ArrowBigRight, Plus} from "
 import { ComboBox } from "@/components/inputs/dropdowns/ComboBox";
 import ImageObj from "next/image";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {createParser, useQueryState} from "nuqs";
-import {arrayObjectParser, boolParser, enumParser, objectParser} from "@/lib/urlParsers";
+import {useQueryState} from "nuqs";
+import {arrayObjectParser, boolParser, enumParser} from "@/lib/urlParsers";
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 type EnchantNamespace = keyof typeof data.enchants;
 
@@ -256,7 +257,7 @@ export const EnchantmentPlanner: React.FC = () => {
                         placeholderSearch="Select an item"
                         renderIcon={(item) => {
                             return <ImageObj
-                                src={`/assets/tool/enchanting/${item}.png`}
+                                src={findImageAsset(item)}
                                 alt={item}
                                 fill
                                 objectFit="cover"
@@ -563,7 +564,7 @@ function EnchantingEntry({image, targetedItem, enchants}: { image: string, targe
             <CardContent className="flex min-h-10 max-h-18 items-center pl-3 pr-1">
                 <div className="relative min-w-8 h-8">
                     <ImageObj
-                        src={`/assets/tool/enchanting/${image}.png`}
+                        src={findImageAsset(image)}
                         alt={image}
                         fill={true}
                         style={{ objectFit: 'contain' }}

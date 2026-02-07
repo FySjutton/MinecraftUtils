@@ -5,6 +5,7 @@ import React from "react";
 import UtilSelector from "@/app/generators/banners/UtilSelector";
 import Image from "next/image";
 import Link from "next/link";
+import {getImageAsset} from "@/lib/images/getImageAsset";
 
 export default function Page() {
     return (
@@ -18,7 +19,7 @@ export default function Page() {
                         <CardContent className="flex flex-col">
                             <div className="flex flex-wrap justify-center gap-x-6">
                                 <Image
-                                    src={`/assets/tool/banner/utils/editor.png`}
+                                    src={getImageAsset("editor")}
                                     alt={"Banner Editor"}
                                     width={500}
                                     height={358}

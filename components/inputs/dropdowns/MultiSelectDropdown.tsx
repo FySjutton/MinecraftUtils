@@ -30,7 +30,7 @@ interface MultiSelectDropdownProps {
     renderIcon?: (item: string) => React.ReactNode
 }
 
-export function MultiSelectDropdown({items, selected, onChange, placeholder = "Select items...", placeholderSearch = "Search...", className, renderIcon}: MultiSelectDropdownProps) {
+export function MultiSelectDropdown({items, selected, onChange, placeholder = "Select item...", placeholderSearch = "Search...", className, renderIcon}: MultiSelectDropdownProps) {
     const [open, setOpen] = useState(false)
     const [search, setSearch] = useState("")
 

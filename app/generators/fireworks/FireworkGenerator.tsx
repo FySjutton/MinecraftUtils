@@ -17,6 +17,7 @@ import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Dot} from "lucide-react";
 import {MultiSelectDropdown} from "@/components/inputs/dropdowns/MultiSelectDropdown";
 import {CraftingCanvas} from "@/components/CraftingCanvas";
+import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
 export default function FireworkGenerator() {
     const canvasRef = useRef<FireworkCanvasRef>(null);
@@ -26,8 +27,8 @@ export default function FireworkGenerator() {
     const [explosions, setExplosions] = useState<Record<string, FireworkExplosion>>({
         "0": {
             shape: 'LARGE_BALL',
-            colors: [FireworkColors.BLUE],
-            fadeColors: [FireworkColors.LIGHT_BLUE],
+            colors: [FireworkColors.blue],
+            fadeColors: [FireworkColors.lime],
             hasTrail: false,
             hasTwinkle: false,
         }
@@ -109,8 +110,8 @@ export default function FireworkGenerator() {
                                 const newId = Object.keys(explosions).length.toString();
                                 const newExplosion: FireworkExplosion = {
                                     shape: 'LARGE_BALL',
-                                    colors: [FireworkColors.BLUE],
-                                    fadeColors: [FireworkColors.LIGHT_BLUE],
+                                    colors: [FireworkColors.blue],
+                                    fadeColors: [FireworkColors.lime],
                                     hasTrail: false,
                                     hasTwinkle: false
                                 };
@@ -214,10 +215,10 @@ export default function FireworkGenerator() {
 
                     <div className="w-full max-w-xl">
                         <CraftingCanvas inputs={[
-                            [null, "/assets/dyes/white.png", null],
-                            [null, "/assets/dyes/white.png", null],
-                            [null, "/assets/dyes/white.png", null],
-                        ]} output="/assets/dyes/white.png" />
+                            [null, getImageAsset("white"), null],
+                            [null, getImageAsset("white"), null],
+                            [null, getImageAsset("white"), null],
+                        ]} output={getImageAsset("white")} />
                     </div>
                 </CardContent>
             </Card>
@@ -234,7 +235,7 @@ function ToggleCard({shape, onClickAction, selected}: {
     return (
         <div key={shape} onClick={onClickAction} className={`bg-[#080811] p-2 text-center rounded-md border cursor-pointer hover:brightness-80 ${selected ? "ring-1" : ""}`}>
             <ImageObj
-                src={`/assets/tool/fireworks/previews/${shape.toLowerCase()}.png`}
+                src={findImageAsset(shape.toLowerCase(), "fireworks")}
                 alt={shape}
                 width={150}
                 height={150}

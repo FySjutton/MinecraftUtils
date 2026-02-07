@@ -43,22 +43,22 @@ export const DyeColorsReverse = Object.fromEntries(
 export const ColorList = Object.values(Colors) as readonly string[]
 
 export const FireworkColors = {
-    WHITE: "#f0f0f0",
-    LIGHT_GRAY: "#abab9f",
-    GRAY: "#434343",
-    BLACK: "#1e1b1b",
-    BROWN: "#51301a",
-    RED: "#b3312c",
-    ORANGE: "#eb8844",
-    YELLOW: "#decf2a",
-    LIME: "#41cd34",
-    GREEN: "#3b511a",
-    CYAN: "#287697",
-    LIGHT_BLUE: "#6689d3",
-    BLUE: "#253192",
-    PURPLE: "#7b2fbe",
-    MAGENTA: "#c354cd",
-    PINK: "#d88198",
+    white: "#f0f0f0",
+    light_gray: "#abab9f",
+    gray: "#434343",
+    black: "#1e1b1b",
+    brown: "#51301a",
+    red: "#b3312c",
+    orange: "#eb8844",
+    yellow: "#decf2a",
+    lime: "#41cd34",
+    green: "#3b511a",
+    cyan: "#287697",
+    light_blue: "#6689d3",
+    blue: "#253192",
+    purple: "#7b2fbe",
+    magenta: "#c354cd",
+    pink: "#d88198"
 } as const;
 
 export const FireworkColorsReverse = Object.fromEntries(

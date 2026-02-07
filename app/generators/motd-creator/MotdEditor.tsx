@@ -28,6 +28,7 @@ import {JSONContent} from "@tiptap/core";
 import Image from "next/image";
 import {createParser, useQueryState} from "nuqs";
 import {useUrlUpdateEmitter} from "@/lib/urlParsers";
+import {getImageAsset} from "@/lib/images/getImageAsset";
 
 export default function MotdEditor({setOutputAction }: { output: string, setOutputAction: React.Dispatch<React.SetStateAction<string>> }) {
     useUrlUpdateEmitter()
@@ -225,7 +226,7 @@ export default function MotdEditor({setOutputAction }: { output: string, setOutp
                             {/* Left icon */}
                             <div className="w-[32px] h-[32px] relative flex-shrink-0 p-px cursor-pointer" onClick={handleClick}>
                                 <Image
-                                    src={preview ?? "/assets/tool/motd/unknown_server.png"}
+                                    src={preview ?? getImageAsset("unknown_server")}
                                     alt="icon"
                                     width={64}
                                     height={64}
@@ -259,7 +260,7 @@ export default function MotdEditor({setOutputAction }: { output: string, setOutp
                                     <div className="flex items-center gap-[2px]">
                                         <span className="text-white text-[9px]" style={{color: Colors.GRAY}}>17/20</span>
                                         <Image
-                                            src="/assets/tool/motd/ping_5.png"
+                                            src={getImageAsset("ping_5")}
                                             alt="icon"
                                             width={16}
                                             height={16}

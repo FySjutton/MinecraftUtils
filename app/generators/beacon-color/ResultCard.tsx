@@ -11,6 +11,7 @@ import {
     rgbToHex
 } from "@/app/generators/beacon-color/subtools/beaconToGlassTool"
 import {toTitleCase} from "@/lib/StringUtils";
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 interface ResultCardProps {
     result: Candidate
@@ -51,7 +52,7 @@ export const ResultCard = memo(function ResultCard({result, index, show3D, onTog
                                 {segmentsFor3D.reverse().map(([, glass], i) => (
                                     <li key={i} className="flex items-center gap-2">
                                         <Image
-                                            src={`/assets/tool/beacon/glass/${glass}.png`}
+                                            src={findImageAsset(glass)}
                                             alt={glass}
                                             width={20}
                                             height={20}

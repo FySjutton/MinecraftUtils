@@ -12,6 +12,7 @@ import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
 import {enumParser, numberParser, recordParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 import {toTitleCase} from "@/lib/StringUtils";
+import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
 type PotionName = string
 type IngredientName = string
@@ -51,12 +52,12 @@ const comboBoxItems: Record<string, string[]> = Object.fromEntries(
 
 function potionIcon(name: PotionName, type: "normal" | "splash" | "lingering" = "normal") {
     const p = POTIONS[name]
-    if (p && p.image) return `/assets/tool/potion/${type}/${p.image}.png`
-    return `/assets/tool/potion/${type}/${sanitize(name)}.png`
+    if (p && p.image) return findImageAsset(type + "_" + p.image)
+    return findImageAsset(type + "_" + sanitize(name))
 }
 
 function ingredientIcon(name: IngredientName) {
-    return `/assets/tool/potion/ingredients/${sanitize(name)}.png`
+    return findImageAsset(sanitize(name))
 }
 
 type Row = | { type: "potion"; name: PotionName } | { type: "ingredient"; name: IngredientName }

@@ -86,7 +86,7 @@ export function enumParser<T extends string>(values: readonly T[]) {
 
 export function enumArrayParser<T extends string>(
     values: readonly T[],
-    options?: { reverse?: boolean } // reverse here means store unselected items
+    options?: { reverse?: boolean } // reverse here means store unselected item
 ) {
     const single = enumParser(values);
 
@@ -95,7 +95,7 @@ export function enumArrayParser<T extends string>(
             let toStore = arr;
             if (options?.reverse) {
                 const selected = new Set(arr);
-                toStore = values.filter(v => !selected.has(v)); // store unselected items
+                toStore = values.filter(v => !selected.has(v)); // store unselected item
             }
             return toStore.map(single.serialize).join("");
         },
@@ -103,7 +103,7 @@ export function enumArrayParser<T extends string>(
             const parsed = s.split("").map(c => single.parse(c)).filter(Boolean) as T[];
             if (options?.reverse) {
                 const parsedSet = new Set(parsed);
-                return values.filter(v => !parsedSet.has(v)); // return selected items
+                return values.filter(v => !parsedSet.has(v)); // return selected item
             }
             return parsed;
         },

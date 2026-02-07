@@ -22,6 +22,7 @@ import {
     CarouselPrevious,
     type CarouselApi
 } from "@/components/ui/carousel"
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 export default function InventorySlotsTool() {
     const inventories = [
@@ -142,7 +143,7 @@ export default function InventorySlotsTool() {
                                             <div className="flex items-center justify-center w-full p-2">
                                                 <div className="flex items-center justify-center max-w-full">
                                                     <Image
-                                                        src={`/assets/tool/inv_slots/${inv.value}.png`}
+                                                        src={findImageAsset(inv.value, "inv_slots")}
                                                         alt={inv.label}
                                                         width={900}
                                                         height={900}

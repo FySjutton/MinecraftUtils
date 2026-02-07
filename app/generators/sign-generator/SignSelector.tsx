@@ -10,6 +10,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 const WOOD_TYPES = [
     "oak",
@@ -30,13 +31,13 @@ const SIGN_VARIANTS = [
     {
         id: "sign",
         label: "Normal",
-        preview: "sign_preview.png",
+        preview: "sign_preview",
         badgeVariant: "secondary",
     },
     {
         id: "hanging",
         label: "Hanging",
-        preview: "hanging_preview.png",
+        preview: "hanging_preview",
         badgeVariant: "outline",
     },
 ] as const
@@ -86,15 +87,15 @@ export default function SignSelector({ value, onChange }: SignSelectorProps) {
                                     className="flex items-center gap-2"
                                 >
                                     <Image
-                                        src={`/assets/tool/sign/textures/${wood}/${variant.preview}`}
+                                        src={findImageAsset(wood + "_" + variant.preview)}
                                         alt={`${wood} ${variant.id}`}
                                         width={20}
                                         height={20}
                                     />
 
                                     <span className="capitalize">
-                    {wood.replace("_", " ")}
-                  </span>
+                                        {wood.replace("_", " ")}
+                                    </span>
 
                                     <Badge
                                         variant={variant.badgeVariant}

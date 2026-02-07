@@ -7,6 +7,7 @@ import {useEffect, useMemo, useRef, useState} from 'react'
 import { drawMinecraftSignToCanvas } from '@/app/generators/sign-generator/canvasRenderer'
 import assert from 'node:assert'
 import { SignSide } from "@/app/generators/sign-generator/SignGenerator"
+import {findImageAsset} from "@/lib/images/getImageAsset";
 
 interface MinecraftSignProps {
     signMaterial: string
@@ -24,7 +25,7 @@ function randomObfuscatedChar() {
 
 export function MinecraftSign({ signMaterial, signType, front, back }: MinecraftSignProps) {
     const gltfPath = signType === 'sign' ? '/sign.gltf' : '/hanging.gltf'
-    const gltf = useGLTF("/assets/tool/sign/models" + gltfPath)
+    const gltf = useGLTF("/assets/tool/sign/" + gltfPath)
     const model = gltf.scene.clone(true)
 
     const fontSize = useMemo(() => (sign(signType) ? 36 : 32), [signType])
@@ -149,7 +150,7 @@ export function MinecraftSign({ signMaterial, signType, front, back }: Minecraft
     useEffect(() => {
         if (!model) return;
 
-        const texturePath = `/assets/tool/sign/textures/${signMaterial}/${signType === 'sign' ? 'sign.png' : 'hanging.png'}`;
+        const texturePath = findImageAsset(`${signMaterial}_${signType === 'sign' ? 'sign' : 'hanging'}`);
         new THREE.TextureLoader().load(texturePath, (tex) => {
             tex.flipY = false;
             tex.minFilter = THREE.NearestFilter;

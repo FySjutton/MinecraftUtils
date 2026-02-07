@@ -13,6 +13,7 @@ import {DaylightDetector} from "@/app/references/daylight-cycle/DaylightDetector
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {TimeTickConverter} from "@/app/references/daylight-cycle/TimeTickConverter";
 import ImageObj from "next/image";
+import {getImageAsset} from "@/lib/images/getImageAsset";
 
 export default function DaylightCycleTool() {
     const videoEastRef = useRef<HTMLVideoElement | null>(null)
@@ -166,7 +167,7 @@ export default function DaylightCycleTool() {
 
                 <ImageObj
                     ref={imageRef}
-                    src="/assets/tool/daycycle/background.png"
+                    src={getImageAsset("background")}
                     alt="background"
                     className="absolute inset-0 top-[50%] left-[50%] translate-[-50%] w-full h-full object-contain z-0 border-2"
                     width={1305}

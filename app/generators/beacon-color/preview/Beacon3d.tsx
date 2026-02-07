@@ -13,6 +13,7 @@ import {
     MeshBasicMaterial,
     Color, DoubleSide
 } from 'three'
+import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
 export type SegmentTuple = [string | null, string]
 
@@ -106,7 +107,7 @@ function Beacon({ segments, beamTextures }: BeaconProps) {
 function GlassBlocks({ segments }: { segments: SegmentTuple[] }) {
     const fullSegmentHeight = 2
     const textures = segments.map(([_, glass]) => {
-        const tex = new TextureLoader().load(`/assets/tool/beacon/glass/${glass}.png`)
+        const tex = new TextureLoader().load(findImageAsset(glass))
         tex.wrapS = RepeatWrapping
         tex.wrapT = RepeatWrapping
         tex.magFilter = NearestFilter
@@ -140,7 +141,7 @@ interface Beacon3dProps {
 export default function Beacon3d({ segments, width = 200, height = 1000 }: Beacon3dProps) {
     const [beamTextures, setBeamTextures] = useState<Texture[]>([])
     const beaconGltf = useGLTF('/assets/tool/beacon/beacon.gltf')
-    const diamondTexture = new TextureLoader().load('/assets/tool/beacon/diamond_block.png', (tex) => {
+    const diamondTexture = new TextureLoader().load(getImageAsset("diamond_block"), (tex) => {
         tex.wrapS = RepeatWrapping
         tex.wrapT = RepeatWrapping
         tex.magFilter = NearestFilter
@@ -178,7 +179,7 @@ export default function Beacon3d({ segments, width = 200, height = 1000 }: Beaco
 
     useEffect(() => {
         const img = new Image()
-        img.src = '/assets/tool/beacon/beacon_beam.png'
+        img.src = getImageAsset("beacon_beam")
         img.crossOrigin = 'anonymous'
         img.onload = () => {
             const textures = [[null, ''], ...segments].map(([color]) =>

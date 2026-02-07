@@ -1,4 +1,5 @@
 import {Mode, Pattern} from "@/app/generators/banners/utils/Utils";
+import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
 const imageCache = new Map<string, HTMLImageElement>()
 
@@ -45,7 +46,7 @@ export async function createLayerPreview(
 
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    const baseImg = await loadImage(`/assets/tool/banner/textures/${mode}/base.png`)
+    const baseImg = await loadImage(findImageAsset(mode + "_base"))
 
     let usableW = fullsize ? baseImg.width : 20
     let usableH = fullsize ? baseImg.height : 40
@@ -74,7 +75,7 @@ export async function createLayerPreview(
     }
 
     for (const p of patternArray) {
-        const img = await loadImage(`/assets/tool/banner/textures/${mode}/${p.pattern}.png`)
+        const img = await loadImage(findImageAsset(mode + "_" + p.pattern))
         const tmp = document.createElement('canvas')
         tmp.width = usableW
         tmp.height = usableH
@@ -93,7 +94,7 @@ export async function buildTextureCanvas(baseColor: string, patterns: Pattern[],
     canvas.height = 64
 
     if (mode === 'shield') {
-        const shieldBase = await loadImage("/assets/tool/banner/shield_base.png");
+        const shieldBase = await loadImage(getImageAsset("shield_base"));
 
         ctx.drawImage(shieldBase, 0, 0, shieldBase.width, shieldBase.height);
     }
