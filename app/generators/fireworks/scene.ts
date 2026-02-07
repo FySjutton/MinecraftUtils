@@ -18,16 +18,37 @@ export class FireworkScene {
     spriteTextures: THREE.Texture[] = [];
     texturesLoaded = false;
 
+    private explosionScale = 0.8;
+    private explosionOriginYPercent = 0.3;
+
     constructor(canvas: HTMLCanvasElement) {
         this.scene = new THREE.Scene();
         this.scene.background = new THREE.Color(0x000000);
-        this.camera = new THREE.PerspectiveCamera(70, canvas.clientWidth / canvas.clientHeight, 0.1, 1000);
-        this.camera.position.set(0, 0, 10);
-        this.camera.lookAt(0, 0, 0);
+        this.camera = new THREE.PerspectiveCamera(70, canvas.clientWidth / Math.max(1, canvas.clientHeight), 0.1, 1000);
+        this.updateCameraForScale();
+
         this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
-        this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
-        this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        this.renderer.setPixelRatio(dpr);
+
+        const cssW = Math.max(1, canvas.clientWidth);
+        const cssH = Math.max(1, canvas.clientHeight);
+        this.renderer.setSize(cssW, cssH, false);
+        this.renderer.domElement.style.width = `${cssW}px`;
+        this.renderer.domElement.style.height = `${cssH}px`;
+
         this.loadTextures().then(() => this.initParticleSystem());
+    }
+
+    private updateCameraForScale(): void {
+        const baseDistance = 10;
+        const distance = baseDistance / this.explosionScale;
+
+        this.camera.position.set(0, 0, distance);
+
+        const lookAtY = -this.explosionOriginYPercent * distance * 0.5;
+        this.camera.lookAt(0, lookAtY, 0);
     }
 
     private async loadTextures(): Promise<void> {
@@ -35,7 +56,7 @@ export class FireworkScene {
         const loadPromises: Promise<THREE.Texture>[] = [];
         for (let i = 0; i < 8; i++) {
             loadPromises.push(new Promise((resolve, reject) => {
-                loader.load(`/assets/tool/fireworks/spark_${i}.png`,
+                loader.load(`/assets/tool/fireworks/particles/spark_${i}.png`,
                     (tex) => {
                         tex.minFilter = THREE.NearestFilter;
                         tex.magFilter = THREE.NearestFilter;
@@ -65,11 +86,13 @@ export class FireworkScene {
             uniforms: {
                 spriteTextures: { value: this.spriteTextures },
                 texturesLoaded: { value: this.texturesLoaded },
+                uHeight: { value: this.renderer.domElement.height },
             },
             vertexShader: `
                 attribute float alpha;
                 attribute float size;
                 attribute float spriteFrame;
+                uniform float uHeight;
                 varying vec3 vColor;
                 varying float vAlpha;
                 varying float vSpriteFrame;
@@ -78,7 +101,8 @@ export class FireworkScene {
                     vAlpha = alpha;
                     vSpriteFrame = spriteFrame;
                     vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-                    gl_PointSize = size * 300.0 / -mvPosition.z;
+                    
+                    gl_PointSize = size * uHeight * 1.1 / -mvPosition.z; // CHANGE HERE, the 1.1 adjusts particle size
                     gl_Position = projectionMatrix * mvPosition;
                 }
             `,
@@ -127,12 +151,8 @@ export class FireworkScene {
     }
 
     launchFirework(explosion: FireworkExplosion): void {
-        const newParticles = createExplosion(explosion, new THREE.Vector3(0, 0, 0));
-        if (this.randomRotation) {
-            const angle = Math.random() * Math.PI * 2;
-            const rot = new THREE.Matrix4().makeRotationY(angle);
-            newParticles.forEach(p => p.velocity.applyMatrix4(rot));
-        }
+        const origin = new THREE.Vector3(0, 0, 0);
+        const newParticles = createExplosion(explosion, origin, this.randomRotation);
         this.particles.push(...newParticles);
         if (this.particles.length > MAX_PARTICLES) {
             this.particles = this.particles.slice(-MAX_PARTICLES);
@@ -246,17 +266,31 @@ export class FireworkScene {
     }
 
     handleResize(w: number, h: number): void {
-        this.camera.aspect = w / h;
+        const cssW = Math.max(1, Math.floor(w));
+        const cssH = Math.max(1, Math.floor(h));
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+        this.camera.aspect = cssW / cssH;
         this.camera.updateProjectionMatrix();
-        this.renderer.setSize(w, h);
+
+        this.renderer.setPixelRatio(dpr);
+        this.renderer.setSize(cssW, cssH, false);
+        this.renderer.domElement.style.width = `${cssW}px`;
+        this.renderer.domElement.style.height = `${cssH}px`;
+
+        if (this.particlesMesh && this.particlesMesh.material instanceof THREE.ShaderMaterial) {
+            this.particlesMesh.material.uniforms.uHeight.value = this.renderer.domElement.height;
+        }
     }
 
     dispose(): void {
         this.stop();
         this.renderer.dispose();
-        this.particlesMesh.geometry.dispose();
-        if (this.particlesMesh.material instanceof THREE.Material) {
-            this.particlesMesh.material.dispose();
+        if (this.particlesMesh) {
+            this.particlesMesh.geometry.dispose();
+            if (this.particlesMesh.material instanceof THREE.Material) {
+                this.particlesMesh.material.dispose();
+            }
         }
         this.spriteTextures.forEach(t => t.dispose());
     }

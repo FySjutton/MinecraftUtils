@@ -10,18 +10,13 @@ import {
     findColorName,
     rgbToHex
 } from "@/app/generators/beacon-color/subtools/beaconToGlassTool"
+import {toTitleCase} from "@/lib/StringUtils";
 
 interface ResultCardProps {
     result: Candidate
     index: number
     show3D: boolean
     onToggle: (checked: boolean) => void
-}
-
-export function toTitleCase(str: string): string {
-    return str.toLowerCase().split(' ').map((word: string) => {
-        return (word.charAt(0).toUpperCase() + word.slice(1));
-    }).join(' ');
 }
 
 export const ResultCard = memo(function ResultCard({result, index, show3D, onToggle}: ResultCardProps) {

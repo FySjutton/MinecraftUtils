@@ -5,8 +5,8 @@ export type FireworkShape = 'SMALL_BALL' | 'LARGE_BALL' | 'STAR' | 'CREEPER' | '
 
 export interface FireworkExplosion {
     shape: FireworkShape;
-    colors: number[];
-    fadeColors: number[];
+    colors: string[];
+    fadeColors: string[];
     hasTrail: boolean;
     hasTwinkle: boolean;
 }
@@ -44,12 +44,20 @@ function nextGaussian(): number {
 
 export function createExplosion(
     explosion: FireworkExplosion,
-    origin: THREE.Vector3 = new THREE.Vector3(0, 0, 0)
+    origin: THREE.Vector3 = new THREE.Vector3(0, 0, 0),
+    randomRotation: boolean = true
 ): FireworkParticle[] {
     const particles: FireworkParticle[] = [];
 
-    const colors = explosion.colors.length > 0 ? explosion.colors : [0x000000];
-    const fadeColors = explosion.fadeColors;
+    const colors: number[] =
+        explosion.colors.length > 0
+            ? explosion.colors.map(c => Number.parseInt(c.replace('#', ''), 16))
+            : [0x000000];
+
+    const fadeColors: number[] =
+        explosion.fadeColors.map(c =>
+            Number.parseInt(c.replace('#', ''), 16)
+        );
 
     const getRandomColor = () => colors[Math.floor(Math.random() * colors.length)];
     const getRandomFadeColor = () =>
@@ -76,10 +84,10 @@ export function createExplosion(
             createParticleBall(0.5, 4, createParticle);
             break;
         case 'STAR':
-            createParticleStar(0.5, createParticle);
+            createParticleStar(0.5, createParticle, randomRotation);
             break;
         case 'CREEPER':
-            createParticleCreeper(0.5, createParticle);
+            createParticleCreeper(0.5, createParticle, randomRotation);
             break;
         case 'BURST':
             createParticleBurst(createParticle);
@@ -114,14 +122,14 @@ function createParticleBall(
     }
 }
 
-function createParticleStar(size: number, createParticle: (vel: THREE.Vector3) => void): void {
+function createParticleStar(size: number, createParticle: (vel: THREE.Vector3) => void, randomRotation: boolean = true): void {
     const coords = STAR_PARTICLE_COORDS;
 
     const e = coords[0][0];
     const f = coords[0][1];
     createParticle(new THREE.Vector3(e * size, f * size, 0));
 
-    const g = Math.random() * Math.PI;
+    const g = randomRotation ? Math.random() * Math.PI : 0;
     const h = 0.34;
 
     createShape(g, h, coords, size, e, f, createParticle);
@@ -156,14 +164,14 @@ function createShape(g: number, h: number, coords: number[][], size: number, e: 
     }
 }
 
-function createParticleCreeper(size: number, createParticle: (vel: THREE.Vector3) => void): void {
+function createParticleCreeper(size: number, createParticle: (vel: THREE.Vector3) => void, randomRotation: boolean = true): void {
     const coords = CREEPER_PARTICLE_COORDS;
 
     const e = coords[0][0];
     const f = coords[0][1];
     createParticle(new THREE.Vector3(e * size, f * size, 0));
 
-    const g = Math.random() * Math.PI;
+    const g = randomRotation ? Math.random() * Math.PI : 0;
     const h = 0.034;
 
     createShape(g, h, coords, size, e, f, createParticle);

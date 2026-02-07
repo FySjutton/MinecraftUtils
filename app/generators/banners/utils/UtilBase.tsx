@@ -2,7 +2,6 @@
 
 import React, {useEffect, useMemo, useState} from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ColorPicker } from "@/app/generators/banners/editor/BannerGenerator"
 import { Button } from "@/components/ui/button"
 import {DyeColors} from "@/lib/Colors"
 import {ArrowBigRight} from "lucide-react";
@@ -17,6 +16,7 @@ import {
     objectParser, useUrlUpdateEmitter,
 } from "@/lib/urlParsers";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import DyePicker from "@/components/DyePicker";
 
 type StringRecord = Record<string, string>
 
@@ -233,7 +233,7 @@ function BannerInput<T extends StringRecord>({input, value, setValue}: {
             )}
 
             {input.kind === "color" && (
-                <ColorPicker selected={value} onSelectAction={value => {setValue(input.key, value)}} />
+                <DyePicker selected={[value]} onSelectAction={value => {setValue(input.key, value)}} />
             )}
         </div>
     )

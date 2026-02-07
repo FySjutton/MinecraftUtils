@@ -20,12 +20,7 @@ import {getCurrentPage} from "@/app/AppStructure";
 import {Banner, BannerAction, BannerIcon, BannerTitle} from "./ui/banner";
 import {IconAlertOctagon} from "@tabler/icons-react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
-
-function toTitleCase(str: string) {
-    return str.toLowerCase().split(' ').map((word: string) => {
-        return (word.charAt(0).toUpperCase() + word.slice(1));
-    }).join(' ');
-}
+import {toTitleCase} from "@/lib/StringUtils";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();

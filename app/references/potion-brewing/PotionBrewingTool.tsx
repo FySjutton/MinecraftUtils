@@ -7,11 +7,11 @@ import potionsRaw from "./potions.json"
 import { ComboBox } from "@/components/ComboBox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { toTitleCase } from "@/app/generators/beacon-color/ResultCard"
 import {Separator} from "@/components/ui/separator";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
 import {enumParser, numberParser, recordParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
+import {toTitleCase} from "@/lib/StringUtils";
 
 type PotionName = string
 type IngredientName = string

@@ -12,7 +12,6 @@ import {
     CardTitle,
 } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import ImageObj from 'next/image'
 import { DyeColors } from '@/lib/Colors'
 
 import { createLayerPreview } from '@/app/generators/banners/utils/TextureManager'
@@ -35,6 +34,7 @@ import {generateCommand, Mode, Pattern, patternList} from "@/app/generators/bann
 import {arrayObjectParser, enumParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 import {useQueryState} from "nuqs";
 import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import DyePicker from "@/components/DyePicker";
 
 type EditTarget =
     | { type: 'base'; anchor: HTMLElement }
@@ -45,32 +45,6 @@ type EditTarget =
 interface PatternWithVisible extends Pattern {
     visible: boolean
 }
-
-export const ColorPicker = ({selected, onSelectAction, onHoverAction, onLeaveAction}: { selected: string, onSelectAction: (hex: string) => void, onHoverAction?: (hex: string) => void, onLeaveAction?: () => void }) => (
-    <div className="flex flex-wrap gap-2 justify-center">
-        {Object.keys(DyeColors).map((colorKey) => {
-            const hex = DyeColors[colorKey]
-            return (
-                <button
-                    key={hex}
-                    className={`w-16 rounded-md border p-2 hover:ring-2 ${hex === selected ? 'ring-2 ring-offset-1' : ''}`}
-                    style={{ backgroundColor: hex }}
-                    onMouseEnter={() => onHoverAction?.(hex)}
-                    onMouseLeave={() => onLeaveAction?.()}
-                    onClick={() => onSelectAction(hex)}
-                >
-                    <ImageObj
-                        src={`/assets/dyes/${colorKey}.png`}
-                        alt={colorKey}
-                        width={16}
-                        height={16}
-                        className="w-full image-pixelated"
-                    />
-                </button>
-            )
-        })}
-    </div>
-)
 
 const CanvasPreview = ({pattern, mode, color, width = 20, height = 40 }: { pattern: string, mode: Mode, color: string, width?: number, height?: number }) => {
     const canvasRef = React.useRef<HTMLCanvasElement>(null)
@@ -309,7 +283,7 @@ export default function BannerGenerator() {
                                     <Card>
                                         <CardContent>
                                             <p className="mb-1 text-sm font-medium mt-2">Color</p>
-                                            <ColorPicker selected={addColor} onSelectAction={setAddColor} onLeaveAction={() => setPreview(null)} />
+                                            <DyePicker selected={[addColor]} onSelectAction={setAddColor} onLeaveAction={() => setPreview(null)} />
                                             <div className="my-4"></div>
                                             <PatternEditorPopup
                                                 pattern=""
@@ -342,8 +316,8 @@ export default function BannerGenerator() {
                                     <Card>
                                         <CardContent>
                                             <p className="mb-1 text-sm font-medium">Color</p>
-                                            <ColorPicker
-                                                selected={baseColor}
+                                            <DyePicker
+                                                selected={[baseColor]}
                                                 onSelectAction={setBaseColor}
                                                 onHoverAction={(hex) => setHoveredBaseColor(hex)}
                                                 onLeaveAction={() => setHoveredBaseColor(null)}
@@ -383,8 +357,8 @@ export default function BannerGenerator() {
                                                                 onLeave={() => setPreview(null)}
                                                             />
                                                             <p className="mb-1 text-sm font-medium mt-2">Color</p>
-                                                            <ColorPicker
-                                                                selected={pattern.color}
+                                                            <DyePicker
+                                                                selected={[pattern.color]}
                                                                 onSelectAction={(hex) => setPatterns(p => p.map((item, idx) => idx === index ? {...item, color: hex} : item))}
                                                                 onLeaveAction={() => setPreview(null)}
                                                             />
