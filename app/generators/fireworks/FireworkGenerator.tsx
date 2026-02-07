@@ -16,6 +16,7 @@ import {InputField} from "@/components/inputs/InputField";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {Dot} from "lucide-react";
 import {MultiSelectDropdown} from "@/components/inputs/dropdowns/MultiSelectDropdown";
+import {CraftingCanvas} from "@/components/CraftingCanvas";
 
 export default function FireworkGenerator() {
     const canvasRef = useRef<FireworkCanvasRef>(null);
@@ -104,7 +105,7 @@ export default function FireworkGenerator() {
                                 <TabsTrigger key={id} value={id}>#{id}</TabsTrigger>
                             ))}
                             <Dot />
-                            <Button variant="ghost" className="px-1" onClick={() => {
+                            <Button variant="ghost" className="px-1" disabled={((parseInt(duration)) + Object.keys(explosions).length) == 8} onClick={() => { // TODO: FIX
                                 const newId = Object.keys(explosions).length.toString();
                                 const newExplosion: FireworkExplosion = {
                                     shape: 'LARGE_BALL',
@@ -210,6 +211,14 @@ export default function FireworkGenerator() {
                         readOnly
                         showCopy
                     />
+
+                    <div className="w-full max-w-xl">
+                        <CraftingCanvas inputs={[
+                            [null, "/assets/dyes/white.png", null],
+                            [null, "/assets/dyes/white.png", null],
+                            [null, "/assets/dyes/white.png", null],
+                        ]} output="/assets/dyes/white.png" />
+                    </div>
                 </CardContent>
             </Card>
         </div>
