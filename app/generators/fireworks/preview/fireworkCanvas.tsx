@@ -5,7 +5,7 @@ import { FireworkScene } from "@/app/generators/fireworks/preview/scene";
 import { FireworkExplosion } from "@/app/generators/fireworks/base/algorithms";
 
 export interface FireworkCanvasRef {
-    launchFirework: (explosion: FireworkExplosion) => void;
+    launchFirework: (explosions: FireworkExplosion[]) => void;
     setRandomRotation: (enabled: boolean) => void;
     getParticleCount: () => number;
 }
@@ -21,8 +21,10 @@ export const FireworkCanvas = forwardRef<FireworkCanvasRef, FireworkCanvasProps>
         const sceneRef = useRef<FireworkScene | null>(null);
 
         useImperativeHandle(ref, () => ({
-            launchFirework: (explosion: FireworkExplosion) => {
-                sceneRef.current?.launchFirework(explosion);
+            launchFirework: (explosions: FireworkExplosion[]) => {
+                for (const explosion of explosions) {
+                    sceneRef.current?.launchFirework(explosion);
+                }
             },
             setRandomRotation: (enabled: boolean) => {
                 sceneRef.current?.setRandomRotation(enabled);

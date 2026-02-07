@@ -98,6 +98,7 @@ export const tools: ToolCategory[] = [
         pages: [
             { name: "Beacon Generator", url: "beacon-color", icon: "beacon", description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
             { name: "Circle Generator", url: "circle-generator", icon: "circle-generator", description: "Generate pixel perfect circles for minecraft.", type: "beta" },
+            { name: "Firework Generator", url: "fireworks", icon: "firework", description: "Generate advanced fireworks with preview, instructions, and output command.", type: "beta" },
             { name: "Shape Generator", url: "shape-generator", icon: "shape-generator", description: "Generate pixel perfect shapes for minecraft.", type: "beta" },
             { name: "Banner Generator", url: "banners", icon: "banner", description: "Create banners through an interactive editor with command and crafting instructions output.", type: "beta" },
             { name: "Sign Generator", url: "sign-generator", icon: "sign", description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
@@ -165,6 +166,7 @@ export const externals: ToolCategory[] = [
 export const featuredHomePage: PageItem[] = [
     getPage(tools, "Shape Generator"),
     getPage(tools, "Enchanting Calculator"),
+    getPage(tools, "Firework Generator"),
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
     getPage(tools, "Beacon Generator"),
@@ -189,6 +191,7 @@ export const featuredCalculators: PageItem[] = [
 export const featuredGenerators: PageItem[] = [
     getPage(tools, "Beacon Generator"),
     getPage(tools, "Shape Generator"),
+    getPage(tools, "Firework Generator"),
     getPage(tools, "Banner Generator"),
     getPage(tools, "Sign Generator"),
     getPage(tools, "Motd Creator"),

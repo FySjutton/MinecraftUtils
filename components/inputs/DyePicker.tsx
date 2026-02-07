@@ -20,7 +20,7 @@ export default function DyePicker({selected, onSelectAction, onHoverAction, onLe
                             alt={colorKey}
                             width={16}
                             height={16}
-                            className="w-full image-pixelated"
+                            className="w-full image-pixelated select-none pointer-events-none"
                         />
                     </button>
                 )

@@ -9,7 +9,6 @@ export interface FireworkExplosion {
     fadeColors: string[];
     hasTrail: boolean;
     hasTwinkle: boolean;
-    duration: string;
 }
 
 // Coordinates taken from minecraft source code, idk why so many decimals lol
