@@ -3,8 +3,8 @@
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import MotdEditor from "@/app/generators/motd-creator/MotdEditor";
 import {useState} from "react";
-import {InputField} from "@/components/InputField";
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {InputField} from "@/components/inputs/InputField";
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 
 export default function MotdCreator() {
     const [output, setOutputAction] = useState('');

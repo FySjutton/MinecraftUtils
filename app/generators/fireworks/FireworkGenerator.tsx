@@ -1,17 +1,19 @@
 'use client';
 
 import React, {useState, useRef, RefObject, useEffect} from 'react';
-import {FireworkCanvas, FireworkCanvasRef} from "@/app/generators/fireworks/fireworkCanvas";
+import {FireworkCanvas, FireworkCanvasRef} from "@/app/generators/fireworks/preview/fireworkCanvas";
 import {FireworkColors} from "@/lib/Colors";
-import {FireworkExplosion, FireworkShape} from "@/app/generators/fireworks/algorithms";
+import {FireworkExplosion, FireworkShape} from "@/app/generators/fireworks/base/algorithms";
 import {Card, CardAction, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import ImageObj from "next/image";
-import DyePicker from "@/components/DyePicker";
+import DyePicker from "@/components/inputs/DyePicker";
 import {toTitleCase} from "@/lib/StringUtils";
 import {Label} from "@/components/ui/label";
 import {Switch} from "@/components/ui/switch";
 import {createPortal} from "react-dom";
+import {InputField} from "@/components/inputs/InputField";
+import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 
 export default function FireworkGenerator() {
     const canvasRef = useRef<FireworkCanvasRef>(null);
@@ -23,6 +25,7 @@ export default function FireworkGenerator() {
         fadeColors: [FireworkColors.YELLOW],
         hasTrail: true,
         hasTwinkle: true,
+        duration: "2"
     });
     const [renderCanvas, setRenderCanvas] = useState(false);
 
@@ -70,7 +73,6 @@ export default function FireworkGenerator() {
 
     return (
         <div className="flex flex-col gap-4">
-            {/* Preview Card - Takes full width on mobile, half on xl+ */}
             <Card>
                 <CardContent className="flex flex-col gap-y-4 items-center">
                     <Button className="w-full" onClick={() => setRenderCanvas(true)}>Open Preview Screen</Button>
@@ -78,7 +80,6 @@ export default function FireworkGenerator() {
                 </CardContent>
             </Card>
 
-            {/* Settings Card - Takes full width on mobile, half on xl+ */}
             <Card>
                 <CardContent className="flex flex-col items-center pt-6">
                     <p className="mt-4 text-2xl font-semibold">Shape</p>
@@ -98,9 +99,31 @@ export default function FireworkGenerator() {
 
                     <p className="mt-6 text-2xl font-semibold mb-2">Primary Colors</p>
                     <DyePicker selected={explosion.colors} onSelectAction={(color) => {toggleColor(color, false)}} colorList={FireworkColors} />
+                    {explosion.colors.length > (8 - +explosion.hasTrail - +explosion.hasTwinkle) && <p className="text-orange-400 mt-4">Warning: You have too many primary colors, this can&#39;t be crafted in a crafting table!</p>}
 
                     <p className="mt-6 text-2xl font-semibold mb-2">Fade Colors</p>
                     <DyePicker selected={explosion.fadeColors} onSelectAction={(color) => {toggleColor(color, true)}} colorList={FireworkColors} />
+                    {explosion.fadeColors.length > 8 && <p className="text-orange-400 mt-4">Warning: You have too many fade colors, this can&#39;t be crafted in a crafting table!</p>}
+
+                    <p className="mt-6 text-2xl font-semibold">Rocket Height</p>
+                    <p className="text-gray-300 mb-2">How tall the rocket will shoot. The ranges are by placing it with with hand. Using a dispenser it will be 9-10, 14-15 and 19-20. Low costs one gunpowder, high costs three.</p>
+                    <Tabs value={explosion.duration} onValueChange={v => updateExplosion({duration: v})}>
+                        <TabsList>
+                            <TabsTrigger value="1">Low (8-20)</TabsTrigger>
+                            <TabsTrigger value="2">Medium (18-34)</TabsTrigger>
+                            <TabsTrigger value="3">High (32-52)</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardContent>
+                    <InputField
+                        value={getGiveCommand(explosion)}
+                        readOnly
+                        showCopy
+                    />
                 </CardContent>
             </Card>
         </div>
@@ -177,3 +200,17 @@ function FireworkPreview({canvasRef, setParticleCount, handleLaunch, randomRotat
     );
 }
 
+function getGiveCommand(explosion: FireworkExplosion) {
+    const primaryColors: number[] = [];
+    const fadeColors: number[] = [];
+
+    for (const color of explosion.colors) {
+        primaryColors.push(parseInt(color.replace(/^#/, ''), 16));
+    }
+
+    for (const color of explosion.fadeColors) {
+        fadeColors.push(parseInt(color.replace(/^#/, ''), 16));
+    }
+
+    return `/give @p firework_rocket[fireworks={flight_duration:${explosion.duration},explosions:[{shape:"${explosion.shape.toLowerCase()}",has_twinkle:${+explosion.hasTwinkle},has_trail:${+explosion.hasTrail},colors:[I;${primaryColors.join(",")}],fade_colors:[I;${fadeColors.join(",")}]}]}] 1`
+}

@@ -2,7 +2,7 @@
 
 import React, {useState} from "react"
 import Image from "next/image"
-import { ComboBox } from "@/components/ComboBox"
+import { ComboBox } from "@/components/inputs/dropdowns/ComboBox"
 
 import {
     Card,

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { FireworkParticle } from './particle';
+import { FireworkParticle } from '@/app/generators/fireworks/base/particle';
 
 export type FireworkShape = 'SMALL_BALL' | 'LARGE_BALL' | 'STAR' | 'CREEPER' | 'BURST';
 
@@ -9,6 +9,7 @@ export interface FireworkExplosion {
     fadeColors: string[];
     hasTrail: boolean;
     hasTwinkle: boolean;
+    duration: string;
 }
 
 // Coordinates taken from minecraft source code, idk why so many decimals lol

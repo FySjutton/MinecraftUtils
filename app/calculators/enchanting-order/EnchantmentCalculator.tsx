@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {Sparkles, Trash2, Play, StopCircle, XCircle, ArrowBigRight, Plus} from "lucide-react";
-import { ComboBox } from "@/components/ComboBox";
+import { ComboBox } from "@/components/inputs/dropdowns/ComboBox";
 import ImageObj from "next/image";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {createParser, useQueryState} from "nuqs";

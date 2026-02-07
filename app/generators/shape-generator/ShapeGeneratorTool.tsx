@@ -5,7 +5,7 @@ import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/componen
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ZoomViewport } from "@/app/generators/shape-generator/ZoomViewport";
-import { ComboBox } from "@/components/ComboBox";
+import { ComboBox } from "@/components/inputs/dropdowns/ComboBox";
 import { defaultTheme, ThemeName, themeNames } from "@/app/generators/shape-generator/styling/themes";
 import { ExportCard } from "@/app/generators/shape-generator/ExportCard";
 
@@ -28,7 +28,7 @@ import {
     useUrlUpdateEmitter
 } from "@/lib/urlParsers";
 import {useQueryState} from "nuqs";
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 import {checksParser} from "@/app/generators/shape-generator/urlCheckParser";
 
 export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean }) {

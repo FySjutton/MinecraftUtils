@@ -6,11 +6,11 @@ import SignPreview from '@/app/generators/sign-generator/SignPreview'
 import SignEditor from '@/app/generators/sign-generator/SignEditor'
 import { MinecraftText } from '@/lib/MinecraftText'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import ColorSelect from '@/components/ColorSelect'
+import ColorSelect from '@/components/inputs/dropdowns/ColorSelect'
 import {Toggle} from "@/components/ui/toggle";
 import Image from "next/image";
 import SignSelector, {SignState} from "@/app/generators/sign-generator/SignSelector";
-import {InputField} from "@/components/InputField";
+import {InputField} from "@/components/inputs/InputField";
 import {generateSignCommand} from "@/app/generators/sign-generator/signCommandGenerator";
 
 export interface SignSide {

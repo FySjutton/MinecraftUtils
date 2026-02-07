@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import { FireworkParticle } from './particle';
-import {createExplosion, FireworkExplosion} from './algorithms';
+import { FireworkParticle } from '@/app/generators/fireworks/base/particle';
+import {createExplosion, FireworkExplosion} from '@/app/generators/fireworks/base/algorithms';
 
 const MAX_PARTICLES = 5000;
 

@@ -2,8 +2,8 @@
 
 import * as React from "react"
 import powerData from "./daylight_detector.json"
-import { ComboBox } from "@/components/ComboBox"
-import {InputField} from "@/components/InputField";
+import { ComboBox } from "@/components/inputs/dropdowns/ComboBox"
+import {InputField} from "@/components/inputs/InputField";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {useState} from "react";
 

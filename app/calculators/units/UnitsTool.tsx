@@ -1,10 +1,10 @@
 "use client"
 
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card"
-import {ComboBox} from "@/components/ComboBox"
+import {ComboBox} from "@/components/inputs/dropdowns/ComboBox"
 import {Separator} from "@/components/ui/separator"
-import {InputField} from "@/components/InputField"
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {InputField} from "@/components/inputs/InputField"
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
 import {enumParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 

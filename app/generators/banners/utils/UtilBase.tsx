@@ -7,7 +7,7 @@ import {DyeColors} from "@/lib/Colors"
 import {ArrowBigRight} from "lucide-react";
 import {Banner, generateCommand, Mode} from "@/app/generators/banners/utils/Utils";
 import {createLayerPreview} from "@/app/generators/banners/utils/TextureManager";
-import {InputField} from "@/components/InputField";
+import {InputField} from "@/components/inputs/InputField";
 import UtilSelector from "@/app/generators/banners/UtilSelector";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {useQueryState} from "nuqs";
@@ -15,8 +15,8 @@ import {
     enumParser,
     objectParser, useUrlUpdateEmitter,
 } from "@/lib/urlParsers";
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
-import DyePicker from "@/components/DyePicker";
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
+import DyePicker from "@/components/inputs/DyePicker";
 
 type StringRecord = Record<string, string>
 

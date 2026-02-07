@@ -4,8 +4,8 @@ import {useState} from "react";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import ImageSlider from "@/app/calculators/experience/ImageSlider";
-import {InputField} from "@/components/InputField";
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {InputField} from "@/components/inputs/InputField";
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
 import {numberParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 

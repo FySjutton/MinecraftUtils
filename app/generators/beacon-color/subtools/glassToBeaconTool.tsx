@@ -5,13 +5,13 @@ import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/compo
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { GLASS_COLORS, beaconColor, deltaE_lab_rgb, RGB } from "@/app/generators/beacon-color/helpers/colorCalculator"
-import { ComboBox } from "@/components/ComboBox"
+import { ComboBox } from "@/components/inputs/dropdowns/ComboBox"
 import Beacon3d, { SegmentTuple } from "@/app/generators/beacon-color/preview/Beacon3d"
 import Image from "next/image"
 import {BeaconPreview} from "@/app/generators/beacon-color/preview/BeaconBeam";
-import {ColorPicker} from "@/components/ColorPicker";
+import {ColorPicker} from "@/components/inputs/ColorPicker";
 import {Trash2} from "lucide-react";
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
 import {enumArrayParser} from "@/lib/urlParsers";
 

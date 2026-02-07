@@ -23,7 +23,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import {IconLayoutSidebarInactive} from "@tabler/icons-react";
-import {InputField} from "@/components/InputField";
+import {InputField} from "@/components/inputs/InputField";
 import {useState} from "react";
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"

@@ -6,15 +6,15 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { GLASS_COLORS, RGB, beaconColor, deltaE_lab_rgb, hexToRgb } from '@/app/generators/beacon-color/helpers/colorCalculator'
 
-import { ComboBox } from "@/components/ComboBox"
+import { ComboBox } from "@/components/inputs/dropdowns/ComboBox"
 import { BeaconPreview } from "@/app/generators/beacon-color/preview/BeaconBeam"
 import {ResultCard} from "@/app/generators/beacon-color/ResultCard";
-import {StepSlider} from "@/components/Slider";
-import {MultiSelectDropdown} from "@/components/MultiSelectDropdown";
+import {StepSlider} from "@/components/inputs/Slider";
+import {MultiSelectDropdown} from "@/components/inputs/dropdowns/MultiSelectDropdown";
 import Image from "next/image";
 import {toDisplayName, toInternalName} from "@/app/generators/beacon-color/subtools/glassToBeaconTool";
-import {ColorPicker} from "@/components/ColorPicker";
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {ColorPicker} from "@/components/inputs/ColorPicker";
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
 import {
     arrayObjectParser,

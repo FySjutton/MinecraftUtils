@@ -29,12 +29,12 @@ import {restrictToParentElement, restrictToVerticalAxis} from '@dnd-kit/modifier
 import { CSS } from '@dnd-kit/utilities'
 import {Eye, EyeOff, GripVertical, X} from "lucide-react";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {InputField} from "@/components/InputField";
+import {InputField} from "@/components/inputs/InputField";
 import {generateCommand, Mode, Pattern, patternList} from "@/app/generators/banners/utils/Utils";
 import {arrayObjectParser, enumParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 import {useQueryState} from "nuqs";
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
-import DyePicker from "@/components/DyePicker";
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
+import DyePicker from "@/components/inputs/DyePicker";
 
 type EditTarget =
     | { type: 'base'; anchor: HTMLElement }

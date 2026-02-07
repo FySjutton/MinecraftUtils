@@ -5,7 +5,7 @@ import {Card, CardHeader, CardTitle, CardContent, CardAction, CardDescription} f
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { download2DSchematic } from "@/lib/schematics/schematic2d";
-import {ComboBox} from "@/components/ComboBox";
+import {ComboBox} from "@/components/inputs/dropdowns/ComboBox";
 import {createPortal} from "react-dom";
 
 interface ExportCardProps {

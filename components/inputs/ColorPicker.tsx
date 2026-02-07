@@ -6,7 +6,7 @@ import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
 import {Popover, PopoverContent, PopoverTrigger,} from "@/components/ui/popover";
 import {DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,} from "@/components/ui/dropdown-menu";
-import {InputField} from "@/components/InputField";
+import {InputField} from "@/components/inputs/InputField";
 import {IconCheck, IconCopy} from "@tabler/icons-react";
 import {useCopyToClipboard} from "@/hooks/useCopyToClipboard";
 
@@ -101,11 +101,11 @@ export function ColorPicker({initialValue, hex, setHex}: ColorPickerProps) {
         return (
             <InputField
                 value={hexDraft.toUpperCase()}
-                onChange={function (e) {
+                onChange={function (e: React.SetStateAction<string>) {
                     setHexDraft(e);
                 }}
                 onBlur={commitHex}
-                onKeyDown={function (e) {
+                onKeyDown={function (e: { key: string; }) {
                     if (e.key === "Enter") commitHex();
                     if (e.key === "Escape") setHexDraft(hex);
                 }}

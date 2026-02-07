@@ -4,7 +4,7 @@ import * as React from "react"
 import { Input } from "@/components/ui/input"
 import {Card, CardHeader, CardTitle, CardContent, CardDescription} from "@/components/ui/card"
 import { Clock } from "lucide-react"
-import {InputField} from "@/components/InputField";
+import {InputField} from "@/components/inputs/InputField";
 import {useState} from "react";
 
 interface TimeTickConverterProps {

@@ -4,11 +4,11 @@ import React from "react"
 import Image from "next/image"
 import potionsRaw from "./potions.json"
 
-import { ComboBox } from "@/components/ComboBox"
+import { ComboBox } from "@/components/inputs/dropdowns/ComboBox"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {Separator} from "@/components/ui/separator";
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 import {useQueryState} from "nuqs";
 import {enumParser, numberParser, recordParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
 import {toTitleCase} from "@/lib/StringUtils";

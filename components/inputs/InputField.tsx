@@ -56,30 +56,47 @@ export function InputField({
         onChange?.(val)
     }
 
+    const handleCopy = () => {
+        copyToClipboard(String(value))
+    }
+
     return (
-        <div className="flex flex-col gap-1 w-full">
+        <div className="flex flex-col gap-1 w-full relative">
             {label && <label className="text-sm font-medium text-gray-300">{label}</label>}
 
-            <InputGroup className="w-full">
-                <InputGroupInput
+            <div
+                onClick={showCopy ? handleCopy : undefined}
+                className={`relative flex items-center gap-2 rounded-md border bg-background px-3 py-2 text-sm ${
+                    showCopy ? "cursor-pointer hover:bg-muted" : ""
+                }`}
+            >
+                {showCopy && isCopied && (
+                    <div className="absolute left-[50%] -top-full translate-x-[-50%] translate-y-[65%] rounded bg-lime-300 px-2 py-1 text-xs text-black">
+                        Copied!
+                    </div>
+                )}
+
+                <input
                     value={value}
                     onChange={handleChange}
-                    className="outline-none"
+                    readOnly={showCopy}
+                    className={`flex-1 bg-transparent outline-none ${
+                        showCopy ? "cursor-pointer select-all truncate" : ""
+                    }`}
                     {...props}
                 />
+
                 {showCopy && (
-                    <InputGroupAddon align="inline-end">
-                        <InputGroupButton
-                            aria-label={copyLabel}
-                            title={copyLabel}
-                            size="icon-xs"
-                            onClick={() => copyToClipboard(String(value))}
-                        >
-                            {isCopied ? <IconCheck className="text-green-500" /> : <IconCopy />}
-                        </InputGroupButton>
-                    </InputGroupAddon>
+                    <div>
+                        {isCopied ? (
+                            <IconCheck className="h-4 w-4 text-green-600" />
+                        ) : (
+                            <IconCopy className="h-4 w-4 opacity-60" />
+                        )}
+                    </div>
                 )}
-            </InputGroup>
+            </div>
         </div>
     )
 }
+

@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
-import { FireworkScene } from "@/app/generators/fireworks/scene";
-import { FireworkExplosion } from "@/app/generators/fireworks/algorithms";
+import { FireworkScene } from "@/app/generators/fireworks/preview/scene";
+import { FireworkExplosion } from "@/app/generators/fireworks/base/algorithms";
 
 export interface FireworkCanvasRef {
     launchFirework: (explosion: FireworkExplosion) => void;

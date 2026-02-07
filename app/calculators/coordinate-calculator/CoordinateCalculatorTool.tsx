@@ -2,8 +2,8 @@
 
 import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { InputField } from "@/components/InputField"
-import {CopyShareLinkInput} from "@/app/CopyShareLinkInput";
+import { InputField } from "@/components/inputs/InputField"
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 import {createParser, useQueryState} from "nuqs";
 import {useUrlUpdateEmitter} from "@/lib/urlParsers";
 
