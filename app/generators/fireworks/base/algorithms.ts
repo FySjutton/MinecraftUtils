@@ -1,7 +1,15 @@
 import * as THREE from 'three';
 import { FireworkParticle } from '@/app/generators/fireworks/base/particle';
 
-export type FireworkShape = 'SMALL_BALL' | 'LARGE_BALL' | 'STAR' | 'CREEPER' | 'BURST';
+export const FireworkShapes = {
+    SMALL_BALL: null,
+    LARGE_BALL: 'fire_charge',
+    STAR: 'gold_nugget',
+    CREEPER: 'zombie_head',
+    BURST: 'feather',
+} as const
+
+export type FireworkShape = keyof typeof FireworkShapes
 
 export interface FireworkExplosion {
     shape: FireworkShape;

@@ -1,82 +1,75 @@
-'use client';
+'use client'
 
-import { useEffect, useRef } from 'react';
-import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
+import { useEffect, useRef } from 'react'
+import { getImageAsset } from '@/lib/images/getImageAsset'
 
-type CraftingGrid = (string | null)[][];
+type CraftingInputs = (string | null)[]
 
 interface CraftingCanvasProps {
-    inputs: CraftingGrid; // 3x3
-    output?: string | null;
+    inputs: CraftingInputs
+    output?: string | null
 }
 
-const CANVAS_WIDTH = 176;
-const CANVAS_HEIGHT = 77;
+const CANVAS_WIDTH = 176
+const CANVAS_HEIGHT = 77
 
-const SLOT_SIZE = 16;
-const SLOT_GAP = 2;
+const SLOT_SIZE = 16
+const SLOT_GAP = 2
 
-const INPUT_START_X = 30;
-const INPUT_START_Y = 17;
+const INPUT_START_X = 30
+const INPUT_START_Y = 17
 
-const OUTPUT_X = 124;
-const OUTPUT_Y = 35;
+const OUTPUT_X = 124
+const OUTPUT_Y = 35
 
 export function CraftingCanvas({ inputs, output }: CraftingCanvasProps) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null)
 
     useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
+        const canvas = canvasRef.current
+        if (!canvas) return
 
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        const ctx = canvas.getContext('2d')
+        if (!ctx) return
 
-        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+        ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT)
 
-        const bg = new Image();
-        bg.src = getImageAsset("shared_crafting_table");
+        const bg = new Image()
+        bg.src = getImageAsset('shared_crafting_table')
 
         bg.onload = () => {
-            ctx.drawImage(bg, 0, 0);
+            ctx.drawImage(bg, 0, 0)
 
-            // draw input grid
-            for (let row = 0; row < 3; row++) {
-                for (let col = 0; col < 3; col++) {
-                    const src = inputs[row]?.[col];
-                    if (!src) continue;
+            // draw input grid (flat array -> 3x3)
+            for (let i = 0; i < 9; i++) {
+                const src = inputs[i] ?? null
+                if (!src) continue
 
-                    const img = new Image();
-                    img.src = src;
+                const row = Math.floor(i / 3)
+                const col = i % 3
 
-                    const x =
-                        INPUT_START_X + col * (SLOT_SIZE + SLOT_GAP);
-                    const y =
-                        INPUT_START_Y + row * (SLOT_SIZE + SLOT_GAP);
+                const x = INPUT_START_X + col * (SLOT_SIZE + SLOT_GAP)
+                const y = INPUT_START_Y + row * (SLOT_SIZE + SLOT_GAP)
 
-                    img.onload = () => {
-                        ctx.drawImage(img, x, y, SLOT_SIZE, SLOT_SIZE);
-                    };
+                const img = new Image()
+                img.src = src
+
+                img.onload = () => {
+                    ctx.drawImage(img, x, y, SLOT_SIZE, SLOT_SIZE)
                 }
             }
 
             // draw output
             if (output) {
-                const outImg = new Image();
-                outImg.src = output;
+                const outImg = new Image()
+                outImg.src = output
 
                 outImg.onload = () => {
-                    ctx.drawImage(
-                        outImg,
-                        OUTPUT_X,
-                        OUTPUT_Y,
-                        SLOT_SIZE,
-                        SLOT_SIZE
-                    );
-                };
+                    ctx.drawImage(outImg, OUTPUT_X, OUTPUT_Y, SLOT_SIZE, SLOT_SIZE)
+                }
             }
-        };
-    }, [inputs, output]);
+        }
+    }, [inputs, output])
 
     return (
         <canvas
@@ -86,5 +79,5 @@ export function CraftingCanvas({ inputs, output }: CraftingCanvasProps) {
             className="block w-full h-auto image-pixelated"
             style={{ aspectRatio: `${CANVAS_WIDTH} / ${CANVAS_HEIGHT}` }}
         />
-    );
+    )
 }

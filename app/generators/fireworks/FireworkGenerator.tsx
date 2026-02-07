@@ -2,8 +2,8 @@
 
 import React, {useState, useRef, RefObject, useEffect} from 'react';
 import {FireworkCanvas, FireworkCanvasRef} from "@/app/generators/fireworks/preview/fireworkCanvas";
-import {FireworkColors} from "@/lib/Colors";
-import {FireworkExplosion, FireworkShape} from "@/app/generators/fireworks/base/algorithms";
+import {FireworkColors, FireworkColorsReverse} from "@/lib/Colors";
+import {FireworkExplosion, FireworkShape, FireworkShapes} from "@/app/generators/fireworks/base/algorithms";
 import {Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import ImageObj from "next/image";
@@ -103,10 +103,10 @@ export default function FireworkGenerator() {
                     <Tabs value={selectedId} onValueChange={setSelectedId}>
                         <TabsList>
                             {Object.entries(explosions).map(([id]) => (
-                                <TabsTrigger key={id} value={id}>#{id}</TabsTrigger>
+                                <TabsTrigger key={id} value={id}>#{parseInt(id) + 1}</TabsTrigger>
                             ))}
                             <Dot />
-                            <Button variant="ghost" className="px-1" disabled={((parseInt(duration)) + Object.keys(explosions).length) == 8} onClick={() => { // TODO: FIX
+                            <Button variant="ghost" className="px-1" disabled={Object.keys(explosions).length == 7} onClick={() => {
                                 const newId = Object.keys(explosions).length.toString();
                                 const newExplosion: FireworkExplosion = {
                                     shape: 'LARGE_BALL',
@@ -165,7 +165,7 @@ export default function FireworkGenerator() {
                 <CardContent className="flex flex-col items-center pt-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Explosion #{selectedId}</CardTitle>
+                            <CardTitle>Explosion #{parseInt(selectedId) + 1}</CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col items-center">
                             <p className="mt-4 text-2xl font-semibold">Shape</p>
@@ -183,9 +183,10 @@ export default function FireworkGenerator() {
                                 <ToggleCard shape="trail" onClickAction={() => updateExplosion({ hasTrail: !explosion.hasTrail })} selected={explosion.hasTrail} />
                             </div>
 
+                            {/* TODO: REPLACE THESE WITH DROPDOWN "ADD BUTTON", YOU CAN HAVE MORE THAN ONE OF EACH? SEE GLASS TO BEACON FOR INSPIRATION; BUT USE BADGES WITH AN ICON*/}
                             <p className="mt-6 text-2xl font-semibold mb-2">Primary Colors</p>
                             <DyePicker selected={explosion.colors} onSelectAction={(color) => {toggleColor(color, false)}} colorList={FireworkColors} />
-                            {explosion.colors.length > (8 - +explosion.hasTrail - +explosion.hasTwinkle) && <p className="text-orange-400 mt-4">Warning: You have too many primary colors, this can&#39;t be crafted in a crafting table!</p>}
+                            {explosion.colors.length > (8 - +explosion.hasTrail - +explosion.hasTwinkle - +(explosion.shape != "SMALL_BALL")) && <p className="text-orange-400 mt-4">Warning: You have too many primary colors, this can&#39;t be crafted in a crafting table!</p>}
 
                             <p className="mt-6 text-2xl font-semibold mb-2">Fade Colors</p>
                             <DyePicker selected={explosion.fadeColors} onSelectAction={(color) => {toggleColor(color, true)}} colorList={FireworkColors} />
@@ -202,6 +203,7 @@ export default function FireworkGenerator() {
                             <TabsTrigger value="3">High (32-52)</TabsTrigger>
                         </TabsList>
                     </Tabs>
+                    {(parseInt(duration) + Object.keys(explosions).length > 8) && <p className="text-orange-400 mt-4">Warning: You have too explosions or too high rocket! This can&#39;t be crafted in a crafting table!</p>}
                 </CardContent>
             </Card>
 
@@ -213,13 +215,39 @@ export default function FireworkGenerator() {
                         showCopy
                     />
 
-                    <div className="w-full max-w-xl">
-                        <CraftingCanvas inputs={[
-                            [null, getImageAsset("white"), null],
-                            [null, getImageAsset("white"), null],
-                            [null, getImageAsset("white"), null],
-                        ]} output={getImageAsset("white")} />
-                    </div>
+                    {((
+                        explosion.colors.length > (8 - +explosion.hasTrail - +explosion.hasTwinkle - +(explosion.shape != "SMALL_BALL"))) || (
+                        explosion.fadeColors.length > 8) || (
+                        parseInt(duration) + Object.keys(explosions).length > 8
+                    )) ? (
+                        <p className="text-orange-400 mt-4 text-center">Warning: Some options are incompatible, and this firework can&#39;t therefore be crafted using a crafting table. It may still be possible to spawn using commands.</p>
+                    ) : (
+                        <div className="w-full max-w-xl">
+                            {Object.entries(explosions).map(([id, explosion]) => (
+                                <Card key={id}>
+                                    <CardHeader>
+                                        <CardTitle>{id}</CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <CraftingCanvas inputs={[
+                                            ...explosion.colors.map(e => findImageAsset(FireworkColorsReverse[e])),
+                                            ...(explosion.hasTrail ? [getImageAsset("diamond")] : []),
+                                            ...(explosion.hasTwinkle ? [getImageAsset("glowstone")] : []),
+                                            ...(FireworkShapes[explosion.shape] != null ? [findImageAsset(FireworkShapes[explosion.shape] as string)] : []),
+                                            getImageAsset("gunpowder")
+                                        ]} output={getImageAsset("missing")} />
+
+                                        <CraftingCanvas inputs={[
+                                            getImageAsset("missing"),
+                                            ...explosion.fadeColors.map(e => findImageAsset(FireworkColorsReverse[e])),
+                                        ]} output={getImageAsset("missing")} />
+                                    </CardContent>
+                                {/*  TODO: Continue on crafting instructions  */}
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+
                 </CardContent>
             </Card>
         </div>
