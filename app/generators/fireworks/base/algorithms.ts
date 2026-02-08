@@ -5,7 +5,7 @@ export const FireworkShapes = {
     SMALL_BALL: null,
     LARGE_BALL: 'fire_charge',
     STAR: 'gold_nugget',
-    CREEPER: 'zombie_head',
+    CREEPER: 'any_head',
     BURST: 'feather',
 } as const
 

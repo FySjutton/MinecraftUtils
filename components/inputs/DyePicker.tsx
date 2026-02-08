@@ -2,7 +2,7 @@ import {DyeColors} from "@/lib/Colors";
 import ImageObj from "next/image";
 import {findImageAsset} from "@/lib/images/getImageAsset";
 
-export default function DyePicker({selected, onSelectAction, onHoverAction, onLeaveAction, colorList = DyeColors}: { selected: string[], onSelectAction: (hex: string) => void, onHoverAction?: (hex: string) => void, onLeaveAction?: () => void, colorList?: Record<string, string>}) {
+export default function DyePicker({selected = [], onSelectAction, onHoverAction, onLeaveAction, colorList = DyeColors}: { selected?: string[], onSelectAction: (hex: string) => void, onHoverAction?: (hex: string) => void, onLeaveAction?: () => void, colorList?: Record<string, string>}) {
     return (
         <div className="flex flex-wrap gap-2 justify-center">
             {Object.keys(colorList).map((colorKey) => {
