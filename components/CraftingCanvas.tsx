@@ -95,19 +95,20 @@ export function CraftingCanvas({ inputs, output }: CraftingCanvasProps) {
                 const draw = (img: HTMLImageElement | HTMLCanvasElement) => {
                     if (img.width === 16 && img.height === 16) {
                         ctx.imageSmoothingEnabled = false
-                        ctx.drawImage(img, x * SCALE, y * SCALE, size * SCALE, size * SCALE)
+                        ctx.drawImage(img, x, y, size, size)
                     } else {
                         ctx.imageSmoothingEnabled = true
                         const aspect = img.width / img.height
-                        let w = size * SCALE
-                        let h = size * SCALE
+                        let w = size
+                        let h = size
+
                         if (aspect > 1) h = w / aspect
                         else w = h * aspect
 
                         ctx.drawImage(
                             img,
-                            x * SCALE + (size * SCALE - w) / 2,
-                            y * SCALE + (size * SCALE - h) / 2,
+                            x + (size - w) / 2,
+                            y + (size - h) / 2,
                             w,
                             h
                         )

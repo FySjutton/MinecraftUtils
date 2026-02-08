@@ -23,7 +23,8 @@ import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {getFireworkStarImage} from "@/app/generators/fireworks/base/fireworkStarRenderer";
 import {Separator} from "@/components/ui/separator";
 import {useQueryState} from "nuqs";
-import {arrayObjectParser, enumArrayParser} from "@/lib/urlParsers";
+import {arrayObjectParser, enumArrayParser, useUrlUpdateEmitter} from "@/lib/urlParsers";
+import {CopyShareLinkInput} from "@/components/inputs/CopyShareLinkInput";
 
 const dataParser = arrayObjectParser<FireworkExplosion>({
     shape: Object.keys(FireworkShapes),
@@ -40,6 +41,7 @@ const dataParser = arrayObjectParser<FireworkExplosion>({
 }])
 
 export default function FireworkGenerator() {
+    useUrlUpdateEmitter()
     const canvasRef = useRef<FireworkCanvasRef>(null);
     const [particleCount, setParticleCount] = useState(0);
     const [randomRotation, setRandomRotation] = useState(false);
@@ -53,15 +55,13 @@ export default function FireworkGenerator() {
     const [renderCanvas, setRenderCanvas] = useState(false);
 
     const handleLaunch = (explosionIds: string[]) => {
-        canvasRef.current?.launchFirework(Object.entries(explosions).filter(([id]) => explosionIds.includes(id)).map((entry) => entry[1]));
+        canvasRef.current?.launchFirework(explosions.filter((_, index) => explosionIds.includes((index + 1).toString())));
     };
 
     const handleRandomRotationChange = (enabled: boolean) => {
         setRandomRotation(enabled);
         canvasRef.current?.setRandomRotation(enabled);
     };
-
-    const shapes: FireworkShape[] = ['SMALL_BALL', 'LARGE_BALL', 'STAR', 'CREEPER', 'BURST'];
 
     useEffect(() => {
         setExplosion(explosions[selectedId]);
@@ -168,9 +168,9 @@ export default function FireworkGenerator() {
                         <CardContent className="flex flex-col items-center">
                             <p className="mt-4 text-2xl font-semibold">Shape</p>
                             <div className="flex flex-wrap gap-2 mt-2 justify-center">
-                                {shapes.map((shape) => (
+                                {Object.keys(FireworkShapes).map((shape) => (
                                     <div key={shape}>
-                                        <ToggleCard shape={shape} onClickAction={() => updateExplosion({ shape })} selected={explosion.shape == shape} />
+                                        <ToggleCard shape={shape} onClickAction={() => updateExplosion({ shape: shape as FireworkShape })} selected={explosion.shape == shape} />
                                     </div>
                                 ))}
                             </div>
@@ -200,7 +200,7 @@ export default function FireworkGenerator() {
                     </Card>
 
                     <p className="mt-6 text-2xl font-semibold">Rocket Height</p>
-                    <p className="text-gray-300 mb-2">How high the rocket will shoot. The ranges are by placing it with with hand. Using a dispenser it will be 9-10, 14-15 and 19-20. Low costs one gunpowder, high costs three.</p>
+                    <p className="text-gray-300 mb-2 text-center">How high the rocket will shoot. The ranges are by placing it with with hand. Using a dispenser it will be 9-10, 14-15 and 19-20. Low costs one gunpowder, high costs three.</p>
                     <Tabs value={duration} onValueChange={setDuration}>
                         <TabsList>
                             <TabsTrigger value="1">Low (8-20)</TabsTrigger>
@@ -208,18 +208,24 @@ export default function FireworkGenerator() {
                             <TabsTrigger value="3">High (32-52)</TabsTrigger>
                         </TabsList>
                     </Tabs>
-                    {(parseInt(duration) + explosions.length > 8) && <p className="text-orange-400 mt-4">Warning: You have too explosions or too high rocket! This can&#39;t be crafted in a crafting table!</p>}
+                    {(parseInt(duration) + explosions.length > 8) && <p className="text-orange-400 mt-4">Warning: You have too many explosions or too high rocket! This can&#39;t be crafted in a crafting table!</p>}
                 </CardContent>
             </Card>
 
             <Card>
                 <CardContent className="max-w-xl w-full mx-auto">
+                    <p className="text-xl font-semibold text-center my-2">Preview Firework</p>
+                    <Button className="w-full" onClick={() => setRenderCanvas(true)}>Click to preview</Button>
+
                     <p className="text-xl font-semibold text-center my-2">Give Command</p>
                     <InputField
                         value={getGiveCommand(Object.values(explosions), duration)}
                         readOnly
                         showCopy
                     />
+
+                    <p className="text-xl font-semibold text-center my-2">Share Firework</p>
+                    <CopyShareLinkInput label="" />
 
                     <Separator className="mt-4"/>
 
@@ -240,7 +246,6 @@ export default function FireworkGenerator() {
                                         ...(exp.hasTwinkle ? [getImageAsset("glowstone")] : []),
                                         ...(FireworkShapes[exp.shape] != null ? [findImageAsset(FireworkShapes[exp.shape] as string)] : []),
                                         getImageAsset("gunpowder")
-                                    //     TODO: CREEPER NOT WORKING
                                     ]} output={getFireworkStarImage(exp.colors)}/>
 
                                     {exp.fadeColors.length > 0 && (
@@ -298,7 +303,7 @@ function FireworkPreview({canvasRef, setParticleCount, handleLaunch, randomRotat
     setParticleCount: React.Dispatch<React.SetStateAction<number>>;
     setRenderCanvas: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
-    const values = explosions.map(((_e, id) => id.toString()))
+    const values = explosions.map(((_e, id) => (id + 1).toString()))
     const [selected, setSelected] = useState<string[]>(values);
 
     return createPortal(
@@ -378,7 +383,7 @@ function DyeChooser({explosion, addColor, removeColor, isFade}: {
                 </PopoverContent>
             </Popover>
             {(isFade ? explosion.fadeColors : explosion.colors).length > 0 && (
-                <div className="flex gap-2 mt-4">
+                <div className="flex flex-wrap justify-center gap-2 mt-4">
                     {(isFade ? explosion.fadeColors : explosion.colors).map((color, index) => (
                         <Badge key={index} style={{ backgroundColor: color }} className="group ring-1 relative text-white text-stroke-black cursor-pointer" onClick={() => {removeColor(color, isFade)}}>
                             <span className="opacity-100 group-hover:opacity-0 transition-opacity">
