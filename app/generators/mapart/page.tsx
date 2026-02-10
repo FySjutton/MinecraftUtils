@@ -7,9 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { ProcessingStats, BlockSelection, Brightness, MaterialCount } from './types';
+import { ProcessingStats, BlockSelection, MaterialCount, ColorDistanceMethod } from './types';
 import { BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection } from './constants';
-import { findNearestMapColor, applyDithering, numberToRGB, rgbToHex, getMaterialList } from './utils';
+import { numberToRGB, rgbToHex, getMaterialList, findNearestMapColor } from './utils';
+import { floydSteinbergDithering } from './dithering';
+import { applyStaircasing } from './staircasing';
 import { ZoomViewport } from './ZoomViewport';
 
 export default function MapArtPage() {
@@ -18,13 +20,14 @@ export default function MapArtPage() {
     const [isDragging, setIsDragging] = useState(false);
     const [useDithering, setUseDithering] = useState(false);
     const [useStaircasing, setUseStaircasing] = useState(false);
+    const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.DELTA_E_2000);
     const [showBlockSelector, setShowBlockSelector] = useState(false);
     const [processingStats, setProcessingStats] = useState<ProcessingStats | null>(null);
     const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getDefaultBlockSelection());
     const [materialList, setMaterialList] = useState<MaterialCount[]>([]);
-    const [error, setError] = useState<string | null>(null);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const [processedImageData, setProcessedImageData] = useState<ImageData | null>(null);
 
-    const canvasRef = useRef<HTMLCanvasElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const getEnabledGroups = useCallback((): Set<number> => {
@@ -43,139 +46,112 @@ export default function MapArtPage() {
     }, [blockSelection]);
 
     const processImage = useCallback(() => {
-        console.log('[processImage] Starting image processing');
-        setError(null);
+        if (!image) return;
 
-        if (!image) {
-            console.log('[processImage] No image set');
-            return;
-        }
+        setIsProcessing(true);
 
-        if (!canvasRef.current) {
-            console.log('[processImage] No canvas ref');
-            return;
-        }
+        setTimeout(() => {
+            const img = new Image();
 
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-            console.error('[processImage] Failed to get canvas context');
-            setError('Failed to get canvas context');
-            return;
-        }
+            img.onerror = () => {
+                setIsProcessing(false);
+            };
 
-        const enabledGroups = getEnabledGroups();
-        console.log('[processImage] Enabled groups:', enabledGroups.size);
-
-        const img = new Image();
-
-        img.onerror = (e) => {
-            console.error('[processImage] Image load error:', e);
-            setError('Failed to load image');
-        };
-
-        img.onload = () => {
-            console.log('[processImage] Image loaded, dimensions:', img.width, 'x', img.height);
-
-            try {
-                const maxDimension = blockSize;
-                let width = img.width;
-                let height = img.height;
-
-                if (width > height) {
-                    if (width > maxDimension) {
-                        height = (height / width) * maxDimension;
-                        width = maxDimension;
+            img.onload = () => {
+                try {
+                    const tempCanvas = document.createElement('canvas');
+                    const ctx = tempCanvas.getContext('2d');
+                    if (!ctx) {
+                        setIsProcessing(false);
+                        return;
                     }
-                } else {
-                    if (height > maxDimension) {
-                        width = (width / height) * maxDimension;
-                        height = maxDimension;
+
+                    const enabledGroups = getEnabledGroups();
+
+                    const maxDimension = blockSize;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxDimension) {
+                            height = (height / width) * maxDimension;
+                            width = maxDimension;
+                        }
+                    } else {
+                        if (height > maxDimension) {
+                            width = (width / height) * maxDimension;
+                            height = maxDimension;
+                        }
                     }
-                }
 
-                width = Math.floor(width);
-                height = Math.floor(height);
+                    width = Math.floor(width);
+                    height = Math.floor(height);
 
-                console.log('[processImage] Processing dimensions:', width, 'x', height);
+                    tempCanvas.width = width;
+                    tempCanvas.height = height;
 
-                canvas.width = width;
-                canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    let imageData = ctx.getImageData(0, 0, width, height);
 
-                ctx.drawImage(img, 0, 0, width, height);
-                let imageData = ctx.getImageData(0, 0, width, height);
+                    if (useStaircasing) {
+                        imageData = applyStaircasing(imageData, width, height, enabledGroups, useDithering, colorDistanceMethod);
+                    } else if (useDithering) {
+                        imageData = floydSteinbergDithering(imageData, width, height, enabledGroups, colorDistanceMethod);
+                    } else {
+                        const data = imageData.data;
+                        for (let i = 0; i < data.length; i += 4) {
+                            const nearest = findNearestMapColor(data[i], data[i + 1], data[i + 2], enabledGroups, false, colorDistanceMethod);
+                            const rgb = numberToRGB(nearest.color);
+                            data[i] = rgb.r;
+                            data[i + 1] = rgb.g;
+                            data[i + 2] = rgb.b;
+                        }
+                    }
 
-                console.log('[processImage] Got image data, processing...');
-
-                if (useDithering) {
-                    console.log('[processImage] Applying dithering');
-                    imageData = applyDithering(imageData, width, height, enabledGroups, useStaircasing);
-                } else {
-                    console.log('[processImage] Applying nearest color');
+                    const usedColors = new Set<string>();
                     const data = imageData.data;
                     for (let i = 0; i < data.length; i += 4) {
-                        const nearest = findNearestMapColor(data[i], data[i + 1], data[i + 2], enabledGroups, useStaircasing);
-                        const rgb = numberToRGB(nearest.color);
-                        data[i] = rgb.r;
-                        data[i + 1] = rgb.g;
-                        data[i + 2] = rgb.b;
+                        const hex = rgbToHex(data[i], data[i + 1], data[i + 2]);
+                        usedColors.add(hex);
                     }
+
+                    setProcessingStats({
+                        width,
+                        height,
+                        totalBlocks: width * height,
+                        uniqueBlocks: usedColors.size
+                    });
+
+                    ctx.putImageData(imageData, 0, 0);
+                    const materials = getMaterialList(tempCanvas, enabledGroups, colorDistanceMethod);
+                    setMaterialList(materials);
+
+                    setProcessedImageData(imageData);
+                    setIsProcessing(false);
+                } catch (err) {
+                    console.error('Processing error:', err);
+                    setIsProcessing(false);
                 }
+            };
 
-                console.log('[processImage] Putting processed image data back');
-                ctx.putImageData(imageData, 0, 0);
-
-                const usedColors = new Set<string>();
-                const data = imageData.data;
-                for (let i = 0; i < data.length; i += 4) {
-                    const hex = rgbToHex(data[i], data[i + 1], data[i + 2]);
-                    usedColors.add(hex);
-                }
-
-                const stats = {
-                    width,
-                    height,
-                    totalBlocks: width * height,
-                    uniqueBlocks: usedColors.size
-                };
-
-                console.log('[processImage] Setting stats:', stats);
-                setProcessingStats(stats);
-
-                console.log('[processImage] Generating material list');
-                const materials = getMaterialList(canvas, enabledGroups, useStaircasing);
-                console.log('[processImage] Material list generated:', materials.length, 'items');
-                setMaterialList(materials);
-
-                console.log('[processImage] Processing complete!');
-            } catch (err) {
-                console.error('[processImage] Error during processing:', err);
-                setError(`Processing error: ${err}`);
-            }
-        };
-
-        console.log('[processImage] Setting image source');
-        img.src = image;
-    }, [image, blockSize, useDithering, useStaircasing, getEnabledGroups]);
+            img.src = image;
+        }, 50);
+    }, [image, blockSize, useDithering, useStaircasing, colorDistanceMethod, getEnabledGroups]);
 
     useEffect(() => {
-        console.log('[useEffect] Image changed:', !!image);
         if (image) {
             processImage();
         }
     }, [image, processImage]);
 
     const handleFileUpload = (file: File | null) => {
-        console.log('[handleFileUpload] File selected:', file?.name);
         if (file && file.type.startsWith('image/')) {
             const reader = new FileReader();
             reader.onload = (e) => {
-                console.log('[handleFileUpload] File read complete');
                 setImage(e.target?.result as string);
-            };
-            reader.onerror = (e) => {
-                console.error('[handleFileUpload] File read error:', e);
-                setError('Failed to read file');
+                setProcessingStats(null);
+                setMaterialList([]);
+                setProcessedImageData(null);
             };
             reader.readAsDataURL(file);
         }
@@ -189,10 +165,19 @@ export default function MapArtPage() {
     };
 
     const handleExport = () => {
-        if (!canvasRef.current) return;
+        if (!processedImageData || !processingStats) return;
+
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = processingStats.width;
+        exportCanvas.height = processingStats.height;
+        const ctx = exportCanvas.getContext('2d');
+        if (!ctx) return;
+
+        ctx.putImageData(processedImageData, 0, 0);
+
         const link = document.createElement('a');
         link.download = 'minecraft-map-art.png';
-        link.href = canvasRef.current.toDataURL();
+        link.href = exportCanvas.toDataURL();
         link.click();
     };
 
@@ -200,7 +185,8 @@ export default function MapArtPage() {
         setImage(null);
         setProcessingStats(null);
         setMaterialList([]);
-        setError(null);
+        setIsProcessing(false);
+        setProcessedImageData(null);
     };
 
     const toggleBlockSelection = (groupId: number, blockName: string) => {
@@ -216,30 +202,12 @@ export default function MapArtPage() {
         });
     };
 
-    const getBrightnessName = (brightness: Brightness): string => {
-        switch (brightness) {
-            case Brightness.LOWEST: return 'Lowest (-2)';
-            case Brightness.LOW: return 'Low (-1)';
-            case Brightness.NORMAL: return 'Normal (0)';
-            case Brightness.HIGH: return 'High (+1)';
-            default: return 'Normal';
-        }
-    };
-
     return (
         <div className="container mx-auto p-4 space-y-4">
             <h1 className="text-3xl font-bold">MapArt Generator</h1>
 
-            {error && (
-                <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded">
-                    {error}
-                </div>
-            )}
-
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                {/* Left Panel */}
                 <div className="space-y-4">
-                    {/* Upload */}
                     <Card>
                         <CardHeader>
                             <CardTitle>Upload Image</CardTitle>
@@ -267,7 +235,6 @@ export default function MapArtPage() {
                         </CardContent>
                     </Card>
 
-                    {/* Settings */}
                     {image && (
                         <Card>
                             <CardHeader>
@@ -304,6 +271,17 @@ export default function MapArtPage() {
                                     <Label htmlFor="staircasing">Staircasing</Label>
                                 </div>
 
+                                <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                        id="perceptual"
+                                        checked={colorDistanceMethod === ColorDistanceMethod.DELTA_E_2000}
+                                        onCheckedChange={(checked) => setColorDistanceMethod(
+                                            checked ? ColorDistanceMethod.DELTA_E_2000 : ColorDistanceMethod.EUCLIDEAN
+                                        )}
+                                    />
+                                    <Label htmlFor="perceptual">Perceptual Color Matching (Delta E 2000)</Label>
+                                </div>
+
                                 <div className="flex gap-2">
                                     <Button onClick={handleExport} className="flex-1" disabled={!processingStats}>
                                         <Download className="mr-2" size={16} />
@@ -318,7 +296,6 @@ export default function MapArtPage() {
                         </Card>
                     )}
 
-                    {/* Stats */}
                     {processingStats && (
                         <Card>
                             <CardHeader>
@@ -341,7 +318,6 @@ export default function MapArtPage() {
                         </Card>
                     )}
 
-                    {/* Material List */}
                     {materialList.length > 0 && (
                         <Card>
                             <CardHeader>
@@ -363,11 +339,6 @@ export default function MapArtPage() {
                                                         style={{ backgroundColor: hexColor }}
                                                     />
                                                     <span className="truncate text-xs">{selectedBlock.replace(/_/g, ' ')}</span>
-                                                    {useStaircasing && (
-                                                        <span className="text-xs text-muted-foreground shrink-0">
-                              {getBrightnessName(material.brightness)}
-                            </span>
-                                                    )}
                                                 </div>
                                                 <span className="font-mono text-xs shrink-0">{material.count}</span>
                                             </div>
@@ -382,7 +353,6 @@ export default function MapArtPage() {
                         </Card>
                     )}
 
-                    {/* Block Selector */}
                     <Card>
                         <CardHeader>
                             <CardTitle
@@ -436,7 +406,6 @@ export default function MapArtPage() {
                     </Card>
                 </div>
 
-                {/* Right Panel - Canvas */}
                 <div className="lg:col-span-2">
                     <Card>
                         <CardHeader>
@@ -447,17 +416,16 @@ export default function MapArtPage() {
                                 <div className="flex items-center justify-center h-96 border-2 border-dashed rounded-lg">
                                     <p className="text-muted-foreground">Upload an image to begin</p>
                                 </div>
-                            ) : !processingStats ? (
+                            ) : isProcessing ? (
                                 <div className="flex items-center justify-center h-96">
-                                    <div className="text-center">
-                                        <p className="mb-2">Processing...</p>
-                                        <p className="text-sm text-muted-foreground">Check console for details</p>
-                                    </div>
+                                    <p>Processing...</p>
                                 </div>
-                            ) : (
-                                <ZoomViewport cellWidth={processingStats.width} cellHeight={processingStats.height}>
+                            ) : processedImageData && processingStats ? (
+                                <ZoomViewport
+                                    cellWidth={processingStats.width}
+                                    cellHeight={processingStats.height}
+                                >
                                     <canvas
-                                        ref={canvasRef}
                                         width={processingStats.width}
                                         height={processingStats.height}
                                         style={{
@@ -465,9 +433,17 @@ export default function MapArtPage() {
                                             width: '100%',
                                             height: '100%',
                                         }}
+                                        ref={(canvas) => {
+                                            if (canvas && processedImageData) {
+                                                const ctx = canvas.getContext('2d');
+                                                if (ctx) {
+                                                    ctx.putImageData(processedImageData, 0, 0);
+                                                }
+                                            }
+                                        }}
                                     />
                                 </ZoomViewport>
-                            )}
+                            ) : null}
                         </CardContent>
                     </Card>
                 </div>

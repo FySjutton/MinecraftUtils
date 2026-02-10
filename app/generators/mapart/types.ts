@@ -21,3 +21,8 @@ export interface MaterialCount {
     brightness: Brightness;
     count: number;
 }
+
+export enum ColorDistanceMethod {
+    EUCLIDEAN = 'euclidean',
+    DELTA_E_2000 = 'delta_e_2000',
+}
