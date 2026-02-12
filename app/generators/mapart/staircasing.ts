@@ -11,7 +11,7 @@ export function applyStaircasing(
     method: ColorDistanceMethod
 ): ImageData {
     if (useDithering) {
-        imageData = floydSteinbergDithering(imageData, width, height, enabledGroups, method);
+        return floydSteinbergDithering(imageData, width, height, enabledGroups, true, method);
     }
 
     const data = imageData.data;

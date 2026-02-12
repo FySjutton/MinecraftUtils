@@ -24,5 +24,6 @@ export interface MaterialCount {
 
 export enum ColorDistanceMethod {
     EUCLIDEAN = 'euclidean',
+    WEIGHTED_RGB = 'weighted_rgb',
     DELTA_E_2000 = 'delta_e_2000',
 }

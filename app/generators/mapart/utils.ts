@@ -8,6 +8,7 @@ export function rgbToHex(r: number, g: number, b: number): string {
 export function getMaterialList(
     canvas: HTMLCanvasElement,
     enabledGroups: Set<number>,
+    useStaircasing: boolean,
     method: ColorDistanceMethod
 ): MaterialCount[] {
     const ctx = canvas.getContext('2d');
@@ -19,22 +20,25 @@ export function getMaterialList(
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
     const data = imageData.data;
 
-    const counts = new Map<number, MaterialCount>();
+    const counts = new Map<string, MaterialCount>();
 
     for (let i = 0; i < data.length; i += 4) {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
 
-        const nearest = findNearestMapColor(r, g, b, enabledGroups, false, method);
+        const nearest = findNearestMapColor(r, g, b, enabledGroups, useStaircasing, method);
         const groupId = nearest.groupId;
+        const brightness = nearest.brightness;
 
-        if (counts.has(groupId)) {
-            counts.get(groupId)!.count++;
+        const key = `${groupId}-${brightness}`;
+
+        if (counts.has(key)) {
+            counts.get(key)!.count++;
         } else {
-            counts.set(groupId, {
+            counts.set(key, {
                 groupId: groupId,
-                brightness: Brightness.NORMAL,
+                brightness: brightness,
                 count: 1,
             });
         }

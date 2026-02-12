@@ -9,7 +9,9 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { ProcessingStats, BlockSelection, MaterialCount, ColorDistanceMethod } from './types';
 import { BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection } from './constants';
-import { numberToRGB, rgbToHex, getMaterialList, findNearestMapColor } from './utils';
+import { numberToRGB } from './colorMatching';
+import { rgbToHex, getMaterialList } from './utils';
+import { findNearestMapColor } from './colorMatching';
 import { floydSteinbergDithering } from './dithering';
 import { applyStaircasing } from './staircasing';
 import { ZoomViewport } from './ZoomViewport';
@@ -20,7 +22,7 @@ export default function MapArtPage() {
     const [isDragging, setIsDragging] = useState(false);
     const [useDithering, setUseDithering] = useState(false);
     const [useStaircasing, setUseStaircasing] = useState(false);
-    const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.DELTA_E_2000);
+    const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.WEIGHTED_RGB);
     const [showBlockSelector, setShowBlockSelector] = useState(false);
     const [processingStats, setProcessingStats] = useState<ProcessingStats | null>(null);
     const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getDefaultBlockSelection());
@@ -68,36 +70,24 @@ export default function MapArtPage() {
 
                     const enabledGroups = getEnabledGroups();
 
-                    const maxDimension = blockSize;
-                    let width = img.width;
-                    let height = img.height;
-
-                    if (width > height) {
-                        if (width > maxDimension) {
-                            height = (height / width) * maxDimension;
-                            width = maxDimension;
-                        }
-                    } else {
-                        if (height > maxDimension) {
-                            width = (width / height) * maxDimension;
-                            height = maxDimension;
-                        }
-                    }
-
-                    width = Math.floor(width);
-                    height = Math.floor(height);
+                    const width = blockSize;
+                    const height = blockSize;
 
                     tempCanvas.width = width;
                     tempCanvas.height = height;
 
+                    // Draw image scaled to fill the entire canvas
                     ctx.drawImage(img, 0, 0, width, height);
                     let imageData = ctx.getImageData(0, 0, width, height);
 
                     if (useStaircasing) {
+                        // This uses 248 colors (4 brightness levels)
                         imageData = applyStaircasing(imageData, width, height, enabledGroups, useDithering, colorDistanceMethod);
                     } else if (useDithering) {
-                        imageData = floydSteinbergDithering(imageData, width, height, enabledGroups, colorDistanceMethod);
+                        // This uses 62 colors (only NORMAL brightness)
+                        imageData = floydSteinbergDithering(imageData, width, height, enabledGroups, false, colorDistanceMethod);
                     } else {
+                        // No dithering, no staircasing - simple quantization to 62 colors
                         const data = imageData.data;
                         for (let i = 0; i < data.length; i += 4) {
                             const nearest = findNearestMapColor(data[i], data[i + 1], data[i + 2], enabledGroups, false, colorDistanceMethod);
@@ -123,7 +113,7 @@ export default function MapArtPage() {
                     });
 
                     ctx.putImageData(imageData, 0, 0);
-                    const materials = getMaterialList(tempCanvas, enabledGroups, colorDistanceMethod);
+                    const materials = getMaterialList(tempCanvas, enabledGroups, useStaircasing, colorDistanceMethod);
                     setMaterialList(materials);
 
                     setProcessedImageData(imageData);
@@ -204,7 +194,7 @@ export default function MapArtPage() {
 
     return (
         <div className="container mx-auto p-4 space-y-4">
-            <h1 className="text-3xl font-bold">MapArt Generator</h1>
+            <h1 className="text-3xl font-bold">Minecraft Map Art Generator</h1>
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 <div className="space-y-4">
@@ -259,7 +249,9 @@ export default function MapArtPage() {
                                         checked={useDithering}
                                         onCheckedChange={(checked) => setUseDithering(checked as boolean)}
                                     />
-                                    <Label htmlFor="dithering">Dithering</Label>
+                                    <Label htmlFor="dithering">
+                                        Dithering {useStaircasing ? '(248 colors)' : '(62 colors)'}
+                                    </Label>
                                 </div>
 
                                 <div className="flex items-center space-x-2">
@@ -268,18 +260,52 @@ export default function MapArtPage() {
                                         checked={useStaircasing}
                                         onCheckedChange={(checked) => setUseStaircasing(checked as boolean)}
                                     />
-                                    <Label htmlFor="staircasing">Staircasing</Label>
+                                    <Label htmlFor="staircasing">Staircasing (248 colors)</Label>
                                 </div>
 
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="perceptual"
-                                        checked={colorDistanceMethod === ColorDistanceMethod.DELTA_E_2000}
-                                        onCheckedChange={(checked) => setColorDistanceMethod(
-                                            checked ? ColorDistanceMethod.DELTA_E_2000 : ColorDistanceMethod.EUCLIDEAN
-                                        )}
-                                    />
-                                    <Label htmlFor="perceptual">Perceptual Color Matching (Delta E 2000)</Label>
+                                <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Color Matching:</Label>
+                                    <div className="space-y-1">
+                                        <div className="flex items-center space-x-2">
+                                            <input
+                                                type="radio"
+                                                id="weighted"
+                                                name="colorMethod"
+                                                checked={colorDistanceMethod === ColorDistanceMethod.WEIGHTED_RGB}
+                                                onChange={() => setColorDistanceMethod(ColorDistanceMethod.WEIGHTED_RGB)}
+                                                className="cursor-pointer"
+                                            />
+                                            <Label htmlFor="weighted" className="cursor-pointer font-normal">
+                                                Weighted RGB <span className="text-xs text-muted-foreground">(Recommended)</span>
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <input
+                                                type="radio"
+                                                id="euclidean"
+                                                name="colorMethod"
+                                                checked={colorDistanceMethod === ColorDistanceMethod.EUCLIDEAN}
+                                                onChange={() => setColorDistanceMethod(ColorDistanceMethod.EUCLIDEAN)}
+                                                className="cursor-pointer"
+                                            />
+                                            <Label htmlFor="euclidean" className="cursor-pointer font-normal">
+                                                Euclidean <span className="text-xs text-muted-foreground">(Fast)</span>
+                                            </Label>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <input
+                                                type="radio"
+                                                id="deltaE"
+                                                name="colorMethod"
+                                                checked={colorDistanceMethod === ColorDistanceMethod.DELTA_E_2000}
+                                                onChange={() => setColorDistanceMethod(ColorDistanceMethod.DELTA_E_2000)}
+                                                className="cursor-pointer"
+                                            />
+                                            <Label htmlFor="deltaE" className="cursor-pointer font-normal">
+                                                Delta E (LAB) <span className="text-xs text-muted-foreground">(Perceptual)</span>
+                                            </Label>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div className="flex gap-2">
