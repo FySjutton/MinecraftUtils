@@ -8,13 +8,16 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { ProcessingStats, BlockSelection, MaterialCount, ColorDistanceMethod } from './types';
-import { BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection } from './constants';
+import {BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection, ALIASES} from './constants';
 import { numberToRGB } from './colorMatching';
 import { rgbToHex, getMaterialList } from './utils';
 import { findNearestMapColor } from './colorMatching';
 import { floydSteinbergDithering } from './dithering';
 import { applyStaircasing } from './staircasing';
 import { ZoomViewport } from './ZoomViewport';
+import ImageObj from "next/image";
+import {findImageAsset} from "@/lib/images/getImageAsset";
+import aliases from './utils/aliases.json';
 
 export default function MapArtPage() {
     const [image, setImage] = useState<string | null>(null);
@@ -410,6 +413,7 @@ export default function MapArtPage() {
                                                     {group.map((blockName, idx) => {
                                                         const isSelected = blockSelection[groupId] === blockName;
                                                         const uniqueKey = `${groupId}-${blockName}-${idx}`;
+                                                        const imageName: string = "2d_" + (blockName in ALIASES ? ALIASES[blockName] : blockName);
                                                         return (
                                                             <Button
                                                                 key={uniqueKey}
@@ -418,6 +422,12 @@ export default function MapArtPage() {
                                                                 size="sm"
                                                                 className="h-7 px-2 text-xs"
                                                             >
+                                                                <ImageObj
+                                                                    src={findImageAsset(imageName, "block")}
+                                                                    alt={blockName}
+                                                                    width={16}
+                                                                    height={16}
+                                                                />
                                                                 {blockName.replace(/_/g, ' ')}
                                                             </Button>
                                                         );

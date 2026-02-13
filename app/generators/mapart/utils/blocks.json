@@ -116,8 +116,6 @@
     "wheat",
     "cactus",
     "sugar_cane",
-    "attached_pumpkin_stem",
-    "attached_melon_stem",
     "pumpkin_stem",
     "melon_stem",
     "vine",
@@ -145,12 +143,10 @@
     "pink_petals",
     "wildflowers",
     "big_dripleaf",
-    "big_dripleaf_stem",
     "small_dripleaf",
     "firefly_bush"
   ],
   [
-    "white_bed",
     "white_wool",
     "snow",
     "snow_block",
@@ -221,8 +217,6 @@
     "dispenser",
     "sticky_piston",
     "piston",
-    "piston_head",
-    "moving_piston",
     "mossy_cobblestone",
     "spawner",
     "diamond_ore",
@@ -390,7 +384,6 @@
     "acacia_log",
     "stripped_acacia_log",
     "stripped_acacia_wood",
-    "orange_bed",
     "orange_wool",
     "creaking_heart",
     "acacia_sign",
@@ -450,7 +443,6 @@
     "open_eyeblossom"
   ],
   [
-    "magenta_bed",
     "magenta_wool",
     "magenta_stained_glass",
     "magenta_carpet",
@@ -465,7 +457,6 @@
     "magenta_candle"
   ],
   [
-    "light_blue_bed",
     "light_blue_wool",
     "soul_fire",
     "light_blue_stained_glass",
@@ -483,7 +474,6 @@
     "stripped_bamboo_block",
     "sponge",
     "wet_sponge",
-    "yellow_bed",
     "short_dry_grass",
     "tall_dry_grass",
     "yellow_wool",
@@ -510,12 +500,10 @@
     "horn_coral_block",
     "horn_coral",
     "horn_coral_fan",
-    "horn_coral_wall_fan",
     "bee_nest",
     "yellow_candle"
   ],
   [
-    "lime_bed",
     "lime_wool",
     "lime_stained_glass",
     "melon",
@@ -529,7 +517,6 @@
   [
     "cherry_sapling",
     "cherry_leaves",
-    "pink_bed",
     "pink_wool",
     "cactus_flower",
     "pink_stained_glass",
@@ -541,13 +528,11 @@
     "brain_coral_block",
     "brain_coral",
     "brain_coral_fan",
-    "brain_coral_wall_fan",
     "pink_candle",
     "pearlescent_froglight"
   ],
   [
     "acacia_wood",
-    "gray_bed",
     "gray_wool",
     "gray_stained_glass",
     "gray_carpet",
@@ -571,16 +556,10 @@
     "dead_bubble_coral_fan",
     "dead_fire_coral_fan",
     "dead_horn_coral_fan",
-    "dead_tube_coral_wall_fan",
-    "dead_brain_coral_wall_fan",
-    "dead_bubble_coral_wall_fan",
-    "dead_fire_coral_wall_fan",
-    "dead_horn_coral_wall_fan",
     "gray_candle",
     "tinted_glass"
   ],
   [
-    "light_gray_bed",
     "light_gray_wool",
     "light_gray_stained_glass",
     "light_gray_carpet",
@@ -597,7 +576,6 @@
     "pale_hanging_moss"
   ],
   [
-    "cyan_bed",
     "cyan_wool",
     "cyan_stained_glass",
     "prismarine",
@@ -619,7 +597,6 @@
     "calibrated_sculk_sensor"
   ],
   [
-    "purple_bed",
     "purple_wool",
     "purple_stained_glass",
     "mycelium",
@@ -634,7 +611,6 @@
     "bubble_coral_block",
     "bubble_coral",
     "bubble_coral_fan",
-    "bubble_coral_wall_fan",
     "purple_candle",
     "amethyst_block",
     "budding_amethyst",
@@ -644,7 +620,6 @@
     "small_amethyst_bud"
   ],
   [
-    "blue_bed",
     "blue_wool",
     "blue_stained_glass",
     "blue_carpet",
@@ -655,7 +630,6 @@
     "tube_coral_block",
     "tube_coral",
     "tube_coral_fan",
-    "tube_coral_wall_fan",
     "blue_candle"
   ],
   [
@@ -664,7 +638,6 @@
     "stripped_dark_oak_log",
     "dark_oak_wood",
     "stripped_dark_oak_wood",
-    "brown_bed",
     "brown_wool",
     "brown_mushroom",
     "dark_oak_sign",
@@ -691,7 +664,6 @@
     "leaf_litter"
   ],
   [
-    "green_bed",
     "green_wool",
     "green_stained_glass",
     "end_portal_frame",
@@ -713,7 +685,6 @@
     "stripped_mangrove_log",
     "mangrove_wood",
     "stripped_mangrove_wood",
-    "red_bed",
     "red_wool",
     "red_mushroom",
     "bricks",
@@ -744,23 +715,19 @@
     "fire_coral_block",
     "fire_coral",
     "fire_coral_fan",
-    "fire_coral_wall_fan",
     "brick_wall",
     "shroomlight",
     "red_candle"
   ],
   [
-    "black_bed",
     "black_wool",
     "obsidian",
     "basalt",
     "polished_basalt",
     "black_stained_glass",
-    "end_portal",
     "dragon_egg",
     "black_carpet",
     "coal_block",
-    "end_gateway",
     "black_shulker_box",
     "black_glazed_terracotta",
     "black_concrete",

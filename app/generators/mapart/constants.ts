@@ -1,9 +1,11 @@
 import blockGroupsData from './utils/blocks.json';
 import baseColorsData from './utils/colors.json';
+import aliasesData from './utils/aliases.json';
 import { BlockSelection } from './types';
 
 export const BLOCK_GROUPS: string[][] = blockGroupsData as string[][];
 export const BASE_COLORS: number[] = baseColorsData as number[];
+export const ALIASES: Record<string, string> = aliasesData as Record<string, string>;
 
 if (!BLOCK_GROUPS || BLOCK_GROUPS.length === 0) {
     console.error('BLOCK_GROUPS failed to load! Check that @/utils/blocks.json exists and is valid.');
