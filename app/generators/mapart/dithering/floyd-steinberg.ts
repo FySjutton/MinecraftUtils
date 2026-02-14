@@ -1,5 +1,5 @@
-import { ColorDistanceMethod } from './types';
-import { findNearestMapColor, numberToRGB } from './colorMatching';
+import { ColorDistanceMethod } from '../utils';
+import { findNearestMapColor, numberToRGB } from '../colorMatching';
 
 export function floydSteinbergDithering(
     imageData: ImageData,

@@ -1,5 +1,4 @@
-import { Brightness, ColorDistanceMethod } from './types';
-import { BASE_COLORS } from './constants';
+import {BASE_COLORS, Brightness, ColorDistanceMethod} from "@/app/generators/mapart/utils";
 
 const labCache = new Map<number, [number, number, number]>();
 
@@ -123,7 +122,7 @@ export function findNearestMapColor(
     let bestBrightness = Brightness.NORMAL;
 
     const brightnesses = useStaircasing
-        ? [Brightness.LOWEST, Brightness.LOW, Brightness.NORMAL, Brightness.HIGH]
+        ? [Brightness.LOW, Brightness.NORMAL, Brightness.HIGH]
         : [Brightness.NORMAL];
 
     for (const groupId of enabledGroups) {
