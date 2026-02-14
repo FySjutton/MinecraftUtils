@@ -77,6 +77,8 @@ function calculateDistance(
     }
 }
 
+export { calculateDistance };
+
 export function scaleRGB(color: number, brightness: Brightness): number {
     const r = ((color >> 16) & 0xff) * brightness / 255;
     const g = ((color >> 8) & 0xff) * brightness / 255;

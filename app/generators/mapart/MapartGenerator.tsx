@@ -7,14 +7,15 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { ProcessingStats, BlockSelection, MaterialCount, ColorDistanceMethod, StaircasingMode } from './utils';
+import { ProcessingStats, BlockSelection, MaterialCount, ColorDistanceMethod, StaircasingMode, Brightness } from './utils';
 import { BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection, ALIASES } from './utils';
 import { numberToRGB } from './colorMatching';
 import { rgbToHex, getMaterialList } from './utils';
-import { processImage, extractBrightnessMap, countUniqueColors } from './imageProcessing';
+import { processImage, extractBrightnessMap } from './imageProcessing';
 import { calculate3DStructure } from './staircasing';
 import { exportStructureNBT } from './nbtExport';
 import { ZoomViewport } from './ZoomViewport';
+import { ditheringMethods, DitheringMethodName } from './dithering';
 import ImageObj from "next/image";
 import { findImageAsset } from "@/lib/images/getImageAsset";
 
@@ -22,7 +23,7 @@ export default function MapArtGenerator() {
     const [image, setImage] = useState<string | null>(null);
     const [blockSize, setBlockSize] = useState(128);
     const [isDragging, setIsDragging] = useState(false);
-    const [useDithering, setUseDithering] = useState(false);
+    const [ditheringMethod, setDitheringMethod] = useState<DitheringMethodName>('None');
     const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.NONE);
     const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.WEIGHTED_RGB);
     const [showBlockSelector, setShowBlockSelector] = useState(false);
@@ -31,6 +32,9 @@ export default function MapArtGenerator() {
     const [materialList, setMaterialList] = useState<MaterialCount[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);
     const [processedImageData, setProcessedImageData] = useState<ImageData | null>(null);
+    const [brightnessMap, setBrightnessMap] = useState<Brightness[][] | null>(null);
+    const [groupIdMap, setGroupIdMap] = useState<number[][] | null>(null);
+    const [yMap, setYMap] = useState<number[][] | null>(null);
     const [addSupportBlocks, setAddSupportBlocks] = useState(true);
 
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -64,54 +68,42 @@ export default function MapArtGenerator() {
                 try {
                     const enabledGroups = getEnabledGroups();
 
-                    // Process image
-                    const imageData = processImage(
+                    const result = processImage(
                         img,
                         blockSize,
                         blockSize,
                         enabledGroups,
-                        useDithering,
+                        ditheringMethod,
                         staircasingMode,
                         colorDistanceMethod
                     );
 
-                    // Get stats
-                    const uniqueColors = countUniqueColors(imageData);
+                    // Calculate materials from the maps returned by processImage
+                    const materials = getMaterialList(result.brightnessMap, result.groupIdMap);
+                    setMaterialList(materials);
 
                     setProcessingStats({
                         width: blockSize,
                         height: blockSize,
                         totalBlocks: blockSize * blockSize,
-                        uniqueBlocks: uniqueColors
+                        uniqueBlocks: materials.length
                     });
 
-                    // Get material list
-                    const canvas = document.createElement('canvas');
-                    canvas.width = blockSize;
-                    canvas.height = blockSize;
-                    const ctx = canvas.getContext('2d');
-                    if (ctx) {
-                        ctx.putImageData(imageData, 0, 0);
-                        const materials = getMaterialList(
-                            canvas,
-                            enabledGroups,
-                            staircasingMode !== StaircasingMode.NONE,
-                            colorDistanceMethod
-                        );
-                        setMaterialList(materials);
-                    }
-
-                    setProcessedImageData(imageData);
+                    setProcessedImageData(result.imageData);
+                    setBrightnessMap(result.brightnessMap);
+                    setGroupIdMap(result.groupIdMap);
+                    setYMap(result.yMap);
                     setIsProcessing(false);
+                    console.log('[MapArt UI] Processing complete');
                 } catch (err) {
-                    console.error('Processing error:', err);
+                    console.error('[MapArt UI] Processing error:', err);
                     setIsProcessing(false);
                 }
             };
 
             img.src = image;
         }, 50);
-    }, [image, blockSize, useDithering, staircasingMode, colorDistanceMethod, getEnabledGroups]);
+    }, [image, blockSize, ditheringMethod, staircasingMode, colorDistanceMethod, getEnabledGroups]);
 
     useEffect(() => {
         if (image) {
@@ -127,6 +119,9 @@ export default function MapArtGenerator() {
                 setProcessingStats(null);
                 setMaterialList([]);
                 setProcessedImageData(null);
+                setBrightnessMap(null);
+                setGroupIdMap(null);
+                setYMap(null);
             };
             reader.readAsDataURL(file);
         }
@@ -157,24 +152,12 @@ export default function MapArtGenerator() {
     };
 
     const handleExport3D = () => {
-        if (!processedImageData || !processingStats) return;
+        if (!processedImageData || !processingStats || !brightnessMap || !groupIdMap || !yMap) return;
 
-        const enabledGroups = getEnabledGroups();
-
-        // Extract brightness and group maps
-        const { brightnessMap, groupIdMap } = extractBrightnessMap(
-            processedImageData,
-            processingStats.width,
-            processingStats.height,
-            enabledGroups,
-            staircasingMode !== StaircasingMode.NONE,
-            colorDistanceMethod
-        );
-
-        // Calculate 3D structure
         const structure = calculate3DStructure(
             brightnessMap,
             groupIdMap,
+            yMap,
             blockSelection,
             staircasingMode,
             addSupportBlocks,
@@ -191,6 +174,9 @@ export default function MapArtGenerator() {
         setMaterialList([]);
         setIsProcessing(false);
         setProcessedImageData(null);
+        setBrightnessMap(null);
+        setGroupIdMap(null);
+        setYMap(null);
     };
 
     const toggleBlockSelection = (groupId: number, blockName: string) => {
@@ -256,6 +242,26 @@ export default function MapArtGenerator() {
                                 </div>
 
                                 <div className="space-y-2">
+                                    <Label className="text-sm font-semibold">Dithering Method:</Label>
+                                    <select
+                                        value={ditheringMethod}
+                                        onChange={(e) => setDitheringMethod(e.target.value as DitheringMethodName)}
+                                        className="w-full p-2 border rounded-md bg-background"
+                                    >
+                                        {Object.entries(ditheringMethods).map(([key, method]) => (
+                                            <option key={key} value={key}>
+                                                {method.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                    {ditheringMethod !== 'None' && (
+                                        <p className="text-xs text-muted-foreground">
+                                            {ditheringMethods[ditheringMethod].description}
+                                        </p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
                                     <Label className="text-sm font-semibold">Staircasing Mode:</Label>
                                     <div className="space-y-1">
                                         <div className="flex items-center space-x-2">
@@ -268,7 +274,7 @@ export default function MapArtGenerator() {
                                                 className="cursor-pointer"
                                             />
                                             <Label htmlFor="none" className="cursor-pointer font-normal">
-                                                Flat (2D)
+                                                Flat (2D) <span className="text-xs text-muted-foreground">(Normal only)</span>
                                             </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
@@ -281,7 +287,7 @@ export default function MapArtGenerator() {
                                                 className="cursor-pointer"
                                             />
                                             <Label htmlFor="standard" className="cursor-pointer font-normal">
-                                                Standard (3D)
+                                                Standard (3D) <span className="text-xs text-muted-foreground">(All variants)</span>
                                             </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
@@ -294,7 +300,7 @@ export default function MapArtGenerator() {
                                                 className="cursor-pointer"
                                             />
                                             <Label htmlFor="valley" className="cursor-pointer font-normal">
-                                                Valley <span className="text-xs text-muted-foreground">(descends only)</span>
+                                                Valley <span className="text-xs text-muted-foreground">(Optimized height)</span>
                                             </Label>
                                         </div>
                                         <div className="flex items-center space-x-2">
@@ -307,21 +313,10 @@ export default function MapArtGenerator() {
                                                 className="cursor-pointer"
                                             />
                                             <Label htmlFor="valley3" className="cursor-pointer font-normal">
-                                                Valley (3-level) <span className="text-xs text-muted-foreground">(max 3 blocks)</span>
+                                                Valley (3-level) <span className="text-xs text-muted-foreground">(Max 3 blocks)</span>
                                             </Label>
                                         </div>
                                     </div>
-                                </div>
-
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                        id="dithering"
-                                        checked={useDithering}
-                                        onCheckedChange={(checked) => setUseDithering(checked as boolean)}
-                                    />
-                                    <Label htmlFor="dithering">
-                                        Enable Dithering
-                                    </Label>
                                 </div>
 
                                 <div className="flex items-center space-x-2">

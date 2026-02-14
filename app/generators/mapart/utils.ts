@@ -1,4 +1,4 @@
-import { findNearestMapColor } from './colorMatching';
+import { getColorWithBrightness, numberToRGB } from './colorMatching';
 import blockGroupsData from './utils/blocks.json';
 import baseColorsData from './utils/colors.json';
 import aliasesData from './utils/aliases.json';
@@ -38,9 +38,9 @@ export interface BlockSelection {
 }
 
 export enum Brightness {
-    LOW = 180, // Darkest: -1 block below north neighbor
-    NORMAL = 220, // Normal: same height as north neighbor
-    HIGH = 255, // Brightest: +1 block above north neighbor
+    LOW = 180,
+    NORMAL = 220,
+    HIGH = 255,
 }
 
 export interface MaterialCount {
@@ -73,40 +73,28 @@ export interface Block3D {
     x: number;
     y: number;
     z: number;
-    blockName: string; // e.g., "minecraft:stone" or "stone"
+    blockName: string;
 }
 
 export function getMaterialList(
-    canvas: HTMLCanvasElement,
-    enabledGroups: Set<number>,
-    useStaircasing: boolean,
-    method: ColorDistanceMethod
+    brightnessMap: Brightness[][],
+    groupIdMap: number[][]
 ): MaterialCount[] {
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-        console.error('Cannot get material list - no canvas context');
-        return [];
-    }
+    const height = brightnessMap.length;
+    const width = brightnessMap[0].length;
 
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imageData.data;
+    // Count materials by groupId
+    const materialCounts = new Map<number, number>();
 
-    // Count blocks by group ID only
-    const counts = new Map<number, number>();
-
-    for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-
-        const nearest = findNearestMapColor(r, g, b, enabledGroups, useStaircasing, method);
-        const groupId = nearest.groupId;
-
-        counts.set(groupId, (counts.get(groupId) || 0) + 1);
+    for (let z = 0; z < height; z++) {
+        for (let x = 0; x < width; x++) {
+            const groupId = groupIdMap[z][x];
+            materialCounts.set(groupId, (materialCounts.get(groupId) || 0) + 1);
+        }
     }
 
     // Convert to array and sort by count
-    return Array.from(counts.entries())
+    return Array.from(materialCounts.entries())
         .map(([groupId, count]) => ({
             groupId,
             brightness: Brightness.NORMAL,
@@ -116,4 +104,4 @@ export function getMaterialList(
 }
 
 export { numberToRGB } from './colorMatching';
-export { findNearestMapColor } from './colorMatching';
+export { getColorWithBrightness } from './colorMatching';

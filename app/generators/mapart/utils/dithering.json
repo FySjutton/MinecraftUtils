@@ -1,0 +1,146 @@
+{
+  "None": {
+    "uniqueId": 0,
+    "name": "None",
+    "description": "No dithering applied"
+  },
+  "FloydSteinberg": {
+    "uniqueId": 1,
+    "name": "Floyd-Steinberg",
+    "description": "Classic error diffusion dithering",
+    "type": "error_diffusion",
+    "ditherMatrix": [
+      [0, 0, 0, 7.0, 0],
+      [0, 3.0, 5.0, 1.0, 0],
+      [0, 0, 0, 0, 0]
+    ],
+    "ditherDivisor": 16.0,
+    "centerX": 2,
+    "centerY": 0
+  },
+  "JarvisJudiceNinke": {
+    "uniqueId": 2,
+    "name": "Jarvis-Judice-Ninke",
+    "description": "High quality error diffusion",
+    "type": "error_diffusion",
+    "ditherMatrix": [
+      [0, 0, 0, 7.0, 5.0],
+      [3.0, 5.0, 7.0, 5.0, 3.0],
+      [1.0, 3.0, 5.0, 3.0, 1.0]
+    ],
+    "ditherDivisor": 48.0,
+    "centerX": 2,
+    "centerY": 0
+  },
+  "Stucki": {
+    "uniqueId": 3,
+    "name": "Stucki",
+    "description": "Balanced error diffusion",
+    "type": "error_diffusion",
+    "ditherMatrix": [
+      [0, 0, 0, 8.0, 4.0],
+      [2.0, 4.0, 8.0, 4.0, 2.0],
+      [1.0, 2.0, 4.0, 2.0, 1.0]
+    ],
+    "ditherDivisor": 42.0,
+    "centerX": 2,
+    "centerY": 0
+  },
+  "Burkes": {
+    "uniqueId": 4,
+    "name": "Burkes",
+    "description": "Fast error diffusion",
+    "type": "error_diffusion",
+    "ditherMatrix": [
+      [0.0, 0.0, 0.0, 8.0, 4.0],
+      [2.0, 4.0, 8.0, 4.0, 2.0],
+      [0.0, 0.0, 0.0, 0.0, 0.0]
+    ],
+    "ditherDivisor": 32.0,
+    "centerX": 2,
+    "centerY": 0
+  },
+  "Sierra": {
+    "uniqueId": 5,
+    "name": "Sierra",
+    "description": "Sierra error diffusion",
+    "type": "error_diffusion",
+    "ditherMatrix": [
+      [0, 0, 0, 5.0, 3.0],
+      [2.0, 4.0, 5.0, 4.0, 2.0],
+      [0, 2.0, 3.0, 2.0, 0]
+    ],
+    "ditherDivisor": 32.0,
+    "centerX": 2,
+    "centerY": 0
+  },
+  "SierraLite": {
+    "uniqueId": 6,
+    "name": "Sierra-Lite",
+    "description": "Lightweight Sierra",
+    "type": "error_diffusion",
+    "ditherMatrix": [
+      [0, 0, 0, 2.0, 0],
+      [0, 1.0, 1.0, 0, 0],
+      [0, 0, 0, 0, 0]
+    ],
+    "ditherDivisor": 4.0,
+    "centerX": 2,
+    "centerY": 0
+  },
+  "Atkinson": {
+    "uniqueId": 7,
+    "name": "Atkinson",
+    "description": "HyperCard-style dithering",
+    "type": "error_diffusion",
+    "ditherMatrix": [
+      [0, 0, 0, 1.0, 1.0],
+      [0, 1.0, 1.0, 1.0, 0],
+      [0, 0, 1.0, 0, 0]
+    ],
+    "ditherDivisor": 8.0,
+    "centerX": 2,
+    "centerY": 0
+  },
+  "Bayer2x2": {
+    "uniqueId": 8,
+    "name": "Bayer 2×2",
+    "description": "Ordered dithering, small pattern",
+    "type": "ordered",
+    "ditherMatrix": [
+      [0, 2],
+      [3, 1]
+    ],
+    "ditherDivisor": 4.0
+  },
+  "Bayer4x4": {
+    "uniqueId": 9,
+    "name": "Bayer 4×4",
+    "description": "Ordered dithering, medium pattern",
+    "type": "ordered",
+    "ditherMatrix": [
+      [0, 8, 2, 10],
+      [12, 4, 14, 6],
+      [3, 11, 1, 9],
+      [15, 7, 13, 5]
+    ],
+    "ditherDivisor": 16.0
+  },
+  "Bayer8x8": {
+    "uniqueId": 10,
+    "name": "Bayer 8×8",
+    "description": "Ordered dithering, large pattern",
+    "type": "ordered",
+    "ditherMatrix": [
+      [0, 32, 8, 40, 2, 34, 10, 42],
+      [48, 16, 56, 24, 50, 18, 58, 26],
+      [12, 44, 4, 36, 14, 46, 6, 38],
+      [60, 28, 52, 20, 62, 30, 54, 22],
+      [3, 35, 11, 43, 1, 33, 9, 41],
+      [51, 19, 59, 27, 49, 17, 57, 25],
+      [15, 47, 7, 39, 13, 45, 5, 37],
+      [63, 31, 55, 23, 61, 29, 53, 21]
+    ],
+    "ditherDivisor": 64.0
+  }
+}
