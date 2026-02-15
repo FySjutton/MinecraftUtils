@@ -4,10 +4,10 @@
         grid-template-columns: calc(50% - 7px) calc(50% - 7px);
         gap: 14px;
     }
+
     .grid-start {
         grid-template-areas:
-            "upload-image upload-image"
-            "preview preview";
+            "upload-image upload-image";
     }
 
     .grid-full {

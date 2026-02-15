@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import {Upload, Download, RotateCcw, ChevronDown, ChevronRight, ChevronUp, Dot} from 'lucide-react';
+import {Upload, Download, RotateCcw, ChevronDown, ChevronUp, Dot} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -13,16 +13,14 @@ import {
     ColorDistanceMethod,
     StaircasingMode,
     Brightness,
-    scaleRGB
-} from './utils';
-import { BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection, ALIASES } from './utils';
-import {numberToHex, numberToRGB} from './colorMatching';
-import { rgbToHex, getMaterialList } from './utils';
-import { processImage, extractBrightnessMap } from './imageProcessing';
-import { calculate3DStructure } from './staircasing';
-import { exportStructureNBT, exportStructureNBTToBlob } from './nbtExport';
+    scaleRGB,
+    getMaterialList,
+    BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection, ALIASES
+} from './utils/utils';
+import {numberToHex} from './utils/colorMatching';
+import { processImage } from './utils/imageProcessing';
 import { ZoomViewport } from './ZoomViewport';
-import { ditheringMethods, DitheringMethodName } from './dithering';
+import { ditheringMethods, DitheringMethodName } from './utils/dithering';
 import ImageObj from "next/image";
 import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
@@ -31,12 +29,11 @@ import {InputField} from "@/components/inputs/InputField";
 import {ComboBox} from "@/components/inputs/dropdowns/ComboBox";
 import {Separator} from "@/components/ui/separator";
 import {toTitleCase} from "@/lib/StringUtils";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
-import {block} from "sharp";
 import "./mapart.css"
+import {export3d, exportPNG} from "@/app/generators/mapart/utils/exporting";
 
-export default function MapArtGenerator() {
+export default function MapartGenerator() {
     const [image, setImage] = useState<string | null>(null);
     const [mapWidth, setMapWidth] = useState(1);
     const [mapHeight, setMapHeight] = useState(1);
@@ -61,6 +58,7 @@ export default function MapArtGenerator() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setMaterialBlockSnapshot({ ...blockSelection })
     }, [materialList]) // do NOT add blockSelection to this
 
@@ -106,47 +104,41 @@ export default function MapArtGenerator() {
         if (!preprocessedCanvas) return;
 
         setTimeout(() => {
-            try {
-                const enabledGroups = getEnabledGroups();
-                const blockSize = mapWidth * 128;
-                const blockHeight = mapHeight * 128;
+            const enabledGroups = getEnabledGroups();
+            const blockSize = mapWidth * 128;
+            const blockHeight = mapHeight * 128;
 
-                // Create image from preprocessed canvas
-                const img = new Image();
-                img.src = preprocessedCanvas.toDataURL();
+            // Create image from preprocessed canvas
+            const img = new Image();
+            img.src = preprocessedCanvas.toDataURL();
 
-                img.onload = () => {
-                    const result = processImage(
-                        img,
-                        blockSize,
-                        blockHeight,
-                        enabledGroups,
-                        ditheringMethod,
-                        staircasingMode,
-                        colorDistanceMethod
-                    );
+            img.onload = () => {
+                const result = processImage(
+                    img,
+                    blockSize,
+                    blockHeight,
+                    enabledGroups,
+                    ditheringMethod,
+                    staircasingMode,
+                    colorDistanceMethod
+                );
 
-                    // Calculate materials from the maps returned by processImage
-                    const materials = getMaterialList(result.brightnessMap, result.groupIdMap);
-                    setMaterialList(materials);
+                // Calculate materials from the maps returned by processImage
+                const materials = getMaterialList(result.brightnessMap, result.groupIdMap);
+                setMaterialList(materials);
 
-                    setProcessingStats({
-                        width: blockSize,
-                        height: blockHeight,
-                        totalBlocks: blockSize * blockHeight,
-                        uniqueBlocks: materials.length
-                    });
+                setProcessingStats({
+                    width: blockSize,
+                    height: blockHeight,
+                    totalBlocks: blockSize * blockHeight,
+                    uniqueBlocks: materials.length
+                });
 
-                    setProcessedImageData(result.imageData);
-                    setBrightnessMap(result.brightnessMap);
-                    setGroupIdMap(result.groupIdMap);
-                    setYMap(result.yMap);
-                    console.log('[MapArt UI] Processing complete');
-                };
-
-            } catch (err) {
-                console.error('[MapArt UI] Processing error:', err);
-            }
+                setProcessedImageData(result.imageData);
+                setBrightnessMap(result.brightnessMap);
+                setGroupIdMap(result.groupIdMap);
+                setYMap(result.yMap);
+            };
         }, 50);
     }, [preprocessedCanvas, mapWidth, mapHeight, ditheringMethod, staircasingMode, colorDistanceMethod, getEnabledGroups]);
 
@@ -187,137 +179,11 @@ export default function MapArtGenerator() {
     };
 
     const handleExportPNG = async () => {
-        if (!processedImageData || !processingStats) return;
-
-        const totalWidth = processingStats.width;
-        const totalHeight = processingStats.height;
-
-        // If single map, just export directly
-        if (mapWidth === 1 && mapHeight === 1) {
-            const canvas = document.createElement('canvas');
-            canvas.width = totalWidth;
-            canvas.height = totalHeight;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) return;
-
-            ctx.putImageData(processedImageData, 0, 0);
-
-            const link = document.createElement('a');
-            link.download = 'minecraft-map-art.png';
-            link.href = canvas.toDataURL();
-            link.click();
-            return;
-        }
-
-        // Multiple maps - create zip
-        const JSZip = (await import('jszip')).default;
-        const zip = new JSZip();
-
-        const sourceCanvas = document.createElement('canvas');
-        sourceCanvas.width = totalWidth;
-        sourceCanvas.height = totalHeight;
-        const sourceCtx = sourceCanvas.getContext('2d');
-        if (!sourceCtx) return;
-        sourceCtx.putImageData(processedImageData, 0, 0);
-
-        // Split into 128x128 chunks
-        for (let row = 0; row < mapHeight; row++) {
-            for (let col = 0; col < mapWidth; col++) {
-                const chunkCanvas = document.createElement('canvas');
-                chunkCanvas.width = 128;
-                chunkCanvas.height = 128;
-                const chunkCtx = chunkCanvas.getContext('2d');
-                if (!chunkCtx) continue;
-
-                // Copy chunk from source
-                const sx = col * 128;
-                const sy = row * 128;
-                chunkCtx.drawImage(sourceCanvas, sx, sy, 128, 128, 0, 0, 128, 128);
-
-                // Convert to blob and add to zip
-                const blob = await new Promise<Blob>((resolve) => {
-                    chunkCanvas.toBlob((b) => resolve(b!), 'image/png');
-                });
-
-                zip.file(`map_${col}_${row}.png`, blob);
-            }
-        }
-
-        // Generate and download zip
-        const content = await zip.generateAsync({ type: 'blob' });
-        const link = document.createElement('a');
-        link.download = 'minecraft-map-art.zip';
-        link.href = URL.createObjectURL(content);
-        link.click();
-        URL.revokeObjectURL(link.href);
+        await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)
     };
 
     const handleExport3D = async () => {
-        if (!processedImageData || !processingStats || !brightnessMap || !groupIdMap || !yMap) return;
-
-        // If single map, export directly
-        if (mapWidth === 1 && mapHeight === 1) {
-            const structure = calculate3DStructure(
-                brightnessMap,
-                groupIdMap,
-                yMap,
-                blockSelection,
-                staircasingMode,
-                addSupportBlocks,
-                'netherrack'
-            );
-            exportStructureNBT(structure, 'mapart-3d.nbt');
-            return;
-        }
-
-        // Multiple maps, create zip with NBT files
-        const JSZip = (await import('jszip')).default;
-        const zip = new JSZip();
-
-        for (let row = 0; row < mapHeight; row++) {
-            for (let col = 0; col < mapWidth; col++) {
-                // Extract 128x128 chunk from maps
-                const chunkBrightnessMap: Brightness[][] = [];
-                const chunkGroupIdMap: number[][] = [];
-                const chunkYMap: number[][] = [];
-
-                for (let z = 0; z < 128; z++) {
-                    const sourceZ = row * 128 + z;
-                    chunkBrightnessMap[z] = [];
-                    chunkGroupIdMap[z] = [];
-                    chunkYMap[z] = [];
-
-                    for (let x = 0; x < 128; x++) {
-                        const sourceX = col * 128 + x;
-                        chunkBrightnessMap[z][x] = brightnessMap[sourceZ][sourceX];
-                        chunkGroupIdMap[z][x] = groupIdMap[sourceZ][sourceX];
-                        chunkYMap[z][x] = yMap[sourceZ][sourceX];
-                    }
-                }
-
-                const structure = calculate3DStructure(
-                    chunkBrightnessMap,
-                    chunkGroupIdMap,
-                    chunkYMap,
-                    blockSelection,
-                    staircasingMode,
-                    addSupportBlocks,
-                    'netherrack'
-                );
-
-                // Export to memory instead of downloading
-                const nbtData = exportStructureNBTToBlob(structure);
-                zip.file(`map_${col}_${row}.nbt`, nbtData);
-            }
-        }
-
-        // Generate and download zip
-        const content = await zip.generateAsync({ type: 'blob' });
-        const link = document.createElement('a');
-        link.download = 'minecraft-map-art-3d.zip';
-        link.href = URL.createObjectURL(content);
-        link.click();
-        URL.revokeObjectURL(link.href);
+        await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, addSupportBlocks)
     };
 
     const handleReset = () => {
@@ -374,236 +240,236 @@ export default function MapArtGenerator() {
                 </CardContent>
             </Card>
 
-            {image && sourceImageElement && (
-                <ImagePreprocessing
-                    sourceImage={sourceImageElement}
-                    targetWidth={mapWidth * 128}
-                    targetHeight={mapHeight * 128}
-                    onProcessed={setPreprocessedCanvas}
-                    id="preprocessing"
-                />
-            )}
-
             {image && (
-                <Card id="settings">
-                    <CardHeader>
-                        <CardTitle>Settings</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="grid grid-cols-2 gap-4">
-                            <InputField
-                                value={mapWidth}
-                                onChange={(e) => setMapWidth(Math.max(1, Math.min(10, parseInt(e) || 1)))}
-                                variant="number"
-                                label="Map Width (X)"
-                            />
-                            <InputField
-                                value={mapHeight}
-                                onChange={(e) => setMapHeight(Math.max(1, Math.min(10, parseInt(e) || 1)))}
-                                variant="number"
-                                label="Map Height (Y)"
-                            />
-                        </div>
-                        <p className="text-xs text-muted-foreground mt-1 ml-1">Total size: {mapWidth * 128}x{mapHeight * 128} pixels ({mapWidth}x{mapHeight} maps)</p>
-
-                        <Label className="mt-4 mb-2">Dithering Method</Label>
-                        <ComboBox
-                            items={Object.keys(ditheringMethods)}
-                            value={ditheringMethod}
-                            onChange={(e) => setDitheringMethod(e as DitheringMethodName)}
+                <>
+                    {/*{image && sourceImageElement && (*/}
+                        <ImagePreprocessing
+                            sourceImage={sourceImageElement}
+                            targetWidth={mapWidth * 128}
+                            targetHeight={mapHeight * 128}
+                            onProcessed={setPreprocessedCanvas}
+                            id="preprocessing"
                         />
+                    {/*)}*/}
 
-                        <Label className="mt-4 mb-2">Staircasing Method</Label>
-                        <ComboBox
-                            items={Object.values(StaircasingMode)}
-                            value={staircasingMode}
-                            onChange={(e) => setStaircasingMode(e as StaircasingMode)}
-                            getDisplayName={(v) => {
-                                return v == StaircasingMode.NONE ? "Flat Map (2d)" : (v == StaircasingMode.STANDARD ? "Staircasing 3d" : (v == StaircasingMode.VALLEY ? "Valley" : "Valley (Max 3)"))
-                            }}
-                            renderItem={(v) => {
-                                return v == StaircasingMode.VALLEY_3_LEVEL ? "Max 3 high" : ""
-                            }}
-                        />
-
-                        <Separator className="my-4" />
-                        <div className="flex items-center space-x-2">
-                            <Checkbox
-                                id="support"
-                                checked={addSupportBlocks}
-                                onCheckedChange={(checked) => setAddSupportBlocks(checked as boolean)}
-                            />
-                            <Label htmlFor="support">
-                                Add Support Blocks
-                            </Label>
-                        </div>
-
-                        <Label className="mt-4 mb-2">Color Matching</Label>
-                        <ComboBox
-                            items={Object.values(ColorDistanceMethod)}
-                            value={colorDistanceMethod}
-                            onChange={(e) => setColorDistanceMethod(e as ColorDistanceMethod)}
-                            getDisplayName={(v) => {
-                                return v == ColorDistanceMethod.WEIGHTED_RGB ? "Weighted RGB" : (v == ColorDistanceMethod.EUCLIDEAN ? "Euclidean" : "Delta E")
-                            }}
-                            renderItem={(v) => {
-                                return v == ColorDistanceMethod.WEIGHTED_RGB ? "Recommended" : (v == ColorDistanceMethod.EUCLIDEAN ? "Fast" : "Perceptual")
-                            }}
-                        />
-
-                        <Separator className="my-4" />
-
-                        <div className="flex flex-wrap gap-2">
-                            <Button onClick={handleExport3D} className="flex-1" disabled={!processingStats}>
-                                <Download className="mr-2" size={16} />
-                                Export NBT
-                            </Button>
-                            <Button onClick={handleExportPNG} className="flex-1" disabled={!processingStats}>
-                                <Download className="mr-2" size={16} />
-                                Export PNG
-                            </Button>
-                            <Button onClick={handleReset} variant="destructive" className="flex-1">
-                                <RotateCcw className="mr-2" size={16} />
-                                Reset
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {processingStats && (
-                <Card id="stats">
-                    <CardHeader>
-                        <CardTitle>Stats</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 text-sm">
-                        <div className="flex justify-between">
-                            <span>Dimensions:</span>
-                            <span className="font-mono">{processingStats.width} x {processingStats.height}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Total Blocks:</span>
-                            <span className="font-mono">{processingStats.totalBlocks.toLocaleString()}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span>Unique Colors:</span>
-                            <span className="font-mono">{processingStats.uniqueBlocks}</span>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {image && (
-                <Card id="palette" className="">
-                    <CardHeader>
-                        <CardTitle>Block Palette</CardTitle>
-                        <CardDescription className="space-y-2 text-sm">
-                            {Object.keys(blockSelection).length} / 61 colors enabled
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="aspect-square space-y-2 overflow-y-auto">
-                        {BLOCK_GROUPS.map((group, groupId) => (
-                            <PaletteGroup key={groupId} group={group} groupId={groupId} blockSelection={blockSelection} toggleBlockSelection={toggleBlockSelection} />
-                        ))}
-                    </CardContent>
-                </Card>
-            )}
-
-            <Card id="preview">
-                <CardHeader>
-                    <CardTitle>Preview</CardTitle>
-                </CardHeader>
-                <CardContent className="w-full aspect-square p-2">
-                    {!image ? (
-                        <div className="flex items-center justify-center h-96 border-2 border-dashed rounded-lg">
-                            <p className="text-muted-foreground">Upload an image to begin</p>
-                        </div>
-                    ) : processedImageData && processingStats ? (
-                        <ZoomViewport cellWidth={processingStats.width} cellHeight={processingStats.height}>
-                            <canvas
-                                width={processingStats.width}
-                                height={processingStats.height}
-                                style={{
-                                    imageRendering: 'pixelated',
-                                    width: '100%',
-                                    height: '100%',
-                                }}
-                                ref={(canvas) => {
-                                    if (canvas && processedImageData) {
-                                        const ctx = canvas.getContext('2d');
-                                        if (ctx) {
-                                            ctx.putImageData(processedImageData, 0, 0);
-                                        }
-                                    }
-                                }}
-                            />
-                        </ZoomViewport>
-                    ) : null}
-                </CardContent>
-            </Card>
-
-            {materialList.length > 0 && (
-                <Card className="gap-2" id="material-list">
-                    <CardHeader>
-                        <CardTitle>Material List</CardTitle>
-                        <CardDescription>Click on materials to edit them.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-sm">
-                            <Separator />
-                            <p className="flex text-gray-400 mt-2 mb-1 ">Stats: {processingStats?.uniqueBlocks} materials<Dot />{processingStats?.totalBlocks} blocks</p>
-                            <Separator />
-
-                            <div className="space-y-2 max-h-90 overflow-y-auto mt-1">
-                                {materialList.map((material, idx) => {
-                                    const selectedBlock = materialBlockSnapshot[material.groupId] as string;
-                                    const imageName: string = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
-                                    const isExpanded = expandedGroup === material.groupId;
-
-                                    return (
-                                        <div key={idx}>
-                                            {!isExpanded ? (
-                                                    <div className="flex items-center justify-between p-2 border rounded-md mr-2 cursor-pointer" onClick={(e) => {
-                                                        e.stopPropagation()
-                                                        setExpandedGroup(material.groupId)
-                                                    }}>
-                                                        <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
-                                                            <ImageObj
-                                                                src={findImageAsset(imageName, "block")}
-                                                                alt={selectedBlock}
-                                                                width={16}
-                                                                height={16}
-                                                                className="h-full w-auto image-pixelated aspect-ratio"
-                                                            />
-                                                            <span className="truncate text-xs">{toTitleCase(selectedBlock, true)}</span>
-                                                        </div>
-                                                        <span className="font-mono text-xs shrink-0">{material.count}</span>
-                                                    </div>
-                                                ) :
-                                                <div ref={expandedRef} className="mt-1 border p-2 rounded-md">
-                                                    <Label className="mb-2 ml-1 mt-1">Select which material to use:</Label>
-                                                    <InlineGroupSwitch
-                                                        group={BLOCK_GROUPS[material.groupId]}
-                                                        blockSelection={blockSelection}
-                                                        callback={(groupId, block) => {
-                                                            setExpandedGroup(null)
-                                                            if (selectedBlock != block) {
-                                                                toggleBlockSelection(groupId, block ? block : selectedBlock);
-                                                            }
-                                                        }}
-                                                        groupId={material.groupId}
-                                                        open={true}
-                                                        removeBtn={true}
-                                                    />
-                                                </div>
-                                            }
-                                        </div>
-                                    );
-                                })}
+                    <Card id="settings">
+                        <CardHeader>
+                            <CardTitle>Settings</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="grid grid-cols-2 gap-4">
+                                <InputField
+                                    value={mapWidth}
+                                    onChange={(e) => setMapWidth(parseInt(e))}
+                                    max={20}
+                                    min={1}
+                                    variant="number"
+                                    label="Map Width (X)"
+                                />
+                                <InputField
+                                    value={mapHeight}
+                                    onChange={(e) => setMapHeight(parseInt(e))}
+                                    max={20}
+                                    min={1}
+                                    variant="number"
+                                    label="Map Height (Y)"
+                                />
                             </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                            <p className="text-xs text-muted-foreground mt-1 ml-1">Total size: {mapWidth * 128}x{mapHeight * 128} pixels ({mapWidth}x{mapHeight} maps)</p>
+
+                            <Label className="mt-4 mb-2">Dithering Method</Label>
+                            <ComboBox
+                                items={Object.keys(ditheringMethods)}
+                                value={ditheringMethod}
+                                onChange={(e) => setDitheringMethod(e as DitheringMethodName)}
+                            />
+
+                            <Label className="mt-4 mb-2">Staircasing Method</Label>
+                            <ComboBox
+                                items={Object.values(StaircasingMode)}
+                                value={staircasingMode}
+                                onChange={(e) => setStaircasingMode(e as StaircasingMode)}
+                                getDisplayName={(v) => {
+                                    return v == StaircasingMode.NONE ? "Flat Map (2d)" : (v == StaircasingMode.STANDARD ? "Staircasing 3d" : (v == StaircasingMode.VALLEY ? "Valley" : "Valley (Max 3)"))
+                                }}
+                                renderItem={(v) => {
+                                    return v == StaircasingMode.VALLEY_3_LEVEL ? "Max 3 high" : ""
+                                }}
+                            />
+
+                            <Separator className="my-4" />
+                            <div className="flex items-center space-x-2">
+                                <Checkbox
+                                    id="support"
+                                    checked={addSupportBlocks}
+                                    onCheckedChange={(checked) => setAddSupportBlocks(checked as boolean)}
+                                />
+                                <Label htmlFor="support">
+                                    Add Support Blocks
+                                </Label>
+                            </div>
+
+                            <Label className="mt-4 mb-2">Color Matching</Label>
+                            <ComboBox
+                                items={Object.values(ColorDistanceMethod)}
+                                value={colorDistanceMethod}
+                                onChange={(e) => setColorDistanceMethod(e as ColorDistanceMethod)}
+                                getDisplayName={(v) => {
+                                    return v == ColorDistanceMethod.WEIGHTED_RGB ? "Weighted RGB" : (v == ColorDistanceMethod.EUCLIDEAN ? "Euclidean" : "Delta E")
+                                }}
+                                renderItem={(v) => {
+                                    return v == ColorDistanceMethod.WEIGHTED_RGB ? "Recommended" : (v == ColorDistanceMethod.EUCLIDEAN ? "Fast" : "Perceptual")
+                                }}
+                            />
+
+                            <Separator className="my-4" />
+
+                            <div className="flex flex-wrap gap-2">
+                                <Button onClick={handleExport3D} className="flex-1" disabled={!processingStats}>
+                                    <Download className="mr-2" size={16} />
+                                    Export NBT
+                                </Button>
+                                <Button onClick={handleExportPNG} className="flex-1" disabled={!processingStats}>
+                                    <Download className="mr-2" size={16} />
+                                    Export PNG
+                                </Button>
+                                <Button onClick={handleReset} variant="destructive" className="flex-1">
+                                    <RotateCcw className="mr-2" size={16} />
+                                    Reset
+                                </Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {processingStats && (
+                        <Card id="stats">
+                            <CardHeader>
+                                <CardTitle>Stats</CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span>Dimensions:</span>
+                                    <span className="font-mono">{processingStats.width} x {processingStats.height}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Total Blocks:</span>
+                                    <span className="font-mono">{processingStats.totalBlocks.toLocaleString()}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span>Unique Colors:</span>
+                                    <span className="font-mono">{processingStats.uniqueBlocks}</span>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    <Card id="palette" className="">
+                        <CardHeader>
+                            <CardTitle>Block Palette</CardTitle>
+                            <CardDescription className="space-y-2 text-sm">
+                                {Object.keys(blockSelection).length} / 61 colors enabled
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="aspect-square space-y-2 overflow-y-auto">
+                            {BLOCK_GROUPS.map((group, groupId) => (
+                                <PaletteGroup key={groupId} group={group} groupId={groupId} blockSelection={blockSelection} toggleBlockSelection={toggleBlockSelection} />
+                            ))}
+                        </CardContent>
+                    </Card>
+
+                    <Card id="preview">
+                        <CardHeader>
+                            <CardTitle>Preview</CardTitle>
+                        </CardHeader>
+                        <CardContent className="w-full aspect-square p-2">
+                            {(processedImageData && processingStats) && (
+                                <ZoomViewport cellWidth={processingStats.width} cellHeight={processingStats.height}>
+                                    <canvas
+                                        width={processingStats.width}
+                                        height={processingStats.height}
+                                        style={{
+                                            imageRendering: 'pixelated',
+                                            width: '100%',
+                                            height: '100%',
+                                        }}
+                                        ref={(canvas) => {
+                                            if (canvas && processedImageData) {
+                                                const ctx = canvas.getContext('2d');
+                                                if (ctx) {
+                                                    ctx.putImageData(processedImageData, 0, 0);
+                                                }
+                                            }
+                                        }}
+                                    />
+                                </ZoomViewport>
+                            )}
+                        </CardContent>
+                    </Card>
+
+                    {materialList.length > 0 && (
+                        <Card className="gap-2" id="material-list">
+                            <CardHeader>
+                                <CardTitle>Material List</CardTitle>
+                                <CardDescription>Click on materials to edit them.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-sm">
+                                    <Separator />
+                                    <p className="flex text-gray-400 mt-2 mb-1 ">Stats: {processingStats?.uniqueBlocks} materials<Dot />{processingStats?.totalBlocks} blocks</p>
+                                    <Separator />
+
+                                    <div className="space-y-2 max-h-90 overflow-y-auto mt-1">
+                                        {materialList.map((material, idx) => {
+                                            const selectedBlock = materialBlockSnapshot[material.groupId] as string;
+                                            const imageName: string = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
+                                            const isExpanded = expandedGroup === material.groupId;
+
+                                            return (
+                                                <div key={idx}>
+                                                    {!isExpanded ? (
+                                                            <div className="flex items-center justify-between p-2 border rounded-md mr-2 cursor-pointer" onClick={(e) => {
+                                                                e.stopPropagation()
+                                                                setExpandedGroup(material.groupId)
+                                                            }}>
+                                                                <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
+                                                                    <ImageObj
+                                                                        src={findImageAsset(imageName, "block")}
+                                                                        alt={selectedBlock}
+                                                                        width={16}
+                                                                        height={16}
+                                                                        className="h-full w-auto image-pixelated aspect-ratio"
+                                                                    />
+                                                                    <span className="truncate text-xs">{toTitleCase(selectedBlock, true)}</span>
+                                                                </div>
+                                                                <span className="font-mono text-xs shrink-0">{material.count}</span>
+                                                            </div>
+                                                        ) :
+                                                        <div ref={expandedRef} className="mt-1 border p-2 rounded-md">
+                                                            <Label className="mb-2 ml-1 mt-1">Select which material to use:</Label>
+                                                            <InlineGroupSwitch
+                                                                group={BLOCK_GROUPS[material.groupId]}
+                                                                blockSelection={blockSelection}
+                                                                callback={(groupId, block) => {
+                                                                    setExpandedGroup(null)
+                                                                    if (selectedBlock != block) {
+                                                                        toggleBlockSelection(groupId, block ? block : selectedBlock);
+                                                                    }
+                                                                }}
+                                                                groupId={material.groupId}
+                                                                open={true}
+                                                                removeBtn={true}
+                                                            />
+                                                        </div>
+                                                    }
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )}
+                </>
             )}
         </div>
     );

@@ -1,6 +1,6 @@
 import pako from 'pako';
-import { Structure3D } from './utils';
-import { NBT, NBTCompound, NBTType, NBTValue, writeNBT } from "@/lib/schematics/nbtWriter";
+import {Structure3D} from './utils';
+import {NBT, NBTCompound, NBTType, NBTValue, writeNBT} from "@/lib/schematics/nbtWriter";
 
 function buildNBTStructure(structure: Structure3D): NBTCompound {
     // Build palette: map block names to indices
@@ -27,16 +27,14 @@ function buildNBTStructure(structure: Structure3D): NBTCompound {
     });
 
     // Build NBT root structure
-    const root: NBTCompound = {
+    return {
         blocks: NBT.list(NBTType.Compound, nbtBlocks),
         entities: NBT.list(NBTType.Compound, []),
         palette: NBT.list(NBTType.Compound, paletteBlocks),
         size: NBT.list(NBTType.Int, [structure.width, structure.depth, structure.height]),
-        author: 'Map Art Generator',
+        author: 'MinecraftUtils',
         DataVersion: 2865 // Minecraft 1.18.2
     };
-
-    return root;
 }
 
 export function exportStructureNBT(structure: Structure3D, filename: string = 'structure.nbt'): void {

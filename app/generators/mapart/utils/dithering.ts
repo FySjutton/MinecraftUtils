@@ -1,6 +1,6 @@
 import {StaircasingMode, ColorDistanceMethod, Brightness, getAllowedBrightnesses} from './utils';
 import { getColorWithBrightness, numberToRGB, calculateDistance } from './colorMatching';
-import ditheringMethods from './utils/dithering.json';
+import ditheringMethods from '../inputs/dithering.json';
 import {getBaseY, getYRange, ProcessedImageResult} from './imageProcessing';
 
 export type DitheringMethodName = keyof typeof ditheringMethods;

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 
 export enum CropMode {
     STRETCH = 'stretch',
@@ -116,36 +117,14 @@ export default function ImagePreprocessing({sourceImage, targetWidth, targetHeig
                     />
                 </div>
 
-                <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Crop Mode:</Label>
-                    <div className="space-y-1">
-                        <div className="flex items-center space-x-2">
-                            <input
-                                type="radio"
-                                id="stretch"
-                                name="cropMode"
-                                checked={cropMode === CropMode.STRETCH}
-                                onChange={() => setCropMode(CropMode.STRETCH)}
-                                className="cursor-pointer"
-                            />
-                            <Label htmlFor="stretch" className="cursor-pointer font-normal">
-                                Stretch to Fit
-                            </Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <input
-                                type="radio"
-                                id="scale_crop"
-                                name="cropMode"
-                                checked={cropMode === CropMode.SCALE_CROP}
-                                onChange={() => setCropMode(CropMode.SCALE_CROP)}
-                                className="cursor-pointer"
-                            />
-                            <Label htmlFor="scale_crop" className="cursor-pointer font-normal">
-                                Scale & Crop (Keep Aspect)
-                            </Label>
-                        </div>
-                    </div>
+                <div className="space-y-2 flex flex-wrap gap-2 items-center">
+                    <Label className="text-sm font-semibold m-0">Crop Mode:</Label>
+                    <Tabs value={cropMode} onValueChange={(v) => setCropMode(v as CropMode)} >
+                        <TabsList>
+                            <TabsTrigger value="scale_crop">Scale & Crop</TabsTrigger>
+                            <TabsTrigger value="stretch">Stretch</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </div>
 
                 {cropMode === CropMode.SCALE_CROP && sourceImage && (() => {
@@ -158,7 +137,7 @@ export default function ImagePreprocessing({sourceImage, targetWidth, targetHeig
                         <>
                             {needsXOffset && (
                                 <div>
-                                    <Label>Horizontal Position: {xOffset}%</Label>
+                                    <Label>Horizontal Position: <span className="text-gray-300">{xOffset}%</span></Label>
                                     <Slider
                                         value={[xOffset]}
                                         onValueChange={(v) => setXOffset(v[0])}
@@ -167,14 +146,11 @@ export default function ImagePreprocessing({sourceImage, targetWidth, targetHeig
                                         step={1}
                                         className="mt-2"
                                     />
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                        0% = Left, 50% = Center, 100% = Right
-                                    </div>
                                 </div>
                             )}
                             {needsYOffset && (
                                 <div>
-                                    <Label>Vertical Position: {yOffset}%</Label>
+                                    <Label>Vertical Position: <span className="text-gray-300">{yOffset}%</span></Label>
                                     <Slider
                                         value={[yOffset]}
                                         onValueChange={(v) => setYOffset(v[0])}
@@ -183,9 +159,6 @@ export default function ImagePreprocessing({sourceImage, targetWidth, targetHeig
                                         step={1}
                                         className="mt-2"
                                     />
-                                    <div className="text-xs text-muted-foreground mt-1">
-                                        0% = Top, 50% = Center, 100% = Bottom
-                                    </div>
                                 </div>
                             )}
                         </>

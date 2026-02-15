@@ -93,8 +93,6 @@ function processWithoutDithering(
     staircasingMode: StaircasingMode,
     colorMethod: ColorDistanceMethod
 ): ProcessedImageResult {
-    console.log('[MapArt] processWithoutDithering - NO DITHERING APPLIED');
-
     const sourceData = sourceImageData.data;
     const resultData = new Uint8ClampedArray(sourceData.length);
 

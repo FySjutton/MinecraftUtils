@@ -5,7 +5,7 @@ import {
     getAllowedBrightnesses,
     rgbToHex,
     scaleRGB
-} from "@/app/generators/mapart/utils";
+} from "@/app/generators/mapart/utils/utils";
 
 const labCache = new Map<number, [number, number, number]>();
 

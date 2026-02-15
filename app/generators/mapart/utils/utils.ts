@@ -1,7 +1,7 @@
 import { getColorWithBrightness, numberToRGB } from './colorMatching';
-import blockGroupsData from './utils/blocks.json';
-import baseColorsData from './utils/colors.json';
-import aliasesData from './utils/aliases.json';
+import blockGroupsData from '../inputs/blocks.json';
+import baseColorsData from '../inputs/colors.json';
+import aliasesData from '../inputs/aliases.json';
 
 export const BLOCK_GROUPS: string[][] = blockGroupsData as string[][];
 export const BASE_COLORS: number[] = baseColorsData as number[];

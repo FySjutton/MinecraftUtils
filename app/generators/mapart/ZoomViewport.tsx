@@ -64,12 +64,12 @@ export function ZoomViewport({ children, cellWidth, cellHeight }: Props) {
             : availableWidth;
 
     return (
-        <div ref={outerRef} className="overflow-hidden relative border border-stone-700 rounded-lg bg-stone-800 w-full h-full aspect-square">
+        <div ref={outerRef} className="overflow-hidden relative border border-stone-700 rounded-lg bg-stone-800 w-full h-full aspect-square p-2">
             <TransformWrapper
                 key={`${cellWidth}x${cellHeight}x${effectiveWrapperWidth}x${scale}`}
                 initialScale={scale}
                 minScale={scale}
-                maxScale={scale * 50}
+                maxScale={scale * 55}
                 centerOnInit
                 limitToBounds
                 wheel={{ step: 0.15 }}
