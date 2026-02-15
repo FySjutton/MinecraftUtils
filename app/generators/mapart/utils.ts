@@ -22,8 +22,21 @@ export function getDefaultBlockSelection(): BlockSelection {
     return selection;
 }
 
+export function getAllowedBrightnesses(groupId: number): Brightness[] {
+    if (groupId === 11) return [Brightness.HIGH];
+    return [Brightness.LOW, Brightness.NORMAL, Brightness.HIGH];
+}
+
 export function rgbToHex(r: number, g: number, b: number): string {
     return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+export function scaleRGB(color: number, brightness: Brightness): number {
+    const r = ((color >> 16) & 0xff) * brightness / 255;
+    const g = ((color >> 8) & 0xff) * brightness / 255;
+    const b = (color & 0xff) * brightness / 255;
+
+    return ((Math.floor(r) & 0xff) << 16) | ((Math.floor(g) & 0xff) << 8) | (Math.floor(b) & 0xff);
 }
 
 export interface ProcessingStats {

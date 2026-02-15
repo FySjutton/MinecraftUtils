@@ -1,7 +1,7 @@
-import { StaircasingMode, ColorDistanceMethod, Brightness } from './utils';
+import {StaircasingMode, ColorDistanceMethod, Brightness, getAllowedBrightnesses} from './utils';
 import { getColorWithBrightness, numberToRGB, calculateDistance } from './colorMatching';
 import ditheringMethods from './utils/dithering.json';
-import { ProcessedImageResult } from './imageProcessing';
+import {getBaseY, getYRange, ProcessedImageResult} from './imageProcessing';
 
 export type DitheringMethodName = keyof typeof ditheringMethods;
 
@@ -221,28 +221,35 @@ function findBestMatch(
     } else {
         let bestDistance = Infinity;
 
-        for (const brightness of [Brightness.HIGH, Brightness.NORMAL, Brightness.LOW]) {
-            const targetY = calculateTargetY(brightness, z, currentY, baseY);
+        for (const groupId of enabledGroups) {
+            const allowedBrightnesses = getAllowedBrightnesses(groupId);
 
-            if (targetY < yRange.min || targetY > yRange.max) {
-                continue;
-            }
+            for (const brightness of allowedBrightnesses) {
+                // Vatten (group 11) tar inte hänsyn till staircasing
+                const targetY = (groupId === 11)
+                    ? currentY
+                    : calculateTargetY(brightness, z, currentY, baseY);
 
-            const result = findBestColorAtBrightness(
-                oldR, oldG, oldB,
-                enabledGroups,
-                brightness,
-                colorMethod
-            );
+                if (targetY < yRange.min || targetY > yRange.max) {
+                    continue;
+                }
 
-            if (result.distance < bestDistance) {
-                bestDistance = result.distance;
-                bestMatch = {
-                    y: targetY,
-                    color: result.color,
-                    groupId: result.groupId,
-                    brightness: brightness
-                };
+                const result = findBestColorAtBrightness(
+                    oldR, oldG, oldB,
+                    new Set([groupId]),
+                    brightness,
+                    colorMethod
+                );
+
+                if (result.distance < bestDistance) {
+                    bestDistance = result.distance;
+                    bestMatch = {
+                        y: targetY,
+                        color: result.color,
+                        groupId: groupId,
+                        brightness: brightness
+                    };
+                }
             }
         }
     }
@@ -336,35 +343,6 @@ function calculateTargetY(
         if (brightness === Brightness.HIGH) return currentY + 1;
         if (brightness === Brightness.NORMAL) return currentY;
         return currentY - 1;
-    }
-}
-
-function getBaseY(mode: StaircasingMode): number {
-    switch (mode) {
-        case StaircasingMode.NONE:
-            return 0;
-        case StaircasingMode.STANDARD:
-            return 0;
-        case StaircasingMode.VALLEY:
-        case StaircasingMode.VALLEY_3_LEVEL:
-            return 1;
-        default:
-            return 0;
-    }
-}
-
-function getYRange(mode: StaircasingMode): { min: number; max: number } {
-    switch (mode) {
-        case StaircasingMode.NONE:
-            return { min: 0, max: 0 };
-        case StaircasingMode.STANDARD:
-            return { min: -1000, max: 1000 };
-        case StaircasingMode.VALLEY:
-            return { min: -1000, max: 1000 };
-        case StaircasingMode.VALLEY_3_LEVEL:
-            return { min: 0, max: 2 };
-        default:
-            return { min: 0, max: 0 };
     }
 }
 

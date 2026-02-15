@@ -1,14 +1,22 @@
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Upload, Download, RotateCcw, ChevronDown, ChevronRight } from 'lucide-react';
+import {Upload, Download, RotateCcw, ChevronDown, ChevronRight, ChevronUp, Dot} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { ProcessingStats, BlockSelection, MaterialCount, ColorDistanceMethod, StaircasingMode, Brightness } from './utils';
+import {
+    ProcessingStats,
+    BlockSelection,
+    MaterialCount,
+    ColorDistanceMethod,
+    StaircasingMode,
+    Brightness,
+    scaleRGB
+} from './utils';
 import { BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection, ALIASES } from './utils';
-import { numberToRGB } from './colorMatching';
+import {numberToHex, numberToRGB} from './colorMatching';
 import { rgbToHex, getMaterialList } from './utils';
 import { processImage, extractBrightnessMap } from './imageProcessing';
 import { calculate3DStructure } from './staircasing';
@@ -23,6 +31,8 @@ import {InputField} from "@/components/inputs/InputField";
 import {ComboBox} from "@/components/inputs/dropdowns/ComboBox";
 import {Separator} from "@/components/ui/separator";
 import {toTitleCase} from "@/lib/StringUtils";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 
 export default function MapArtGenerator() {
     const [image, setImage] = useState<string | null>(null);
@@ -32,11 +42,9 @@ export default function MapArtGenerator() {
     const [ditheringMethod, setDitheringMethod] = useState<DitheringMethodName>('None');
     const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.NONE);
     const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.WEIGHTED_RGB);
-    const [showBlockSelector, setShowBlockSelector] = useState(false);
     const [processingStats, setProcessingStats] = useState<ProcessingStats | null>(null);
     const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getDefaultBlockSelection());
     const [materialList, setMaterialList] = useState<MaterialCount[]>([]);
-    const [isProcessing, setIsProcessing] = useState(false);
     const [processedImageData, setProcessedImageData] = useState<ImageData | null>(null);
     const [brightnessMap, setBrightnessMap] = useState<Brightness[][] | null>(null);
     const [groupIdMap, setGroupIdMap] = useState<number[][] | null>(null);
@@ -64,8 +72,6 @@ export default function MapArtGenerator() {
 
     const handleProcessImage = useCallback(() => {
         if (!preprocessedCanvas) return;
-
-        setIsProcessing(true);
 
         setTimeout(() => {
             try {
@@ -103,14 +109,11 @@ export default function MapArtGenerator() {
                     setBrightnessMap(result.brightnessMap);
                     setGroupIdMap(result.groupIdMap);
                     setYMap(result.yMap);
-                    setIsProcessing(false);
                     console.log('[MapArt UI] Processing complete');
                 };
 
-                img.onerror = () => setIsProcessing(false);
             } catch (err) {
                 console.error('[MapArt UI] Processing error:', err);
-                setIsProcessing(false);
             }
         }, 50);
     }, [preprocessedCanvas, mapWidth, mapHeight, ditheringMethod, staircasingMode, colorDistanceMethod, getEnabledGroups]);
@@ -291,7 +294,6 @@ export default function MapArtGenerator() {
         setPreprocessedCanvas(null);
         setProcessingStats(null);
         setMaterialList([]);
-        setIsProcessing(false);
         setProcessedImageData(null);
         setBrightnessMap(null);
         setGroupIdMap(null);
@@ -459,99 +461,24 @@ export default function MapArtGenerator() {
                     </Card>
                 )}
 
-                {materialList.length > 0 && (
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Material List</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="space-y-2 max-h-64 overflow-y-auto text-sm">
-                                {materialList.map((material, idx) => {
-                                    const selectedBlock = blockSelection[material.groupId] || BLOCK_GROUPS[material.groupId]?.[0] || 'Unknown';
-                                    const imageName: string = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
-
-                                    return (
-                                        <div key={idx} className="flex items-center justify-between p-2 border rounded-md mr-2">
-                                            <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
-                                                <ImageObj
-                                                    src={findImageAsset(imageName, "block")}
-                                                    alt={selectedBlock}
-                                                    width={16}
-                                                    height={16}
-                                                    className="h-full w-auto image-pixelated aspect-ratio"
-                                                />
-                                                <span className="truncate text-xs">{toTitleCase(selectedBlock.replace(/_/g, ' '))}</span>
-                                            </div>
-                                            <span className="font-mono text-xs shrink-0">{material.count}</span>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </CardContent>
-                    </Card>
-                )}
-
                 <Card>
                     <CardHeader>
-                        <CardTitle
-                            className="cursor-pointer flex items-center justify-between"
-                            onClick={() => setShowBlockSelector(!showBlockSelector)}
-                        >
-                            <span>Block Palette</span>
-                            {showBlockSelector ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
-                        </CardTitle>
+                        <CardTitle>Block Palette</CardTitle>
+                        <CardDescription className="space-y-2 text-sm">
+                            {Object.keys(blockSelection).length} / 61 colors enabled
+                        </CardDescription>
                     </CardHeader>
-                    {showBlockSelector && (
-                        <CardContent>
-                            <div className="space-y-2 max-h-96 overflow-y-auto">
-                                {BLOCK_GROUPS.map((group, groupId) => {
-                                    const baseColor = BASE_COLORS[groupId];
-                                    const rgb = numberToRGB(baseColor);
-                                    const hexColor = rgbToHex(rgb.r, rgb.g, rgb.b);
-
-                                    return (
-                                        <div key={groupId} className="border rounded p-2">
-                                            <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
-                                                <div
-                                                    className="w-4 h-4 rounded border"
-                                                    style={{ backgroundColor: hexColor }}
-                                                />
-                                                <span>Group {groupId}</span>
-                                            </div>
-                                            <div className="flex flex-wrap gap-1">
-                                                {group.map((blockName, idx) => {
-                                                    const isSelected = blockSelection[groupId] === blockName;
-                                                    const uniqueKey = `${groupId}-${blockName}-${idx}`;
-                                                    const imageName: string = "2d_" + (blockName in ALIASES ? ALIASES[blockName] : blockName);
-                                                    return (
-                                                        <Button
-                                                            key={uniqueKey}
-                                                            onClick={() => toggleBlockSelection(groupId, blockName)}
-                                                            variant={isSelected ? 'default' : 'outline'}
-                                                            size="sm"
-                                                            className="h-7 px-2 text-xs"
-                                                        >
-                                                            <ImageObj
-                                                                src={findImageAsset(imageName, "block")}
-                                                                alt={blockName}
-                                                                width={16}
-                                                                height={16}
-                                                            />
-                                                            {blockName.replace(/_/g, ' ')}
-                                                        </Button>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </CardContent>
-                    )}
+                    <CardContent>
+                        <div className="space-y-2 max-h-96 overflow-y-auto">
+                            {BLOCK_GROUPS.map((group, groupId) => (
+                                <PaletteGroup key={groupId} group={group} groupId={groupId} blockSelection={blockSelection} toggleBlockSelection={toggleBlockSelection} />
+                            ))}
+                        </div>
+                    </CardContent>
                 </Card>
             </div>
 
-            <div className="w-1/2 max-[800]:w-full">
+            <div className="w-1/2 max-[800]:w-full overflow-hidden">
                 <Card>
                     <CardHeader>
                         <CardTitle>Preview</CardTitle>
@@ -560,10 +487,6 @@ export default function MapArtGenerator() {
                         {!image ? (
                             <div className="flex items-center justify-center h-96 border-2 border-dashed rounded-lg">
                                 <p className="text-muted-foreground">Upload an image to begin</p>
-                            </div>
-                        ) : isProcessing ? (
-                            <div className="flex items-center justify-center h-96">
-                                <p>Processing...</p>
                             </div>
                         ) : processedImageData && processingStats ? (
                             <ZoomViewport
@@ -591,6 +514,111 @@ export default function MapArtGenerator() {
                         ) : null}
                     </CardContent>
                 </Card>
+
+                {materialList.length > 0 && (
+                    <Card className="mt-4">
+                        <CardHeader>
+                            <CardTitle>Material List</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <div className="space-y-2 max-h-64 overflow-y-auto text-sm">
+                                {materialList.map((material, idx) => {
+                                    const selectedBlock = blockSelection[material.groupId] || BLOCK_GROUPS[material.groupId]?.[0] || 'Unknown';
+                                    const imageName: string = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
+
+                                    return (
+                                        <div key={idx} className="flex items-center justify-between p-2 border rounded-md mr-2">
+                                            <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
+                                                <ImageObj
+                                                    src={findImageAsset(imageName, "block")}
+                                                    alt={selectedBlock}
+                                                    width={16}
+                                                    height={16}
+                                                    className="h-full w-auto image-pixelated aspect-ratio"
+                                                />
+                                                <span className="truncate text-xs">{toTitleCase(selectedBlock, true)}</span>
+                                            </div>
+                                            <span className="font-mono text-xs shrink-0">{material.count}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function PaletteGroup({group, groupId, blockSelection, toggleBlockSelection}: {group: string[], groupId: number, blockSelection: BlockSelection, toggleBlockSelection: (groupId: number, blockName: string) => void}) {
+    const [open, setOpen] = useState(false);
+
+    const baseColor = BASE_COLORS[groupId];
+
+    const normalHex = numberToHex(scaleRGB(baseColor, Brightness.NORMAL));
+    const lightHex = numberToHex(scaleRGB(baseColor, Brightness.LOW));
+    const highHex = numberToHex(scaleRGB(baseColor, Brightness.HIGH));
+
+    const selected = blockSelection[groupId]
+    const selectedIndex = selected != null ? group.indexOf(selected) : -1
+
+    return (
+        <div key={groupId} className="border rounded p-2">
+            <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                <div className="flex">
+                    {groupId != 11 && (
+                        <>
+                            <div className="w-4 h-4 rounded border" style={{backgroundColor: lightHex}}/>
+                            <div className="w-4 h-4 rounded border" style={{backgroundColor: normalHex}}/>
+                        </>
+                    )}
+                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: highHex }}/>
+                </div>
+
+                <span>Group {groupId + 1}</span><Dot />
+                <span>{group.length > 5 && `${open ? group.length : (5 + (selectedIndex > 4 ? 1 : 0))} /`} {group.length} blocks</span>
+                {group.length > 5 && (
+                    <Button onClick={() => setOpen(!open)} variant="secondary" className="h-6 mr-4 px-2 text-xs cursor-pointer">{open ?
+                        <p className="flex gap-2">Hide<ChevronUp /></p> :
+                        <p className="flex gap-2">Show<ChevronDown /></p>
+                    }</Button>
+                )}
+            </div>
+            <div className="flex flex-wrap gap-1">
+                {group.map((blockName, idx) => {
+                    if (!((idx < (open ? group.length : Math.min(group.length, 5))) || (selected == blockName))) return null
+                    const isSelected = selected === blockName
+                    const uniqueKey = `${groupId}-${blockName}-${idx}`
+                    const imageName = "2d_" + (blockName in ALIASES ? ALIASES[blockName] : blockName)
+
+                    return (
+                        <TooltipProvider key={uniqueKey} delayDuration={200}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        onClick={() => toggleBlockSelection(groupId, blockName)}
+                                        variant="outline"
+                                        size="sm"
+                                        className={`px-2 py-2 flex-col border h-auto ${isSelected ? "inset-ring-2" : ""}`}
+                                    >
+                                        <ImageObj
+                                            src={findImageAsset(imageName, "block")}
+                                            alt={blockName}
+                                            width={16}
+                                            height={16}
+                                            className="h-10 w-auto image-pixelated"
+                                        />
+                                    </Button>
+                                </TooltipTrigger>
+
+                                <TooltipContent side="bottom" align="center">
+                                    {toTitleCase(blockName, true)}
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )
+                })}
             </div>
         </div>
     );

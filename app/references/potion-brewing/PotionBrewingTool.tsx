@@ -118,7 +118,7 @@ function InlineIngredientList({items}: { items: { type: "potion" | "ingredient";
                             className="image-pixelated"
                         />
                         <span className="mt-1 text-muted-foreground whitespace-nowrap">
-                        {toTitleCase(item.name.replaceAll("_", " "))}
+                        {toTitleCase(item.name, true)}
                     </span>
                     </div>
                 ))}
@@ -337,9 +337,7 @@ export default function PotionBrewingTool() {
 
                                 <RowView
                                     icon={ingredientIcon(s.ingredient)}
-                                    label={`Add ${toTitleCase(
-                                        s.ingredient.replaceAll("_", " ")
-                                    )}`}
+                                    label={`Add ${toTitleCase(s.ingredient, true)}`}
                                     size="large"
                                 />
 

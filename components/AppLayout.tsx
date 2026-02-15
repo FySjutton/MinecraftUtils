@@ -27,7 +27,7 @@ export default function AppLayout({ children }: { children: ReactNode }) {
     const segments = pathname
         .split("/")
         .filter(Boolean)
-        .map((value) => toTitleCase(value.replaceAll(/[-_]/g, " ")));
+        .map((value) => toTitleCase(value, true));
 
     const currentPage = getCurrentPage(pathname);
 

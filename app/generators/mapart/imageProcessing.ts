@@ -1,8 +1,8 @@
 import { findNearestMapColor, getColorWithBrightness, numberToRGB, calculateDistance } from './colorMatching';
-import { Brightness, ColorDistanceMethod, StaircasingMode } from './utils';
+import {Brightness, ColorDistanceMethod, getAllowedBrightnesses, StaircasingMode} from './utils';
 import { applyDithering, DitheringMethodName } from './dithering';
 
-function getBaseY(mode: StaircasingMode): number {
+export function getBaseY(mode: StaircasingMode): number {
     switch (mode) {
         case StaircasingMode.NONE:
             return 0;
@@ -16,7 +16,7 @@ function getBaseY(mode: StaircasingMode): number {
     }
 }
 
-function getYRange(mode: StaircasingMode): { min: number; max: number } {
+export function getYRange(mode: StaircasingMode): { min: number; max: number } {
     switch (mode) {
         case StaircasingMode.NONE:
             return { min: 0, max: 0 };
@@ -145,36 +145,39 @@ function processWithoutDithering(
             } | null = null;
             let bestDistance = Infinity;
 
-            for (const brightness of [Brightness.HIGH, Brightness.NORMAL, Brightness.LOW]) {
-                let targetY: number;
+            for (const groupId of enabledGroups) {
+                const allowedBrightnesses = getAllowedBrightnesses(groupId);
 
-                if (z === 0) {
-                    if (brightness === Brightness.HIGH) {
-                        targetY = baseY + 1;
-                    } else if (brightness === Brightness.NORMAL) {
-                        targetY = baseY;
-                    } else {
-                        targetY = baseY - 1;
-                    }
-                } else {
-                    if (brightness === Brightness.HIGH) {
-                        targetY = currentY + 1;
-                    } else if (brightness === Brightness.NORMAL) {
+                for (const brightness of allowedBrightnesses) {
+                    let targetY: number;
+
+                    // Vatten (group 11) tar inte hänsyn till staircasing
+                    if (groupId === 11) {
                         targetY = currentY;
                     } else {
-                        targetY = currentY - 1;
+                        if (z === 0) {
+                            if (brightness === Brightness.HIGH) {
+                                targetY = baseY + 1;
+                            } else if (brightness === Brightness.NORMAL) {
+                                targetY = baseY;
+                            } else {
+                                targetY = baseY - 1;
+                            }
+                        } else {
+                            if (brightness === Brightness.HIGH) {
+                                targetY = currentY + 1;
+                            } else if (brightness === Brightness.NORMAL) {
+                                targetY = currentY;
+                            } else {
+                                targetY = currentY - 1;
+                            }
+                        }
                     }
-                }
 
-                if (targetY < yRange.min || targetY > yRange.max) {
-                    continue;
-                }
+                    if (targetY < yRange.min || targetY > yRange.max) {
+                        continue;
+                    }
 
-                let minDistance = Infinity;
-                let bestColor = 0;
-                let bestGroupId = 0;
-
-                for (const groupId of enabledGroups) {
                     const colorNum = getColorWithBrightness(groupId, brightness);
                     const rgb = numberToRGB(colorNum);
 
@@ -184,21 +187,15 @@ function processWithoutDithering(
                         colorMethod
                     );
 
-                    if (distance < minDistance) {
-                        minDistance = distance;
-                        bestColor = colorNum;
-                        bestGroupId = groupId;
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestMatch = {
+                            y: targetY,
+                            color: colorNum,
+                            groupId: groupId,
+                            brightness: brightness
+                        };
                     }
-                }
-
-                if (minDistance < bestDistance) {
-                    bestDistance = minDistance;
-                    bestMatch = {
-                        y: targetY,
-                        color: bestColor,
-                        groupId: bestGroupId,
-                        brightness: brightness
-                    };
                 }
             }
 
@@ -269,8 +266,10 @@ export function extractBrightnessMap(
             let foundGroupId = 0;
             let foundBrightness = Brightness.NORMAL;
 
-            for (const brightness of [Brightness.HIGH, Brightness.NORMAL, Brightness.LOW]) {
-                for (const groupId of enabledGroups) {
+            for (const groupId of enabledGroups) {
+                const allowedBrightnesses = getAllowedBrightnesses(groupId);
+
+                for (const brightness of allowedBrightnesses) {
                     const colorNum = getColorWithBrightness(groupId, brightness);
                     const rgb = numberToRGB(colorNum);
 
@@ -297,23 +296,28 @@ export function extractBrightnessMap(
             if (staircasingMode === StaircasingMode.NONE) {
                 yMap[z][x] = 0;
             } else {
-                if (z === 0) {
-                    if (foundBrightness === Brightness.HIGH) {
-                        currentY = baseY + 1;
-                    } else if (foundBrightness === Brightness.NORMAL) {
-                        currentY = baseY;
-                    } else {
-                        currentY = baseY - 1;
-                    }
+                // Vatten (group 11) ändrar inte Y
+                if (foundGroupId === 11) {
+                    yMap[z][x] = currentY;
                 } else {
-                    if (foundBrightness === Brightness.HIGH) {
-                        currentY = currentY + 1;
-                    } else if (foundBrightness === Brightness.LOW) {
-                        currentY = currentY - 1;
+                    if (z === 0) {
+                        if (foundBrightness === Brightness.HIGH) {
+                            currentY = baseY + 1;
+                        } else if (foundBrightness === Brightness.NORMAL) {
+                            currentY = baseY;
+                        } else {
+                            currentY = baseY - 1;
+                        }
+                    } else {
+                        if (foundBrightness === Brightness.HIGH) {
+                            currentY = currentY + 1;
+                        } else if (foundBrightness === Brightness.LOW) {
+                            currentY = currentY - 1;
+                        }
+                        // NORMAL keeps currentY the same
                     }
-                    // NORMAL keeps currentY the same
+                    yMap[z][x] = currentY;
                 }
-                yMap[z][x] = currentY;
             }
         }
     }

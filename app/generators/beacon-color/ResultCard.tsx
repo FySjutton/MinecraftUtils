@@ -58,7 +58,7 @@ export const ResultCard = memo(function ResultCard({result, index, show3D, onTog
                                             height={20}
                                             className="w-6 h-6 border"
                                         />
-                                        <span className="text-xs">{toTitleCase(glass.replaceAll("_", " "))}</span>
+                                        <span className="text-xs">{toTitleCase(glass, true)}</span>
                                     </li>
                                 ))}
                             </ul>

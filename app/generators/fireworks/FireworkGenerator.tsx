@@ -288,7 +288,7 @@ function ToggleCard({shape, onClickAction, selected}: {
                 height={150}
                 className="select-none pointer-events-none"
             />
-            <p className="mt-2">{toTitleCase(shape.replaceAll("_", " "))}</p>
+            <p className="mt-2">{toTitleCase(shape, true)}</p>
         </div>
     )
 }
@@ -394,7 +394,7 @@ function DyeChooser({explosion, addColor, removeColor, isFade}: {
                                         width={16}
                                         height={16}
                                     />
-                                    {toTitleCase(FireworkColorsReverse[color].replaceAll('_', ' '))}
+                                    {toTitleCase(FireworkColorsReverse[color], true)}
                                 </div>
                             </span>
 

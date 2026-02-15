@@ -1,4 +1,11 @@
-import {BASE_COLORS, Brightness, ColorDistanceMethod} from "@/app/generators/mapart/utils";
+import {
+    BASE_COLORS,
+    Brightness,
+    ColorDistanceMethod,
+    getAllowedBrightnesses,
+    rgbToHex,
+    scaleRGB
+} from "@/app/generators/mapart/utils";
 
 const labCache = new Map<number, [number, number, number]>();
 
@@ -79,14 +86,6 @@ function calculateDistance(
 
 export { calculateDistance };
 
-export function scaleRGB(color: number, brightness: Brightness): number {
-    const r = ((color >> 16) & 0xff) * brightness / 255;
-    const g = ((color >> 8) & 0xff) * brightness / 255;
-    const b = (color & 0xff) * brightness / 255;
-
-    return ((Math.floor(r) & 0xff) << 16) | ((Math.floor(g) & 0xff) << 8) | (Math.floor(b) & 0xff);
-}
-
 export function getColorWithBrightness(
     mapColorId: number,
     brightness: Brightness,
@@ -97,6 +96,11 @@ export function getColorWithBrightness(
     }
     const color = BASE_COLORS[mapColorId];
     return scaleRGB(color, brightness);
+}
+
+export function numberToHex(color: number): string {
+    const rgb = numberToRGB(color);
+    return rgbToHex(rgb.r, rgb.g, rgb.b);
 }
 
 export function numberToRGB(color: number): { r: number; g: number; b: number } {
@@ -123,11 +127,11 @@ export function findNearestMapColor(
     let bestGroupId = 0;
     let bestBrightness = Brightness.NORMAL;
 
-    const brightnesses = useStaircasing
-        ? [Brightness.LOW, Brightness.NORMAL, Brightness.HIGH]
-        : [Brightness.NORMAL];
-
     for (const groupId of enabledGroups) {
+        const brightnesses = useStaircasing
+            ? getAllowedBrightnesses(groupId)
+            : [Brightness.NORMAL];
+
         for (const brightness of brightnesses) {
             const colorNum = getColorWithBrightness(groupId, brightness);
             const rgb = numberToRGB(colorNum);
