@@ -2,7 +2,7 @@ import pako from 'pako';
 import { Structure3D } from './utils';
 import { NBT, NBTCompound, NBTType, NBTValue, writeNBT } from "@/lib/schematics/nbtWriter";
 
-export function exportStructureNBT(structure: Structure3D, filename: string = 'structure.nbt'): void {
+function buildNBTStructure(structure: Structure3D): NBTCompound {
     // Build palette: map block names to indices
     const paletteMap = new Map<string, number>();
     const paletteBlocks: NBTValue[] = [];
@@ -36,6 +36,12 @@ export function exportStructureNBT(structure: Structure3D, filename: string = 's
         DataVersion: 2865 // Minecraft 1.18.2
     };
 
+    return root;
+}
+
+export function exportStructureNBT(structure: Structure3D, filename: string = 'structure.nbt'): void {
+    const root = buildNBTStructure(structure);
+
     // Write and compress
     const nbt = writeNBT(root);
     const compressed = pako.gzip(nbt);
@@ -50,4 +56,14 @@ export function exportStructureNBT(structure: Structure3D, filename: string = 's
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+}
+
+export function exportStructureNBTToBlob(structure: Structure3D): Blob {
+    const root = buildNBTStructure(structure);
+
+    // Write and compress
+    const nbt = writeNBT(root);
+    const compressed = pako.gzip(nbt);
+
+    return new Blob([compressed], { type: 'application/octet-stream' });
 }
