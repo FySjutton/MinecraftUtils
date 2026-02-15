@@ -24,7 +24,7 @@ import { exportStructureNBT, exportStructureNBTToBlob } from './nbtExport';
 import { ZoomViewport } from './ZoomViewport';
 import { ditheringMethods, DitheringMethodName } from './dithering';
 import ImageObj from "next/image";
-import { findImageAsset } from "@/lib/images/getImageAsset";
+import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
 import ImagePreprocessing from './ImagePreprocessing';
 import {InputField} from "@/components/inputs/InputField";
@@ -33,6 +33,7 @@ import {Separator} from "@/components/ui/separator";
 import {toTitleCase} from "@/lib/StringUtils";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
+import {block} from "sharp";
 
 export default function MapArtGenerator() {
     const [image, setImage] = useState<string | null>(null);
@@ -52,8 +53,38 @@ export default function MapArtGenerator() {
     const [addSupportBlocks, setAddSupportBlocks] = useState(true);
     const [preprocessedCanvas, setPreprocessedCanvas] = useState<HTMLCanvasElement | null>(null);
     const [sourceImageElement, setSourceImageElement] = useState<HTMLImageElement | null>(null);
+    const [expandedGroup, setExpandedGroup] = useState<number | null>(null)
+    const [materialBlockSnapshot, setMaterialBlockSnapshot] = useState<BlockSelection>({})
 
+    const expandedRef = useRef<HTMLDivElement | null>(null)
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        setMaterialBlockSnapshot({ ...blockSelection })
+    }, [materialList]) // do NOT add blockSelection to this
+
+    useEffect(() => {
+        if (expandedGroup === null) return
+
+        const handleClickOutside = (e: MouseEvent) => {
+            if (expandedRef.current && !expandedRef.current.contains(e.target as Node)) {
+                setExpandedGroup(null)
+            }
+        }
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                setExpandedGroup(null)
+            }
+        }
+
+        document.addEventListener("mousedown", handleClickOutside)
+        document.addEventListener("keydown", handleKeyDown)
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside)
+            document.removeEventListener("keydown", handleKeyDown)
+        }
+    }, [expandedGroup])
 
     const getEnabledGroups = useCallback((): Set<number> => {
         const enabled = new Set<number>();
@@ -516,32 +547,64 @@ export default function MapArtGenerator() {
                 </Card>
 
                 {materialList.length > 0 && (
-                    <Card className="mt-4">
+                    <Card className="mt-4 gap-2">
                         <CardHeader>
                             <CardTitle>Material List</CardTitle>
+                            <CardDescription>Click on materials to edit them.</CardDescription>
                         </CardHeader>
                         <CardContent>
-                            <div className="space-y-2 max-h-64 overflow-y-auto text-sm">
-                                {materialList.map((material, idx) => {
-                                    const selectedBlock = blockSelection[material.groupId] || BLOCK_GROUPS[material.groupId]?.[0] || 'Unknown';
-                                    const imageName: string = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
+                            <div className="text-sm">
+                                <Separator />
+                                <p className="flex text-gray-400 mt-2 mb-1">Stats: {processingStats?.uniqueBlocks} materials<Dot />{processingStats?.totalBlocks} blocks</p>
+                                <Separator />
 
-                                    return (
-                                        <div key={idx} className="flex items-center justify-between p-2 border rounded-md mr-2">
-                                            <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
-                                                <ImageObj
-                                                    src={findImageAsset(imageName, "block")}
-                                                    alt={selectedBlock}
-                                                    width={16}
-                                                    height={16}
-                                                    className="h-full w-auto image-pixelated aspect-ratio"
-                                                />
-                                                <span className="truncate text-xs">{toTitleCase(selectedBlock, true)}</span>
+                                <div className="space-y-2 max-h-64 overflow-y-auto mt-1">
+                                    {materialList.map((material, idx) => {
+                                        const selectedBlock = materialBlockSnapshot[material.groupId] as string;
+                                        const imageName: string = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
+                                        const isExpanded = expandedGroup === material.groupId;
+
+                                        return (
+                                            <div key={idx}>
+                                                {!isExpanded ? (
+                                                        <div className="flex items-center justify-between p-2 border rounded-md mr-2 cursor-pointer" onClick={(e) => {
+                                                            e.stopPropagation()
+                                                            setExpandedGroup(material.groupId)
+                                                        }}>
+                                                            <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
+                                                                <ImageObj
+                                                                    src={findImageAsset(imageName, "block")}
+                                                                    alt={selectedBlock}
+                                                                    width={16}
+                                                                    height={16}
+                                                                    className="h-full w-auto image-pixelated aspect-ratio"
+                                                                />
+                                                                <span className="truncate text-xs">{toTitleCase(selectedBlock, true)}</span>
+                                                            </div>
+                                                            <span className="font-mono text-xs shrink-0">{material.count}</span>
+                                                        </div>
+                                                    ) :
+                                                    <div ref={expandedRef} className="mt-1 border p-2 rounded-md">
+                                                        <Label className="mb-2 ml-1 mt-1">Select which material to use:</Label>
+                                                        <InlineGroupSwitch
+                                                            group={BLOCK_GROUPS[material.groupId]}
+                                                            blockSelection={blockSelection}
+                                                            callback={(groupId, block) => {
+                                                                setExpandedGroup(null)
+                                                                if (selectedBlock != block) {
+                                                                    toggleBlockSelection(groupId, block ? block : selectedBlock);
+                                                                }
+                                                            }}
+                                                            groupId={material.groupId}
+                                                            open={true}
+                                                            removeBtn={true}
+                                                        />
+                                                    </div>
+                                                }
                                             </div>
-                                            <span className="font-mono text-xs shrink-0">{material.count}</span>
-                                        </div>
-                                    );
-                                })}
+                                        );
+                                    })}
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -585,41 +648,67 @@ function PaletteGroup({group, groupId, blockSelection, toggleBlockSelection}: {g
                     }</Button>
                 )}
             </div>
-            <div className="flex flex-wrap gap-1">
-                {group.map((blockName, idx) => {
-                    if (!((idx < (open ? group.length : Math.min(group.length, 5))) || (selected == blockName))) return null
-                    const isSelected = selected === blockName
-                    const uniqueKey = `${groupId}-${blockName}-${idx}`
-                    const imageName = "2d_" + (blockName in ALIASES ? ALIASES[blockName] : blockName)
-
-                    return (
-                        <TooltipProvider key={uniqueKey} delayDuration={200}>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        onClick={() => toggleBlockSelection(groupId, blockName)}
-                                        variant="outline"
-                                        size="sm"
-                                        className={`px-2 py-2 flex-col border h-auto ${isSelected ? "inset-ring-2" : ""}`}
-                                    >
-                                        <ImageObj
-                                            src={findImageAsset(imageName, "block")}
-                                            alt={blockName}
-                                            width={16}
-                                            height={16}
-                                            className="h-10 w-auto image-pixelated"
-                                        />
-                                    </Button>
-                                </TooltipTrigger>
-
-                                <TooltipContent side="bottom" align="center">
-                                    {toTitleCase(blockName, true)}
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
-                    )
-                })}
-            </div>
+            <InlineGroupSwitch group={group} blockSelection={blockSelection} callback={(groupId, blockName) => {
+                toggleBlockSelection(groupId, blockName as string);
+            }} groupId={groupId} open={open} />
         </div>
     );
+}
+
+function InlineGroupSwitch({group, blockSelection, callback, groupId, open, removeBtn = false}: {group: string[], blockSelection: BlockSelection, callback: (groupId: number, blockName: string | null) => void, groupId: number, open: boolean, removeBtn?: boolean}) {
+    const selected = blockSelection[groupId];
+
+    return (
+        <div className="flex flex-wrap gap-1">
+            {removeBtn && (
+                <TooltipProvider delayDuration={200}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button onClick={() => {
+                                if (selected) {
+                                    callback(groupId, null)
+                                }
+                            }} variant="outline" size="sm" className={`px-2 py-2 flex-col border h-auto ${!selected ? "inset-ring-2" : ""}`}>
+                                <ImageObj src={getImageAsset("none")} alt="None" width={16} height={16} className="h-10 w-auto image-pixelated" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" align="center">Disable Group</TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            )}
+
+            {group.map((blockName, idx) => {
+                if (!((idx < (open ? group.length : Math.min(group.length, 5))) || (selected == blockName))) return null
+                const isSelected = selected === blockName
+                const uniqueKey = `${groupId}-${blockName}-${idx}`
+                const imageName = "2d_" + (blockName in ALIASES ? ALIASES[blockName] : blockName)
+
+                return (
+                    <TooltipProvider key={uniqueKey} delayDuration={200}>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={() => {callback(groupId, blockName)}}
+                                    variant="outline"
+                                    size="sm"
+                                    className={`px-2 py-2 flex-col border h-auto ${isSelected ? "inset-ring-2" : ""}`}
+                                >
+                                    <ImageObj
+                                        src={findImageAsset(imageName, "block")}
+                                        alt={blockName}
+                                        width={16}
+                                        height={16}
+                                        className="h-10 w-auto image-pixelated"/>
+                                </Button>
+                            </TooltipTrigger>
+
+                            <TooltipContent side="bottom" align="center">
+                                {toTitleCase(blockName, true)}
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                )
+            })}
+        </div>
+    )
 }
