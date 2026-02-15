@@ -63,30 +63,26 @@ export function ZoomViewport({ children, cellWidth, cellHeight }: Props) {
             ? canvasW * maxBaseScale
             : availableWidth;
 
-    const wrapperHeight = canvasH * scale;
-
     return (
-        <div ref={outerRef} className="w-full overflow-hidden relative border border-stone-700 rounded-lg bg-stone-800">
-            <div style={{ width: `${effectiveWrapperWidth}px`, height: `${wrapperHeight}px` }} className="max-w-full mx-auto my-2">
-                <TransformWrapper
-                    key={`${cellWidth}x${cellHeight}x${effectiveWrapperWidth}x${scale}`}
-                    initialScale={scale}
-                    minScale={scale}
-                    maxScale={scale * 50}
-                    centerOnInit
-                    limitToBounds
-                    wheel={{ step: 0.15 }}
-                    smooth={false}
-                    panning={{ velocityDisabled: true }}
-                    zoomAnimation={{ disabled: true }}
-                >
-                    <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-                        <div style={{ width: canvasW, height: canvasH }}>
-                            {children}
-                        </div>
-                    </TransformComponent>
-                </TransformWrapper>
-            </div>
+        <div ref={outerRef} className="overflow-hidden relative border border-stone-700 rounded-lg bg-stone-800 w-full h-full aspect-square">
+            <TransformWrapper
+                key={`${cellWidth}x${cellHeight}x${effectiveWrapperWidth}x${scale}`}
+                initialScale={scale}
+                minScale={scale}
+                maxScale={scale * 50}
+                centerOnInit
+                limitToBounds
+                wheel={{ step: 0.15 }}
+                smooth={false}
+                panning={{ velocityDisabled: true }}
+                zoomAnimation={{ disabled: true }}
+            >
+                <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }} >
+                    <div style={{ width: canvasW, height: canvasH }}>
+                        {children}
+                    </div>
+                </TransformComponent>
+            </TransformWrapper>
         </div>
     );
 }

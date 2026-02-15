@@ -1,0 +1,42 @@
+@layer utilities {
+    .grid-parent {
+        display: grid;
+        grid-template-columns: calc(50% - 7px) calc(50% - 7px);
+        gap: 14px;
+    }
+    .grid-start {
+        grid-template-areas:
+            "upload-image upload-image"
+            "preview preview";
+    }
+
+    .grid-full {
+        grid-template-areas:
+            "upload-image upload-image"
+            "palette preview"
+            "preprocessing stats"
+            "settings materials-list";
+    }
+
+    @media (max-width: 800px) {
+        .grid-full {
+            grid-template-columns: 100%;
+            grid-template-areas:
+                "upload-image"
+                "palette"
+                "preprocessing"
+                "settings"
+                "preview"
+                "stats"
+                "materials-list";
+        }
+    }
+
+    #upload-image { grid-area: upload-image; }
+    #palette { grid-area: palette; }
+    #preprocessing { grid-area: preprocessing; }
+    #preview { grid-area: preview; }
+    #settings { grid-area: settings; }
+    #materials-list { grid-area: materials-list; }
+    #stats { grid-area: stats; }
+}

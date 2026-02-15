@@ -15,9 +15,10 @@ interface ImagePreprocessingProps {
     targetWidth: number;
     targetHeight: number;
     onProcessed: (canvas: HTMLCanvasElement) => void;
+    id: string;
 }
 
-export default function ImagePreprocessing({sourceImage, targetWidth, targetHeight, onProcessed}: ImagePreprocessingProps) {
+export default function ImagePreprocessing({sourceImage, targetWidth, targetHeight, onProcessed, id}: ImagePreprocessingProps) {
     const [brightness, setBrightness] = useState(100);
     const [contrast, setContrast] = useState(100);
     const [saturation, setSaturation] = useState(100);
@@ -74,7 +75,7 @@ export default function ImagePreprocessing({sourceImage, targetWidth, targetHeig
     }, [sourceImage, targetWidth, targetHeight, brightness, contrast, saturation, cropMode, xOffset, yOffset, onProcessed]);
 
     return (
-        <Card>
+        <Card id={id}>
             <CardHeader>
                 <CardTitle>Image Preprocessing</CardTitle>
             </CardHeader>
