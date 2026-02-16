@@ -4,6 +4,9 @@ import ditheringMethods from '../inputs/dithering.json';
 import {getBaseY, getYRange, ProcessedImageResult} from './imageProcessing';
 
 export type DitheringMethodName = keyof typeof ditheringMethods;
+export const DitheringMethods = Object.fromEntries(
+    Object.keys(ditheringMethods).map(key => [key, key])
+) as Record<DitheringMethodName, DitheringMethodName>;
 
 interface DitheringMethod {
     uniqueId: number;

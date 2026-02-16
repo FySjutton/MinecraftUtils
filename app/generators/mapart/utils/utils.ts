@@ -2,6 +2,9 @@ import { getColorWithBrightness, numberToRGB } from './colorMatching';
 import blockGroupsData from '../inputs/blocks.json';
 import baseColorsData from '../inputs/colors.json';
 import aliasesData from '../inputs/aliases.json';
+import presetsData from '../inputs/presets.json';
+import ditheringMethods from "@/app/generators/mapart/inputs/dithering.json";
+import {DitheringMethodName} from "@/app/generators/mapart/utils/dithering";
 
 export const BLOCK_GROUPS: string[][] = blockGroupsData as string[][];
 export const BASE_COLORS: number[] = baseColorsData as number[];
@@ -26,6 +29,9 @@ export function getAllowedBrightnesses(groupId: number): Brightness[] {
     if (groupId === 11) return [Brightness.HIGH];
     return [Brightness.LOW, Brightness.NORMAL, Brightness.HIGH];
 }
+
+export type Preset = keyof typeof presetsData;
+export const Presets = Object.keys(presetsData) as string[];
 
 export function rgbToHex(r: number, g: number, b: number): string {
     return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);

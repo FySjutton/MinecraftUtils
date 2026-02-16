@@ -15,12 +15,12 @@ import {
     Brightness,
     scaleRGB,
     getMaterialList,
-    BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection, ALIASES
+    BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection, ALIASES, Preset, Presets
 } from './utils/utils';
 import {numberToHex} from './utils/colorMatching';
 import { processImage } from './utils/imageProcessing';
 import { ZoomViewport } from './ZoomViewport';
-import { ditheringMethods, DitheringMethodName } from './utils/dithering';
+import {ditheringMethods, DitheringMethodName, DitheringMethods} from './utils/dithering';
 import ImageObj from "next/image";
 import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
@@ -32,14 +32,15 @@ import {toTitleCase} from "@/lib/StringUtils";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import "./mapart.css"
 import {export3d, exportPNG} from "@/app/generators/mapart/utils/exporting";
+import presetsData from './inputs/presets.json';
 
 export default function MapartGenerator() {
     const [image, setImage] = useState<string | null>(null);
     const [mapWidth, setMapWidth] = useState(1);
     const [mapHeight, setMapHeight] = useState(1);
     const [isDragging, setIsDragging] = useState(false);
-    const [ditheringMethod, setDitheringMethod] = useState<DitheringMethodName>('None');
-    const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.NONE);
+    const [ditheringMethod, setDitheringMethod] = useState<DitheringMethodName>(DitheringMethods.FloydSteinberg);
+    const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.STANDARD);
     const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.WEIGHTED_RGB);
     const [processingStats, setProcessingStats] = useState<ProcessingStats | null>(null);
     const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getDefaultBlockSelection());
@@ -61,6 +62,65 @@ export default function MapartGenerator() {
         // eslint-disable-next-line react-hooks/set-state-in-effect
         setMaterialBlockSnapshot({ ...blockSelection })
     }, [materialList]) // do NOT add blockSelection to this
+
+    const [currentPreset, setCurrentPreset] = useState<string>("Custom");
+    const presetInputRef = useRef<HTMLInputElement>(null);
+
+// Apply a preset
+    const applyPreset = (presetName: string) => {
+        console.log("APPLYING PRESET")
+        if (presetName === "Custom") return;
+
+        const preset = presetsData[presetName as Preset];
+        if (!preset) return;
+
+        const newSelection: BlockSelection = {};
+        Object.entries(preset).forEach(([groupId, blockName]) => {
+            newSelection[parseInt(groupId) - 1] = blockName as string;
+        });
+
+        setBlockSelection(newSelection);
+        setCurrentPreset(presetName);
+    };
+
+// Export preset
+    const handleExportPreset = () => {
+        console.log("EXPORTING")
+        const presetName = currentPreset === "Custom" ? "My_Preset" : currentPreset;
+        const data = { [presetName]: blockSelection };
+
+        const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${presetName.toLowerCase()}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+// Import preset
+    const handleImportPreset = (file: File) => {
+        console.log("IMPORTING")
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const imported = JSON.parse(e.target?.result as string);
+                const presetName = Object.keys(imported)[0];
+                const presetData = imported[presetName];
+
+                const newSelection: BlockSelection = {};
+                Object.entries(presetData).forEach(([groupId, blockName]) => {
+                    newSelection[parseInt(groupId)] = blockName as string;
+                });
+
+                setBlockSelection(newSelection);
+                setCurrentPreset(presetName);
+            } catch (error) {
+                alert('Invalid preset file');
+            }
+        };
+        reader.readAsText(file);
+    };
 
     useEffect(() => {
         if (expandedGroup === null) return
@@ -108,7 +168,6 @@ export default function MapartGenerator() {
             const blockSize = mapWidth * 128;
             const blockHeight = mapHeight * 128;
 
-            // Create image from preprocessed canvas
             const img = new Image();
             img.src = preprocessedCanvas.toDataURL();
 
@@ -123,7 +182,6 @@ export default function MapartGenerator() {
                     colorDistanceMethod
                 );
 
-                // Calculate materials from the maps returned by processImage
                 const materials = getMaterialList(result.brightnessMap, result.groupIdMap);
                 setMaterialList(materials);
 
@@ -140,7 +198,7 @@ export default function MapartGenerator() {
                 setYMap(result.yMap);
             };
         }, 50);
-    }, [preprocessedCanvas, mapWidth, mapHeight, ditheringMethod, staircasingMode, colorDistanceMethod, getEnabledGroups]);
+    }, [preprocessedCanvas, mapWidth, mapHeight, ditheringMethod, staircasingMode, colorDistanceMethod, getEnabledGroups, blockSelection]);
 
     useEffect(() => {
         if (preprocessedCanvas) {
@@ -199,6 +257,7 @@ export default function MapartGenerator() {
     };
 
     const toggleBlockSelection = (groupId: number, blockName: string) => {
+        setCurrentPreset("Custom"); // Switch to Custom when user manually changes
         setBlockSelection(prev => {
             const current = prev[groupId];
             if (current === blockName) {
@@ -363,16 +422,55 @@ export default function MapartGenerator() {
                         </Card>
                     )}
 
-                    <Card id="palette" className="">
+                    <Card id="palette">
                         <CardHeader>
                             <CardTitle>Block Palette</CardTitle>
                             <CardDescription className="space-y-2 text-sm">
                                 {Object.keys(blockSelection).length} / 61 colors enabled
                             </CardDescription>
+                            <div className="flex gap-2 mt-4">
+                                <div className="flex-1">
+                                    <ComboBox
+                                        items={["Custom", ...Presets]}
+                                        value={currentPreset}
+                                        onChange={(value) => applyPreset(value)}
+                                    />
+                                </div>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={handleExportPreset}
+                                >
+                                    <Download className="mr-1" size={14} />
+                                </Button>
+                                <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => presetInputRef.current?.click()}
+                                >
+                                    <Upload className="mr-1" size={14} />
+                                </Button>
+                                <input
+                                    ref={presetInputRef}
+                                    type="file"
+                                    accept=".json"
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) handleImportPreset(file);
+                                    }}
+                                    className="hidden"
+                                />
+                            </div>
                         </CardHeader>
                         <CardContent className="aspect-square space-y-2 overflow-y-auto">
                             {BLOCK_GROUPS.map((group, groupId) => (
-                                <PaletteGroup key={groupId} group={group} groupId={groupId} blockSelection={blockSelection} toggleBlockSelection={toggleBlockSelection} />
+                                <PaletteGroup
+                                    key={groupId}
+                                    group={group}
+                                    groupId={groupId}
+                                    blockSelection={blockSelection}
+                                    toggleBlockSelection={toggleBlockSelection}
+                                />
                             ))}
                         </CardContent>
                     </Card>
@@ -420,7 +518,9 @@ export default function MapartGenerator() {
 
                                     <div className="space-y-2 max-h-90 overflow-y-auto mt-1">
                                         {materialList.map((material, idx) => {
-                                            const selectedBlock = materialBlockSnapshot[material.groupId] as string;
+                                            const selectedBlock = blockSelection[material.groupId] as string;
+                                            if (!selectedBlock) return null;
+
                                             const imageName: string = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
                                             const isExpanded = expandedGroup === material.groupId;
 
