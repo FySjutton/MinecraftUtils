@@ -14,8 +14,8 @@
         grid-template-areas:
             "upload-image upload-image"
             "palette preview"
-            "preprocessing stats"
-            "settings materials-list";
+            "settings materials-list"
+            "preprocessing exporting";
     }
 
     @media (max-width: 800px) {
@@ -27,8 +27,8 @@
                 "preprocessing"
                 "settings"
                 "preview"
-                "stats"
-                "materials-list";
+                "materials-list"
+                "exporting";
         }
     }
 
@@ -38,5 +38,5 @@
     #preview { grid-area: preview; }
     #settings { grid-area: settings; }
     #materials-list { grid-area: materials-list; }
-    #stats { grid-area: stats; }
+    #exporting { grid-area: exporting; }
 }

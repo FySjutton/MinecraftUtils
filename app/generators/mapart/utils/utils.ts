@@ -10,7 +10,7 @@ export const BLOCK_GROUPS: string[][] = blockGroupsData as string[][];
 export const BASE_COLORS: number[] = baseColorsData as number[];
 export const ALIASES: Record<string, string> = aliasesData as Record<string, string>;
 
-export function getDefaultBlockSelection(): BlockSelection {
+export function getEverythingBlockSelection(): BlockSelection {
     const selection: BlockSelection = {};
     if (!BLOCK_GROUPS) {
         return selection;

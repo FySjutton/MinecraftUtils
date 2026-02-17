@@ -15,7 +15,7 @@ import {
     Brightness,
     scaleRGB,
     getMaterialList,
-    BLOCK_GROUPS, BASE_COLORS, getDefaultBlockSelection, ALIASES, Preset, Presets
+    BLOCK_GROUPS, BASE_COLORS, ALIASES, Preset, Presets, getEverythingBlockSelection
 } from './utils/utils';
 import {numberToHex} from './utils/colorMatching';
 import { ZoomViewport } from './ZoomViewport';
@@ -52,7 +52,7 @@ export default function MapartGenerator() {
     const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.STANDARD);
     const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.WEIGHTED_RGB);
     const [processingStats, setProcessingStats] = useState<ProcessingStats | null>(null);
-    const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getDefaultBlockSelection());
+    const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getEverythingBlockSelection());
     const [materialList, setMaterialList] = useState<MaterialCount[]>([]);
     const [processedImageData, setProcessedImageData] = useState<ImageData | null>(null);
     const [brightnessMap, setBrightnessMap] = useState<Brightness[][] | null>(null);
@@ -113,11 +113,16 @@ export default function MapartGenerator() {
         return () => { worker.terminate(); workerRef.current = null; };
     }, []);
 
-    const [currentPreset, setCurrentPreset] = useState<string>("Custom");
+    const [currentPreset, setCurrentPreset] = useState<string>("Everything");
     const presetInputRef = useRef<HTMLInputElement>(null);
 
     const applyPreset = (presetName: string) => {
         if (presetName === "Custom") return;
+        if (presetName === "Everything") {
+            setBlockSelection(getEverythingBlockSelection())
+            setCurrentPreset(presetName)
+            return;
+        }
         const preset = presetsData[presetName as Preset];
         if (!preset) return;
         const newSelection: BlockSelection = {};
@@ -200,10 +205,11 @@ export default function MapartGenerator() {
         const enabledGroups = debouncedEnabledGroupsKey
             ? debouncedEnabledGroupsKey.split(',').map(Number)
             : Array.from({ length: BLOCK_GROUPS.length }, (_, i) => i);
+        if (Object.keys(blockSelection).length == 0) return;
 
         // eslint-disable-next-line react-hooks/set-state-in-effect
         postToWorker(preprocessedCanvas, enabledGroups);
-    }, [preprocessedCanvas, debouncedEnabledGroupsKey, postToWorker]);
+    }, [preprocessedCanvas, debouncedEnabledGroupsKey, postToWorker]); // do NOT add blockSelection
 
 
     const handleFileUpload = (file: File | null) => {
@@ -352,43 +358,28 @@ export default function MapartGenerator() {
                                 getDisplayName={(v) => v === ColorDistanceMethod.WEIGHTED_RGB ? "Weighted RGB" : v === ColorDistanceMethod.EUCLIDEAN ? "Euclidean" : "Delta E"}
                                 renderItem={(v) => v === ColorDistanceMethod.WEIGHTED_RGB ? "Recommended" : v === ColorDistanceMethod.EUCLIDEAN ? "Fast" : "Perceptual"}
                             />
-
-                            <Separator className="my-4" />
-                            <div className="flex flex-wrap gap-2">
-                                <Button onClick={async () => await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)} className="flex-1" disabled={!processingStats || isProcessing}>
-                                    <Download className="mr-2" size={16} />Export PNG
-                                </Button>
-                                <Button onClick={async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, addSupportBlocks)} className="flex-1" disabled={!processingStats || isProcessing}>
-                                    <Download className="mr-2" size={16} />Export NBT
-                                </Button>
-                                <Button onClick={handleReset} variant="destructive" className="flex-1">
-                                    <RotateCcw className="mr-2" size={16} />Reset
-                                </Button>
-                            </div>
                         </CardContent>
                     </Card>
 
-                    {(processingStats || isProcessing) && (
-                        <Card id="stats">
-                            <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    Stats
-                                    {isProcessing && <Loader2 className="animate-spin text-muted-foreground" size={16} />}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-2 text-sm">
-                                {processingStats ? (
-                                    <>
-                                        <div className="flex justify-between"><span>Dimensions:</span><span className="font-mono">{processingStats.width} x {processingStats.height}</span></div>
-                                        <div className="flex justify-between"><span>Total Blocks:</span><span className="font-mono">{processingStats.totalBlocks.toLocaleString()}</span></div>
-                                        <div className="flex justify-between"><span>Unique Colors:</span><span className="font-mono">{processingStats.uniqueBlocks}</span></div>
-                                    </>
-                                ) : (
-                                    <p className="text-muted-foreground text-xs">Processing…</p>
-                                )}
-                            </CardContent>
-                        </Card>
-                    )}
+                    <Card id="exporting">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                                Exporting
+                                {isProcessing && <Loader2 className="animate-spin text-muted-foreground" size={16} />}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex flex-col gap-2">
+                            <Button onClick={async () => await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)} className="max-w-150" disabled={!processingStats || isProcessing}>
+                                <Download className="mr-2" size={16} />Export PNG
+                            </Button>
+                            <Button onClick={async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, addSupportBlocks)} className="max-w-150" disabled={!processingStats || isProcessing}>
+                                <Download className="mr-2" size={16} />Export NBT
+                            </Button>
+                            <Button onClick={handleReset} variant="destructive" className="max-w-150">
+                                <RotateCcw className="mr-2" size={16} />Reset
+                            </Button>
+                        </CardContent>
+                    </Card>
 
                     <Card id="palette">
                         <CardHeader>
@@ -398,7 +389,7 @@ export default function MapartGenerator() {
                             </CardDescription>
                             <div className="flex gap-2 mt-4">
                                 <div className="flex-1">
-                                    <ComboBox items={["Custom", ...Presets]} value={currentPreset} onChange={(value) => applyPreset(value)} />
+                                    <ComboBox items={[...Presets]} value={currentPreset} onChange={(value) => applyPreset(value)} />
                                 </div>
                                 <Button size="sm" variant="outline" onClick={handleExportPreset}><Download className="mr-1" size={14} /></Button>
                                 <Button size="sm" variant="outline" onClick={() => presetInputRef.current?.click()}><Upload className="mr-1" size={14} /></Button>
@@ -420,25 +411,36 @@ export default function MapartGenerator() {
                         </CardContent>
                     </Card>
 
-                    <Card id="preview">
+                    <Card id="preview" className="pb-0">
                         <CardHeader><CardTitle>Preview</CardTitle></CardHeader>
-                        <CardContent className="w-full aspect-square p-2 relative">
-                            {isProcessing && (
-                                <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/60 rounded-md">
-                                    <Loader2 className="animate-spin text-muted-foreground" size={32} />
+                        <CardContent className="w-full p-0 m-0">
+                            <div className="aspect-square p-2 relative">
+                                {isProcessing && (
+                                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/60 rounded-md">
+                                        <Loader2 className="animate-spin text-muted-foreground" size={32} />
+                                    </div>
+                                )}
+                                {processedImageData && processingStats && (
+                                    <ZoomViewport cellWidth={processingStats.width} cellHeight={processingStats.height}>
+                                        <canvas
+                                            width={processingStats.width} height={processingStats.height}
+                                            style={{ imageRendering: 'pixelated', width: '100%', height: '100%' }}
+                                            ref={(canvas) => {
+                                                if (canvas && processedImageData)
+                                                    canvas.getContext('2d')?.putImageData(processedImageData, 0, 0);
+                                            }}
+                                        />
+                                    </ZoomViewport>
+                                )}
+                            </div>
+                            {processingStats ? (
+                                <div className="px-5 py-3">
+                                    <div className="flex justify-between"><span>Dimensions:</span><span className="font-mono">{processingStats.width} x {processingStats.height}</span></div>
+                                    <div className="flex justify-between"><span>Total Blocks:</span><span className="font-mono">{processingStats.totalBlocks.toLocaleString()}</span></div>
+                                    <div className="flex justify-between"><span>Unique Colors:</span><span className="font-mono">{processingStats.uniqueBlocks}</span></div>
                                 </div>
-                            )}
-                            {processedImageData && processingStats && (
-                                <ZoomViewport cellWidth={processingStats.width} cellHeight={processingStats.height}>
-                                    <canvas
-                                        width={processingStats.width} height={processingStats.height}
-                                        style={{ imageRendering: 'pixelated', width: '100%', height: '100%' }}
-                                        ref={(canvas) => {
-                                            if (canvas && processedImageData)
-                                                canvas.getContext('2d')?.putImageData(processedImageData, 0, 0);
-                                        }}
-                                    />
-                                </ZoomViewport>
+                            ) : (
+                                <p className="text-muted-foreground text-xs">Processing…</p>
                             )}
                         </CardContent>
                     </Card>
