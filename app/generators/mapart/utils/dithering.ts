@@ -62,7 +62,14 @@ function applyErrorDiffusion(
     colorMethod: ColorDistanceMethod,
     method: DitheringMethod
 ): ProcessedImageResult {
-    const data = new Uint8ClampedArray(imageData.data);
+    const workingData = new Float32Array(width * height * 4);
+    const outputData = new Uint8ClampedArray(imageData.data.length);
+
+    for (let i = 0; i < imageData.data.length; i++) {
+        workingData[i] = imageData.data[i];
+        outputData[i] = imageData.data[i];
+    }
+
     const baseY = getBaseY(staircasingMode);
     const yRange = getYRange(staircasingMode);
 
@@ -76,42 +83,35 @@ function applyErrorDiffusion(
 
         for (let z = 0; z < height; z++) {
             const idx = (z * width + x) * 4;
-            const oldR = Math.max(0, Math.min(255, Math.round(data[idx])));
-            const oldG = Math.max(0, Math.min(255, Math.round(data[idx + 1])));
-            const oldB = Math.max(0, Math.min(255, Math.round(data[idx + 2])));
+
+            const oldR = Math.max(0, Math.min(255, Math.round(workingData[idx])));
+            const oldG = Math.max(0, Math.min(255, Math.round(workingData[idx + 1])));
+            const oldB = Math.max(0, Math.min(255, Math.round(workingData[idx + 2])));
 
             const bestMatch = findBestMatch(colorMethod, staircasingMode, oldR, oldG, oldB, enabledGroups, yRange, z, currentY, baseY);
 
             if (bestMatch) {
                 const rgb = numberToRGB(bestMatch.color);
-                data[idx] = rgb.r;
-                data[idx + 1] = rgb.g;
-                data[idx + 2] = rgb.b;
 
-                // Store the block info in maps
+                outputData[idx]     = rgb.r;
+                outputData[idx + 1] = rgb.g;
+                outputData[idx + 2] = rgb.b;
+
                 brightnessMap[z][x] = bestMatch.brightness;
-                groupIdMap[z][x] = bestMatch.groupId;
-                yMap[z][x] = bestMatch.y;
+                groupIdMap[z][x]    = bestMatch.groupId;
+                yMap[z][x]          = bestMatch.y;
 
-                // Calculate and distribute error
                 const errR = oldR - rgb.r;
                 const errG = oldG - rgb.g;
                 const errB = oldB - rgb.b;
 
-                distributeError(
-                    data,
-                    width,
-                    height,
-                    x,
-                    z,
-                    errR,
-                    errG,
-                    errB,
-                    method
-                );
-
+                distributeError(workingData, width, height, x, z, errR, errG, errB, method);
                 currentY = bestMatch.y;
             } else {
+                outputData[idx] = 0;
+                outputData[idx + 1] = 0;
+                outputData[idx + 2] = 0;
+
                 brightnessMap[z][x] = Brightness.NORMAL;
                 groupIdMap[z][x] = 0;
                 yMap[z][x] = currentY;
@@ -120,7 +120,7 @@ function applyErrorDiffusion(
     }
 
     return {
-        imageData: new ImageData(data, width, height),
+        imageData: new ImageData(outputData, width, height),
         brightnessMap,
         groupIdMap,
         yMap
@@ -155,11 +155,9 @@ function applyOrderedDithering(
         for (let z = 0; z < height; z++) {
             const idx = (z * width + x) * 4;
 
-            // Get threshold from Bayer matrix
             const matrixValue = method.ditherMatrix[z % matrixHeight][x % matrixWidth];
             const threshold = (matrixValue / divisor - 0.5) * 255;
 
-            // Apply threshold to color
             const oldR = Math.max(0, Math.min(255, data[idx] + threshold));
             const oldG = Math.max(0, Math.min(255, data[idx + 1] + threshold));
             const oldB = Math.max(0, Math.min(255, data[idx + 2] + threshold));
@@ -172,13 +170,16 @@ function applyOrderedDithering(
                 data[idx + 1] = rgb.g;
                 data[idx + 2] = rgb.b;
 
-                // Store the block info in maps
                 brightnessMap[z][x] = bestMatch.brightness;
                 groupIdMap[z][x] = bestMatch.groupId;
                 yMap[z][x] = bestMatch.y;
 
                 currentY = bestMatch.y;
             } else {
+                data[idx] = 0;
+                data[idx + 1] = 0;
+                data[idx + 2] = 0;
+
                 brightnessMap[z][x] = Brightness.NORMAL;
                 groupIdMap[z][x] = 0;
                 yMap[z][x] = currentY;
@@ -228,7 +229,6 @@ function findBestMatch(
             const allowedBrightnesses = getAllowedBrightnesses(groupId);
 
             for (const brightness of allowedBrightnesses) {
-                // Vatten (group 11) tar inte hänsyn till staircasing
                 const targetY = (groupId === 11)
                     ? currentY
                     : calculateTargetY(brightness, z, currentY, baseY);
@@ -260,7 +260,7 @@ function findBestMatch(
 }
 
 function distributeError(
-    data: Uint8ClampedArray,
+    data: Float32Array,
     width: number,
     height: number,
     x: number,
@@ -290,9 +290,9 @@ function distributeError(
                 const newIdx = (newZ * width + newX) * 4;
                 const factor = weight / divisor;
 
-                data[newIdx] = Math.max(0, Math.min(255, data[newIdx] + errR * factor));
-                data[newIdx + 1] = Math.max(0, Math.min(255, data[newIdx + 1] + errG * factor));
-                data[newIdx + 2] = Math.max(0, Math.min(255, data[newIdx + 2] + errB * factor));
+                data[newIdx] += errR * factor;
+                data[newIdx + 1] += errG * factor;
+                data[newIdx + 2] += errB * factor;
             }
         }
     }

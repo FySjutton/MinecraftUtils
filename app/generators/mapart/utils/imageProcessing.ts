@@ -37,9 +37,8 @@ export interface ProcessedImageResult {
     groupIdMap: number[][];
     yMap: number[][];
 }
-
-export function processImage(
-    sourceImage: HTMLImageElement,
+export function processImageDataDirect(
+    imageData: ImageData,
     width: number,
     height: number,
     enabledGroups: Set<number>,
@@ -47,25 +46,15 @@ export function processImage(
     staircasingMode: StaircasingMode,
     colorMethod: ColorDistanceMethod
 ): ProcessedImageResult {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Could not get canvas context');
-
-    ctx.imageSmoothingEnabled = false;
-
-    ctx.drawImage(sourceImage, 0, 0, width, height);
-    const sourceImageData = ctx.getImageData(0, 0, width, height);
-
-    const shouldApplyDithering = ditheringMethod !== 'None' &&
+    const shouldApplyDithering =
+        ditheringMethod !== 'None' &&
         ditheringMethod !== null &&
         ditheringMethod !== undefined &&
         String(ditheringMethod) !== 'None';
 
     if (shouldApplyDithering) {
         return applyDithering(
-            sourceImageData,
+            imageData,
             width,
             height,
             enabledGroups,
@@ -75,7 +64,7 @@ export function processImage(
         );
     } else {
         return processWithoutDithering(
-            sourceImageData,
+            imageData,
             width,
             height,
             enabledGroups,
@@ -124,14 +113,14 @@ function processWithoutDithering(
                 );
                 const rgb = numberToRGB(result.color);
 
-                resultData[idx] = rgb.r;
+                resultData[idx]     = rgb.r;
                 resultData[idx + 1] = rgb.g;
                 resultData[idx + 2] = rgb.b;
                 resultData[idx + 3] = targetA;
 
                 brightnessMap[z][x] = result.brightness;
-                groupIdMap[z][x] = result.groupId;
-                yMap[z][x] = 0;
+                groupIdMap[z][x]    = result.groupId;
+                yMap[z][x]          = 0;
                 continue;
             }
 
@@ -149,32 +138,21 @@ function processWithoutDithering(
                 for (const brightness of allowedBrightnesses) {
                     let targetY: number;
 
-                    // Vatten (group 11) tar inte hänsyn till staircasing
                     if (groupId === 11) {
                         targetY = currentY;
                     } else {
                         if (z === 0) {
-                            if (brightness === Brightness.HIGH) {
-                                targetY = baseY + 1;
-                            } else if (brightness === Brightness.NORMAL) {
-                                targetY = baseY;
-                            } else {
-                                targetY = baseY - 1;
-                            }
+                            if (brightness === Brightness.HIGH)        targetY = baseY + 1;
+                            else if (brightness === Brightness.NORMAL) targetY = baseY;
+                            else                                        targetY = baseY - 1;
                         } else {
-                            if (brightness === Brightness.HIGH) {
-                                targetY = currentY + 1;
-                            } else if (brightness === Brightness.NORMAL) {
-                                targetY = currentY;
-                            } else {
-                                targetY = currentY - 1;
-                            }
+                            if (brightness === Brightness.HIGH)        targetY = currentY + 1;
+                            else if (brightness === Brightness.NORMAL) targetY = currentY;
+                            else                                        targetY = currentY - 1;
                         }
                     }
 
-                    if (targetY < yRange.min || targetY > yRange.max) {
-                        continue;
-                    }
+                    if (targetY < yRange.min || targetY > yRange.max) continue;
 
                     const colorNum = getColorWithBrightness(groupId, brightness);
                     const rgb = numberToRGB(colorNum);
@@ -187,12 +165,7 @@ function processWithoutDithering(
 
                     if (distance < bestDistance) {
                         bestDistance = distance;
-                        bestMatch = {
-                            y: targetY,
-                            color: colorNum,
-                            groupId: groupId,
-                            brightness: brightness
-                        };
+                        bestMatch = { y: targetY, color: colorNum, groupId, brightness };
                     }
                 }
             }
@@ -200,25 +173,25 @@ function processWithoutDithering(
             if (bestMatch) {
                 const rgb = numberToRGB(bestMatch.color);
 
-                resultData[idx] = rgb.r;
+                resultData[idx]     = rgb.r;
                 resultData[idx + 1] = rgb.g;
                 resultData[idx + 2] = rgb.b;
                 resultData[idx + 3] = targetA;
 
                 brightnessMap[z][x] = bestMatch.brightness;
-                groupIdMap[z][x] = bestMatch.groupId;
-                yMap[z][x] = bestMatch.y;
+                groupIdMap[z][x]    = bestMatch.groupId;
+                yMap[z][x]          = bestMatch.y;
 
                 currentY = bestMatch.y;
             } else {
-                resultData[idx] = 0;
+                resultData[idx]     = 0;
                 resultData[idx + 1] = 0;
                 resultData[idx + 2] = 0;
                 resultData[idx + 3] = targetA;
 
                 brightnessMap[z][x] = Brightness.NORMAL;
-                groupIdMap[z][x] = 0;
-                yMap[z][x] = currentY;
+                groupIdMap[z][x]    = 0;
+                yMap[z][x]          = currentY;
             }
         }
     }
@@ -229,110 +202,4 @@ function processWithoutDithering(
         groupIdMap,
         yMap
     };
-}
-
-export function extractBrightnessMap(
-    imageData: ImageData,
-    width: number,
-    height: number,
-    enabledGroups: Set<number>,
-    staircasingMode: StaircasingMode
-): { brightnessMap: Brightness[][], groupIdMap: number[][], yMap: number[][] } {
-    const data = imageData.data;
-    const brightnessMap: Brightness[][] = [];
-    const groupIdMap: number[][] = [];
-    const yMap: number[][] = [];
-
-    for (let z = 0; z < height; z++) {
-        brightnessMap[z] = [];
-        groupIdMap[z] = [];
-        yMap[z] = [];
-    }
-
-    const baseY = getBaseY(staircasingMode);
-
-    for (let x = 0; x < width; x++) {
-        let currentY = baseY;
-
-        for (let z = 0; z < height; z++) {
-            const idx = (z * width + x) * 4;
-            const r = data[idx];
-            const g = data[idx + 1];
-            const b = data[idx + 2];
-
-            let found = false;
-            let foundGroupId = 0;
-            let foundBrightness = Brightness.NORMAL;
-
-            for (const groupId of enabledGroups) {
-                const allowedBrightnesses = getAllowedBrightnesses(groupId);
-
-                for (const brightness of allowedBrightnesses) {
-                    const colorNum = getColorWithBrightness(groupId, brightness);
-                    const rgb = numberToRGB(colorNum);
-
-                    if (rgb.r === r && rgb.g === g && rgb.b === b) {
-                        foundGroupId = groupId;
-                        foundBrightness = brightness;
-                        found = true;
-                        break;
-                    }
-                }
-                if (found) break;
-            }
-
-            if (!found) {
-                brightnessMap[z][x] = Brightness.NORMAL;
-                groupIdMap[z][x] = 0;
-                yMap[z][x] = currentY;
-                continue;
-            }
-
-            brightnessMap[z][x] = foundBrightness;
-            groupIdMap[z][x] = foundGroupId;
-
-            if (staircasingMode === StaircasingMode.NONE) {
-                yMap[z][x] = 0;
-            } else {
-                // Vatten (group 11) ändrar inte Y
-                if (foundGroupId === 11) {
-                    yMap[z][x] = currentY;
-                } else {
-                    if (z === 0) {
-                        if (foundBrightness === Brightness.HIGH) {
-                            currentY = baseY + 1;
-                        } else if (foundBrightness === Brightness.NORMAL) {
-                            currentY = baseY;
-                        } else {
-                            currentY = baseY - 1;
-                        }
-                    } else {
-                        if (foundBrightness === Brightness.HIGH) {
-                            currentY = currentY + 1;
-                        } else if (foundBrightness === Brightness.LOW) {
-                            currentY = currentY - 1;
-                        }
-                        // NORMAL keeps currentY the same
-                    }
-                    yMap[z][x] = currentY;
-                }
-            }
-        }
-    }
-
-    return { brightnessMap, groupIdMap, yMap };
-}
-
-export function countUniqueColors(imageData: ImageData): number {
-    const data = imageData.data;
-    const colors = new Set<string>();
-
-    for (let i = 0; i < data.length; i += 4) {
-        const r = data[i];
-        const g = data[i + 1];
-        const b = data[i + 2];
-        colors.add(`${r},${g},${b}`);
-    }
-
-    return colors.size;
 }

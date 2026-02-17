@@ -16,7 +16,8 @@ export function calculate3DStructure(
     const blocks: Block3D[] = [];
     const supportBlockName = supportBlock.includes(':') ? supportBlock : `minecraft:${supportBlock}`;
 
-    // Find min/max Y
+    const useReferenceRow = mode !== StaircasingMode.NONE;
+
     let minY = Infinity;
     let maxY = -Infinity;
 
@@ -28,53 +29,72 @@ export function calculate3DStructure(
         }
     }
 
-    // Normalize Y to start at 0
+    if (useReferenceRow) {
+        for (let x = 0; x < width; x++) {
+            const brightness = brightnessMap[0][x];
+            const rawY = yMap[0][x];
+
+            if (!addSupportBlocks && brightness === Brightness.HIGH) {
+                const refRawY = rawY - 1;
+                if (refRawY < minY) minY = refRawY;
+            }
+        }
+    }
+
     const yOffset = -minY;
 
-    // Build blocks
     for (let z = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
             const groupId = groupIdMap[z][x];
             const y = yMap[z][x] + yOffset;
+            const zPos = useReferenceRow ? z + 1 : z;
 
             const selectedBlockName = blockSelection[groupId] || BLOCK_GROUPS[groupId]?.[0] || 'stone';
             const fullBlockName = selectedBlockName.includes(':') ? selectedBlockName : `minecraft:${selectedBlockName}`;
 
             if (addSupportBlocks && mode !== StaircasingMode.NONE) {
-                // Support block below
-                blocks.push({
-                    x,
-                    y,
-                    z,
-                    blockName: supportBlockName
-                });
-                // Colored block on top
-                blocks.push({
-                    x,
-                    y: y + 1,
-                    z,
-                    blockName: fullBlockName
-                });
+                blocks.push({ x, y,     z: zPos, blockName: supportBlockName });
+                blocks.push({ x, y: y + 1, z: zPos, blockName: fullBlockName });
             } else {
-                // Just the colored block
-                blocks.push({
-                    x,
-                    y,
-                    z,
-                    blockName: fullBlockName
-                });
+                blocks.push({ x, y, z: zPos, blockName: fullBlockName });
             }
         }
     }
 
-    // Calculate structure dimensions
+    if (useReferenceRow) {
+        for (let x = 0; x < width; x++) {
+            const brightness = brightnessMap[0][x];
+            const normalizedY = yMap[0][x] + yOffset;
+
+            const surfaceY = normalizedY + (addSupportBlocks ? 1 : 0);
+
+            let refBlockY: number;
+            if (brightness === Brightness.HIGH) {
+                refBlockY = surfaceY - 1;
+            } else if (brightness === Brightness.NORMAL) {
+                refBlockY = surfaceY;
+            } else { // LOW
+                refBlockY = surfaceY + 1;
+            }
+
+            blocks.push({
+                x,
+                y: refBlockY,
+                z: 0,
+                blockName: supportBlockName
+            });
+        }
+    }
+
     const finalMinY = Math.min(...blocks.map(b => b.y));
     const finalMaxY = Math.max(...blocks.map(b => b.y));
     const depth = finalMaxY - finalMinY + 1;
 
+    const structureHeight = useReferenceRow ? height + 1 : height;
+
     return {
         width,
-        height,
+        height: structureHeight,
         depth,
         blocks
     };
