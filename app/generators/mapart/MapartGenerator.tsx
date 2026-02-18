@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback, memo } from 'react';
+import React, {useState, useRef, useEffect, useCallback, memo, useMemo} from 'react';
 import {Upload, Download, RotateCcw, ChevronDown, ChevronUp, Dot, Loader2} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
@@ -69,6 +69,11 @@ export default function MapartGenerator() {
     const requestIdRef = useRef(0);
     const expandedRef  = useRef<HTMLDivElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const preprocessedImageUrl = useMemo(
+        () => preprocessedCanvas?.toDataURL() ?? null,
+        [preprocessedCanvas]
+    );
 
     const enabledGroupsKey = Object.entries(blockSelection)
         .filter(([, v]) => v !== null)
@@ -411,7 +416,14 @@ export default function MapartGenerator() {
                         </CardContent>
                     </Card>
 
-                    <PreviewCard isProcessing={isProcessing} processedImageData={processedImageData} processingStats={processingStats} groupIdMap={groupIdMap} blockSelection={blockSelection} />
+                    <PreviewCard
+                        isProcessing={isProcessing}
+                        processedImageData={processedImageData}
+                        processingStats={processingStats}
+                        groupIdMap={groupIdMap}
+                        blockSelection={blockSelection}
+                        sourceImage={preprocessedImageUrl}
+                    />
 
                     {materialList.length > 0 && (
                         <Card className="gap-2" id="material-list">

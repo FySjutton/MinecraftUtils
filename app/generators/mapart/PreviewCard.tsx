@@ -9,8 +9,10 @@ import { Button } from "@/components/ui/button";
 import { ProcessingStats, BlockSelection, ALIASES } from "./utils/utils";
 import { findImageAsset } from "@/lib/images/getImageAsset";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CompareSlider, CompareSliderBefore, CompareSliderAfter, CompareSliderHandle } from "@/components/ui/compare-slider";
 
 const TILE = 16;
+type Mode = "preview" | "textures" | "compare";
 
 interface Props {
     isProcessing: boolean;
@@ -18,10 +20,11 @@ interface Props {
     processingStats: ProcessingStats | null;
     groupIdMap: number[][] | null;
     blockSelection: BlockSelection;
+    sourceImage: string | null;
 }
 
-export function PreviewCard({ isProcessing, processedImageData, processingStats, groupIdMap, blockSelection }: Props) {
-    const [textureMode, setTextureMode] = useState<"preview" | "textures">("preview");
+export function PreviewCard({ isProcessing, processedImageData, processingStats, groupIdMap, blockSelection, sourceImage }: Props) {
+    const [mode, setMode] = useState<Mode>("preview");
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     const cardViewportRef = useRef<HTMLDivElement>(null);
@@ -32,9 +35,12 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
 
     const textureCanvasRef = useRef<HTMLCanvasElement>(null);
     const fsTextureCanvasRef = useRef<HTMLCanvasElement>(null);
+    const compareCanvasRef = useRef<HTMLCanvasElement>(null);
+    const fsCompareCanvasRef = useRef<HTMLCanvasElement>(null);
     const imgCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
 
-    const isPreview = textureMode === "preview";
+    const isTextures = mode === "textures";
+    const isCompare = mode === "compare";
 
     useLayoutEffect(() => {
         if (!cardViewportRef.current) return;
@@ -74,7 +80,7 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const needed = new Map<number, string>();
-        for (let y = 0; y < height; y++) {
+        for (let y = 0; y < height; y++)
             for (let x = 0; x < width; x++) {
                 const gId = groupIdMap[y][x];
                 if (needed.has(gId) || imgCacheRef.current.has(gId)) continue;
@@ -83,7 +89,6 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                 const aliased = blockName in ALIASES ? ALIASES[blockName] : blockName;
                 needed.set(gId, findImageAsset(`2d_${aliased}`, "block") as string);
             }
-        }
 
         const draw = () => {
             ctx.imageSmoothingEnabled = false;
@@ -105,45 +110,126 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
         }
     };
 
-    // Card texture canvas — redraws when mode/data changes
     useEffect(() => {
-        if (isPreview || !textureCanvasRef.current) return;
+        if (!isTextures || !textureCanvasRef.current) return;
         drawTextures(textureCanvasRef.current);
-    }, [textureMode, groupIdMap, blockSelection, processingStats]);
+    }, [mode, groupIdMap, blockSelection, processingStats]);
 
-    // Fullscreen texture canvas — callback ref draws immediately on mount,
-    // and this effect redraws when data/mode changes while fullscreen is open
     useEffect(() => {
-        if (!isFullscreen || isPreview || !fsTextureCanvasRef.current) return;
+        if (!isFullscreen || !isTextures || !fsTextureCanvasRef.current) return;
         drawTextures(fsTextureCanvasRef.current);
-    }, [isFullscreen, textureMode, groupIdMap, blockSelection, processingStats]);
+    }, [isFullscreen, mode, groupIdMap, blockSelection, processingStats]);
 
-    // Callback ref for the fullscreen texture canvas: fires when the portal canvas mounts
     const fsMountRef = (el: HTMLCanvasElement | null) => {
         (fsTextureCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
-        if (el && !isPreview) drawTextures(el);
+        if (el && isTextures) drawTextures(el);
     };
 
-    const canvasW = processingStats ? (!isPreview ? processingStats.width * TILE  : processingStats.width)  : 1;
-    const canvasH = processingStats ? (!isPreview ? processingStats.height * TILE : processingStats.height) : 1;
+    const drawCompareAfter = (canvas: HTMLCanvasElement) => {
+        if (!processedImageData) return;
+        canvas.getContext("2d")?.putImageData(processedImageData, 0, 0);
+    };
 
-    const fitScale = (availW: number, availH: number) => Math.min(availW / canvasW, availH / canvasH);
+    useEffect(() => {
+        if (!isCompare || !compareCanvasRef.current) return;
+        drawCompareAfter(compareCanvasRef.current);
+    }, [mode, processedImageData]);
+
+    useEffect(() => {
+        if (!isFullscreen || !isCompare || !fsCompareCanvasRef.current) return;
+        drawCompareAfter(fsCompareCanvasRef.current);
+    }, [isFullscreen, mode, processedImageData]);
+
+    const fsCompareMountRef = (el: HTMLCanvasElement | null) => {
+        (fsCompareCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
+        if (el && isCompare) drawCompareAfter(el);
+    };
+
+    const canvasW = processingStats ? processingStats.width * TILE : 1;
+    const canvasH = processingStats ? processingStats.height * TILE : 1;
+    const flatW = processingStats ? processingStats.width : 1;
+    const flatH = processingStats ? processingStats.height : 1;
+
+    const activeW = isTextures ? canvasW : flatW;
+    const activeH = isTextures ? canvasH : flatH;
+
+    const fitScale = (availW: number, availH: number) => Math.min(availW / activeW, availH / activeH);
     const cardScale = cardSize ? fitScale(cardSize.w, cardSize.h) : null;
-    const fsScale   = fsSize   ? fitScale(fsSize.w,   fsSize.h)   : null;
+    const fsScale = fsSize ? fitScale(fsSize.w, fsSize.h) : null;
 
-    const cardCanvas = !isPreview
-        ? <canvas ref={textureCanvasRef} width={canvasW} height={canvasH} style={{ imageRendering: "pixelated", display: "block" }} />
-        : <canvas width={canvasW} height={canvasH} style={{ imageRendering: "pixelated", display: "block" }} ref={(el) => { if (el && processedImageData) el.getContext("2d")?.putImageData(processedImageData, 0, 0); }} />;
+    const renderCompare = (cmpRef: (el: HTMLCanvasElement | null) => void) => (
+        <div className="size-full flex items-center justify-center">
+            <CompareSlider
+                defaultValue={50}
+                style={{
+                    height: "100%",
+                    width: "auto",
+                    maxWidth: "100%",
+                    aspectRatio: `${flatW} / ${flatH}`,
+                }}
+            >
+                <CompareSliderBefore>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={sourceImage ?? ""}
+                        alt="Original"
+                        className="size-full"
+                        style={{ imageRendering: "pixelated" }}
+                    />
+                </CompareSliderBefore>
+                <CompareSliderAfter>
+                    <canvas
+                        ref={cmpRef}
+                        width={flatW}
+                        height={flatH}
+                        className="size-full"
+                        style={{ imageRendering: "pixelated", display: "block" }}
+                    />
+                </CompareSliderAfter>
+                <CompareSliderHandle />
+            </CompareSlider>
+        </div>
+    );
 
-    const fsCanvas = !isPreview
-        ? <canvas ref={fsMountRef} width={canvasW} height={canvasH} style={{ imageRendering: "pixelated", display: "block" }} />
-        : <canvas width={canvasW} height={canvasH} style={{ imageRendering: "pixelated", display: "block" }} ref={(el) => { if (el && processedImageData) el.getContext("2d")?.putImageData(processedImageData, 0, 0); }} />;
+    const renderZoomable = (texRef: (el: HTMLCanvasElement | null) => void, scale: number) => (
+        <TransformWrapper
+            key={`${mode}-${activeW}x${activeH}-${scale}`}
+            initialScale={scale}
+            minScale={scale}
+            maxScale={scale * 50}
+            centerOnInit
+            limitToBounds
+            wheel={{ step: scale * 0.8 }}
+            smooth={false}
+            panning={{ velocityDisabled: true }}
+            zoomAnimation={{ disabled: true }}
+        >
+            <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
+                {isTextures ? (
+                    <canvas
+                        ref={texRef}
+                        width={canvasW}
+                        height={canvasH}
+                        style={{ imageRendering: "pixelated", display: "block" }}
+                    />
+                ) : (
+                    <canvas
+                        width={flatW}
+                        height={flatH}
+                        style={{ imageRendering: "pixelated", display: "block" }}
+                        ref={(el) => { if (el && processedImageData) el.getContext("2d")?.putImageData(processedImageData, 0, 0); }}
+                    />
+                )}
+            </TransformComponent>
+        </TransformWrapper>
+    );
 
     const modeToggle = (
-        <Tabs value={textureMode} onValueChange={v => setTextureMode(v as "preview" | "textures")} className="w-full h-auto">
-            <TabsList className="flex-wrap h-auto">
+        <Tabs value={mode} onValueChange={v => setMode(v as Mode)} className="h-auto">
+            <TabsList className="h-auto">
                 <TabsTrigger value="preview">Preview</TabsTrigger>
                 <TabsTrigger value="textures">Textures</TabsTrigger>
+                {sourceImage && <TabsTrigger value="compare">Compare</TabsTrigger>}
             </TabsList>
         </Tabs>
     );
@@ -173,12 +259,19 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                             </div>
                         )}
                         <div ref={cardViewportRef} className="w-full h-full">
-                            {processingStats && cardScale !== null && (
-                                <TransformWrapper key={`card-${canvasW}x${canvasH}-${cardScale}`} initialScale={cardScale} minScale={cardScale} maxScale={cardScale * 50} centerOnInit limitToBounds wheel={{ step: 0.15 }} smooth={false} panning={{ velocityDisabled: true }} zoomAnimation={{ disabled: true }}>
-                                    <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-                                        {cardCanvas}
-                                    </TransformComponent>
-                                </TransformWrapper>
+                            {processingStats && (
+                                isCompare
+                                    ? renderCompare((el) => {
+                                        (compareCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
+                                        if (el) drawCompareAfter(el);
+                                    })
+                                    : cardScale !== null && renderZoomable(
+                                    (el) => {
+                                        (textureCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
+                                        if (el && isTextures) drawTextures(el);
+                                    },
+                                    cardScale,
+                                )
                             )}
                         </div>
                     </div>
@@ -206,13 +299,10 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                         </div>
                     </div>
                     <div ref={fsViewportRef} className="flex-1 overflow-hidden p-4">
-                        {fsScale !== null && (
-                            <TransformWrapper key={`fs-${canvasW}x${canvasH}-${fsScale}`} initialScale={fsScale} minScale={fsScale} maxScale={fsScale * 50} centerOnInit limitToBounds wheel={{ step: 0.15 }} smooth={false} panning={{ velocityDisabled: true }} zoomAnimation={{ disabled: true }}>
-                                <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-                                    {fsCanvas}
-                                </TransformComponent>
-                            </TransformWrapper>
-                        )}
+                        {isCompare
+                            ? renderCompare(fsCompareMountRef)
+                            : fsScale !== null && renderZoomable(fsMountRef, fsScale)
+                        }
                     </div>
                     <div className="px-5 py-2 border-t text-xs text-muted-foreground flex gap-6 shrink-0">
                         <span>{processingStats.width} × {processingStats.height} px</span>
