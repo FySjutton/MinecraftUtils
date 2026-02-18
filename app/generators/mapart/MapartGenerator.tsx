@@ -18,7 +18,6 @@ import {
     BLOCK_GROUPS, BASE_COLORS, ALIASES, Preset, Presets, getEverythingBlockSelection
 } from './utils/utils';
 import {numberToHex} from './utils/colorMatching';
-import { ZoomViewport } from './ZoomViewport';
 import {ditheringMethods, DitheringMethodName, DitheringMethods} from './utils/dithering';
 import ImageObj from "next/image";
 import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
@@ -33,6 +32,7 @@ import "./mapart.css"
 import {export3d, exportPNG} from "@/app/generators/mapart/utils/exporting";
 import presetsData from './inputs/presets.json';
 import type { WorkerRequest, WorkerResponse } from './utils/mapart.worker';
+import {PreviewCard} from "@/app/generators/mapart/PreviewCard";
 
 function useDebounce<T>(value: T, delay: number): T {
     const [debounced, setDebounced] = useState<T>(value);
@@ -391,8 +391,8 @@ export default function MapartGenerator() {
                                 <div className="flex-1">
                                     <ComboBox items={[...Presets]} value={currentPreset} onChange={(value) => applyPreset(value)} />
                                 </div>
-                                <Button size="sm" variant="outline" onClick={handleExportPreset}><Download className="mr-1" size={14} /></Button>
-                                <Button size="sm" variant="outline" onClick={() => presetInputRef.current?.click()}><Upload className="mr-1" size={14} /></Button>
+                                <Button variant="outline" onClick={handleExportPreset}><Download size={14} /></Button>
+                                <Button variant="outline" onClick={() => presetInputRef.current?.click()}><Upload size={14} /></Button>
                                 <input ref={presetInputRef} type="file" accept=".json"
                                        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportPreset(f); }}
                                        className="hidden" />
@@ -411,39 +411,7 @@ export default function MapartGenerator() {
                         </CardContent>
                     </Card>
 
-                    <Card id="preview" className="pb-0">
-                        <CardHeader><CardTitle>Preview</CardTitle></CardHeader>
-                        <CardContent className="w-full p-0 m-0">
-                            <div className="aspect-square p-2 relative">
-                                {isProcessing && (
-                                    <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/60 rounded-md">
-                                        <Loader2 className="animate-spin text-muted-foreground" size={32} />
-                                    </div>
-                                )}
-                                {processedImageData && processingStats && (
-                                    <ZoomViewport cellWidth={processingStats.width} cellHeight={processingStats.height}>
-                                        <canvas
-                                            width={processingStats.width} height={processingStats.height}
-                                            style={{ imageRendering: 'pixelated', width: '100%', height: '100%' }}
-                                            ref={(canvas) => {
-                                                if (canvas && processedImageData)
-                                                    canvas.getContext('2d')?.putImageData(processedImageData, 0, 0);
-                                            }}
-                                        />
-                                    </ZoomViewport>
-                                )}
-                            </div>
-                            {processingStats ? (
-                                <div className="px-5 py-3">
-                                    <div className="flex justify-between"><span>Dimensions:</span><span className="font-mono">{processingStats.width} x {processingStats.height}</span></div>
-                                    <div className="flex justify-between"><span>Total Blocks:</span><span className="font-mono">{processingStats.totalBlocks.toLocaleString()}</span></div>
-                                    <div className="flex justify-between"><span>Unique Colors:</span><span className="font-mono">{processingStats.uniqueBlocks}</span></div>
-                                </div>
-                            ) : (
-                                <p className="text-muted-foreground text-xs">Processing…</p>
-                            )}
-                        </CardContent>
-                    </Card>
+                    <PreviewCard isProcessing={isProcessing} processedImageData={processedImageData} processingStats={processingStats} groupIdMap={groupIdMap} blockSelection={blockSelection} />
 
                     {materialList.length > 0 && (
                         <Card className="gap-2" id="material-list">
