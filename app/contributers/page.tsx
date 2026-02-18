@@ -1,79 +1,89 @@
 "use client";
 
-import React from "react";
-import Image from "next/image";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import React, {ReactNode, useEffect, useState} from "react";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import GithubIcon from "@/components/icons/GithubIcon";
+import {IconBrandDiscord, IconBrandYoutubeFilled} from "@tabler/icons-react";
+import {YoutubeIcon} from "lucide-react";
 
 type Contributor = {
     name: string;
+    medias: Record<string, string>;
     role?: string;
-    github?: string;
-    cardLink?: string;
     logo?: string;
-    message?: string;
+    messages?: string[];
 };
 
 const contributors: Contributor[] = [
-    { name: "Fy17", role: "Developer", message: "Created this site", github: "FySjutton"},
-    { name: "Bob", role: "Designer", message: "Created the main branding" },
-    { name: "Carol", role: "Backend Developer", cardLink: "https://carol.dev" },
-    { name: "Dave", role: "Tester", github: "daveGH" },
+    {
+        name: "Fy17",
+        role: "Founder & Developer",
+        logo: "https://github.com/FySjutton.png",
+        messages: [
+            "Original creator of the website", "a", "b", "c", "d", "e", "f",
+        ],
+        medias: { "github": "https://github.com/FySjutton" }
+    },
+    {
+        name: "Kruxa",
+        role: "Helper",
+        messages: [
+            "Sorted mapart palette"
+        ],
+        medias: { "youtube": "https://www.youtube.com/@Kruxxa"}
+    }
 ];
 
 export default function ContributorsPage() {
     return (
-        <div>
-            <h1 className="text-3xl font-bold mb-2 text-center">Contributors</h1>
-            <p className="text-center mb-8 text-muted-foreground px-4">
-                Thank you to everyone who has contributed to the project. Your work, whether in code, design, or documentation, is appreciated!
-            </p>
+        <div className="flex flex-wrap justify-center gap-4">
+            {contributors.map((c, idx) => {
+                const initials = c.name.split(" ").map((n) => n[0]).join("").toUpperCase();
 
-            <div className="flex flex-wrap justify-center gap-4 items-stretch">
-                {contributors.map((c, idx) => {
-                    const link = c.cardLink || (c.github ? `https://github.com/${c.github}` : undefined);
-                    const logoSrc = c.logo ?? (c.github ? `https://github.com/${c.github}.png` : null);
+                return (
+                    <Card key={idx} className="h-full w-75">
+                        <CardContent className="flex flex-col items-center h-full">
+                            {c.logo ? (
+                                <img src={c.logo} alt={c.name} className="min-w-24 h-24 rounded-full mb-2" />
+                            ) : (
+                                <div className="w-24 h-24 rounded-full bg-gray-300 mb-2 flex items-center justify-center font-bold text-xl">
+                                    {initials}
+                                </div>
+                            )}
+                            <p className="font-bold mt-2 mb-2 text-lg">{c.name}</p>
+                            {c.role && <p className="text-gray-300 text-sm">{c.role}</p>}
 
-                    return (
-                        <Link key={idx} href={link ?? "#"} target={link ? "_blank" : undefined} rel={link ? "noopener noreferrer" : undefined}>
-                            <Card className="flex flex-col items-center text-center p-4 cursor-pointer w-70 h-full">
-                                <CardHeader className="flex flex-col items-center">
-                                    {logoSrc ? (
-                                        <img src={logoSrc} alt={c.name} width={64} height={64} className="rounded-full mb-2 w-18 h-18" />
-                                    ) : (
-                                        <div className="w-16 h-16 bg-gray-300 rounded-full mb-2 flex items-center justify-center text-xl font-bold text-gray-700">
-                                            {c.name.charAt(0)}
-                                        </div>
-                                    )}
-                                    <CardTitle>{c.name}</CardTitle>
-                                    {c.role && <CardDescription>{c.role}</CardDescription>}
-                                </CardHeader>
+                            <div className="max-h-18 overflow-y-auto mt-2 text-center p-2 mb-auto">
+                                {c.messages && c.messages.map((message, index) => (
+                                    <p key={index} className="text-xs">{message}</p>
+                                ))}
+                            </div>
 
-                                {c.message && (
-                                    <CardContent className="text-sm text-muted-foreground mt-2">
-                                        <TooltipProvider delayDuration={200}>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <span>{c.message}</span>
-                                                </TooltipTrigger>
-                                                <TooltipContent side="bottom">{c.message}</TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </CardContent>
-                                )}
-
-                                {link && (
-                                    <CardContent className="mt-2">
-                                        <Button asChild variant="outline" size="sm">View Profile</Button>
-                                    </CardContent>
-                                )}
-                            </Card>
-                        </Link>
-                    );
-                })}
-            </div>
+                            <div className="flex flex-wrap gap-3 cursor-pointer justify-center mt-2">
+                                {c.medias && Object.keys(c.medias).map((media, index) => {
+                                    let mediaNode: ReactNode;
+                                    switch (media) {
+                                        case "github":
+                                            mediaNode = <GithubIcon/>
+                                            break
+                                        case "youtube":
+                                            mediaNode = <IconBrandYoutubeFilled/>
+                                            break
+                                        case "discord": mediaNode = <IconBrandDiscord/>;
+                                    }
+                                    return (
+                                        <Link key={index} href={c.medias[media]}>
+                                            <Button variant="outline" className="cursor-pointer">{mediaNode}</Button>
+                                        </Link>
+                                    )
+                                })}
+                            </div>
+                        </CardContent>
+                    </Card>
+                );
+            })}
         </div>
     );
 }
