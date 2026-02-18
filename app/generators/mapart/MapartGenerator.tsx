@@ -581,9 +581,8 @@ const InlineGroupSwitch = memo(function InlineGroupSwitch({ group, selectedBlock
                     <TooltipProvider key={`${groupId}-${blockName}-${idx}`} delayDuration={200}>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button onClick={() => callback(groupId, blockName)} variant="outline" size="sm"
-                                        className={`px-2 py-2 flex-col border h-auto ${isSelected ? "inset-ring-2" : ""}`}>
-                                    <ImageObj src={findImageAsset(imageName, "block")} alt={blockName} width={16} height={16} className="h-10 w-auto image-pixelated" />
+                                <Button onClick={() => callback(groupId, blockName)} variant="outline" size="sm" className={`px-2 py-2 flex-col border h-auto ${isSelected ? "inset-ring-2" : ""}`}>
+                                    <ImageObj src={findImageAsset(imageName, "block")} alt={blockName} width={16} height={16} className="h-10 w-10 image-pixelated" />
                                 </Button>
                             </TooltipTrigger>
                             <TooltipContent side="bottom" align="center">{toTitleCase(blockName, true)}</TooltipContent>

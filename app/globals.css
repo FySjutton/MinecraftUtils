@@ -240,6 +240,7 @@ input[type="time"]::-webkit-calendar-picker-indicator {
     }
 
     .image-pixelated {
+        image-rendering: crisp-edges; /* fallback */
         image-rendering: pixelated;
     }
 }

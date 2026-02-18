@@ -245,9 +245,7 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                     {processingStats && !isProcessing && (
                         <CardAction className="flex items-center gap-2">
                             {modeToggle}
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setIsFullscreen(true)}>
-                                <Maximize2 size={15} />
-                            </Button>
+                            <Button variant="outline" onClick={() => setIsFullscreen(true)}><Maximize2 size={15} /></Button>
                         </CardAction>
                     )}
                 </CardHeader>
@@ -290,12 +288,10 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
             {isFullscreen && processingStats && createPortal(
                 <div className="fixed inset-0 z-[9999] flex flex-col bg-background">
                     <div className="flex items-center justify-between px-4 py-2 border-b shrink-0">
-                        <span className="font-semibold text-sm">Preview — Fullscreen</span>
+                        <span className="font-semibold text-sm">Fullscreen Mapart Preview</span>
                         <div className="flex items-center gap-2">
                             {modeToggle}
-                            <Button variant="outline" size="sm" onClick={() => setIsFullscreen(false)}>
-                                Close <kbd className="ml-1 text-xs opacity-50">Esc</kbd>
-                            </Button>
+                            <Button variant="outline" onClick={() => setIsFullscreen(false)}>Close</Button>
                         </div>
                     </div>
                     <div ref={fsViewportRef} className="flex-1 overflow-hidden p-4">
