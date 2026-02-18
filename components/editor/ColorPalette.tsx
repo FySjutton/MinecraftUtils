@@ -10,7 +10,7 @@ import { ButtonGroup } from '@/components/ui/button-group'
 
 interface InlinePaletteButtonProps {
     alwaysActive?: boolean // if true, a color must always be active
-    initialColor?: string  // required if alwaysActive is true
+    initialColor?: string // required if alwaysActive is true
 }
 
 export default function InlinePaletteButton({ alwaysActive = false, initialColor }: InlinePaletteButtonProps) {

@@ -444,7 +444,7 @@ function SortableLayer({index, pattern, setPatterns, setEditing}: {
                         <Badge variant="secondary" className="my-auto">{patternList[pattern.pattern]}</Badge>
 
                         <div className="flex gap-2 items-center ml-auto mr-6 max-[430]:mx-auto">
-                            <div {...listeners}  {...attributes} className="cursor-grab text-lg select-none px-2 flex items-center my-auto py-3" style={{ touchAction: 'none'}} onDragStart={(e) => e.preventDefault()}><GripVertical /></div>
+                            <div {...listeners} {...attributes} className="cursor-grab text-lg select-none px-2 flex items-center my-auto py-3" style={{ touchAction: 'none'}} onDragStart={(e) => e.preventDefault()}><GripVertical /></div>
 
                             <Button
                                 size="sm"

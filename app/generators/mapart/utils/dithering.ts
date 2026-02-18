@@ -93,13 +93,13 @@ function applyErrorDiffusion(
             if (bestMatch) {
                 const rgb = numberToRGB(bestMatch.color);
 
-                outputData[idx]     = rgb.r;
+                outputData[idx] = rgb.r;
                 outputData[idx + 1] = rgb.g;
                 outputData[idx + 2] = rgb.b;
 
                 brightnessMap[z][x] = bestMatch.brightness;
-                groupIdMap[z][x]    = bestMatch.groupId;
-                yMap[z][x]          = bestMatch.y;
+                groupIdMap[z][x] = bestMatch.groupId;
+                yMap[z][x] = bestMatch.y;
 
                 const errR = oldR - rgb.r;
                 const errG = oldG - rgb.g;

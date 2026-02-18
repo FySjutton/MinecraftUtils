@@ -105,7 +105,7 @@ function RowView({icon, label, size, right}: { icon: string, label: string, size
 
 function InlineIngredientList({items}: { items: { type: "potion" | "ingredient"; name: string }[] }) {
     return (
-        <div className="sticky top-[55] z-10 backdrop-blur border-b py-2  items-center">
+        <div className="sticky top-[55] z-10 backdrop-blur border-b py-2 items-center">
             <Separator className="mb-[4]"/>
             <div className="flex gap-3 flex-wrap justify-center px-1">
                 {items.map((item, i) => (

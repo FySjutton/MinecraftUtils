@@ -53,7 +53,7 @@ export function calculate3DStructure(
             const fullBlockName = selectedBlockName.includes(':') ? selectedBlockName : `minecraft:${selectedBlockName}`;
 
             if (addSupportBlocks && mode !== StaircasingMode.NONE) {
-                blocks.push({ x, y,     z: zPos, blockName: supportBlockName });
+                blocks.push({ x, y, z: zPos, blockName: supportBlockName });
                 blocks.push({ x, y: y + 1, z: zPos, blockName: fullBlockName });
             } else {
                 blocks.push({ x, y, z: zPos, blockName: fullBlockName });

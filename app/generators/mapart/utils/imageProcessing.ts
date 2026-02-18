@@ -113,14 +113,14 @@ function processWithoutDithering(
                 );
                 const rgb = numberToRGB(result.color);
 
-                resultData[idx]     = rgb.r;
+                resultData[idx] = rgb.r;
                 resultData[idx + 1] = rgb.g;
                 resultData[idx + 2] = rgb.b;
                 resultData[idx + 3] = targetA;
 
                 brightnessMap[z][x] = result.brightness;
-                groupIdMap[z][x]    = result.groupId;
-                yMap[z][x]          = 0;
+                groupIdMap[z][x] = result.groupId;
+                yMap[z][x] = 0;
                 continue;
             }
 
@@ -142,13 +142,13 @@ function processWithoutDithering(
                         targetY = currentY;
                     } else {
                         if (z === 0) {
-                            if (brightness === Brightness.HIGH)        targetY = baseY + 1;
+                            if (brightness === Brightness.HIGH) targetY = baseY + 1;
                             else if (brightness === Brightness.NORMAL) targetY = baseY;
-                            else                                        targetY = baseY - 1;
+                            else targetY = baseY - 1;
                         } else {
-                            if (brightness === Brightness.HIGH)        targetY = currentY + 1;
+                            if (brightness === Brightness.HIGH) targetY = currentY + 1;
                             else if (brightness === Brightness.NORMAL) targetY = currentY;
-                            else                                        targetY = currentY - 1;
+                            else targetY = currentY - 1;
                         }
                     }
 
@@ -173,25 +173,25 @@ function processWithoutDithering(
             if (bestMatch) {
                 const rgb = numberToRGB(bestMatch.color);
 
-                resultData[idx]     = rgb.r;
+                resultData[idx] = rgb.r;
                 resultData[idx + 1] = rgb.g;
                 resultData[idx + 2] = rgb.b;
                 resultData[idx + 3] = targetA;
 
                 brightnessMap[z][x] = bestMatch.brightness;
-                groupIdMap[z][x]    = bestMatch.groupId;
-                yMap[z][x]          = bestMatch.y;
+                groupIdMap[z][x] = bestMatch.groupId;
+                yMap[z][x] = bestMatch.y;
 
                 currentY = bestMatch.y;
             } else {
-                resultData[idx]     = 0;
+                resultData[idx] = 0;
                 resultData[idx + 1] = 0;
                 resultData[idx + 2] = 0;
                 resultData[idx + 3] = targetA;
 
                 brightnessMap[z][x] = Brightness.NORMAL;
-                groupIdMap[z][x]    = 0;
-                yMap[z][x]          = currentY;
+                groupIdMap[z][x] = 0;
+                yMap[z][x] = currentY;
             }
         }
     }

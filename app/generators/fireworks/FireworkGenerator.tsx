@@ -118,7 +118,7 @@ export default function FireworkGenerator() {
                                 <TabsTrigger key={index} value={index.toString()}>#{index + 1}</TabsTrigger>
                             ))}
                             <Dot />
-                            <Button variant="ghost" className="px-1" disabled={explosions.length == 7}   onClick={() => {
+                            <Button variant="ghost" className="px-1" disabled={explosions.length == 7} onClick={() => {
                                 const newExplosion: FireworkExplosion = {
                                     shape: 'LARGE_BALL',
                                     colors: [FireworkColors.blue],

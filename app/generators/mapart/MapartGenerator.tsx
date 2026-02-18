@@ -67,7 +67,7 @@ export default function MapartGenerator() {
 
     const workerRef= useRef<Worker | null>(null);
     const requestIdRef = useRef(0);
-    const expandedRef  = useRef<HTMLDivElement | null>(null);
+    const expandedRef = useRef<HTMLDivElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const preprocessedImageUrl = useMemo(
@@ -229,8 +229,25 @@ export default function MapartGenerator() {
 
             const img = new Image();
             img.onload = () => {
-                setSourceImageElement(img);
-                setIsUploading(false); // done loading image
+                const canvas = document.createElement('canvas');
+                canvas.width = img.width;
+                canvas.height = img.height;
+
+                const ctx = canvas.getContext('2d');
+                if (!ctx) return;
+
+                ctx.fillStyle = '#000000';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0);
+
+                const flattenedDataUrl = canvas.toDataURL('image/png');
+                const flattenedImg = new Image();
+                flattenedImg.onload = () => {
+                    setSourceImageElement(flattenedImg);
+                    setImage(flattenedDataUrl);
+                    setIsUploading(false);
+                };
+                flattenedImg.src = flattenedDataUrl;
             };
             img.src = imgSrc;
 
@@ -496,8 +513,8 @@ const PaletteGroup = memo(function PaletteGroup({ group, groupId, selectedBlock,
 
     const baseColor = BASE_COLORS[groupId];
     const normalHex = numberToHex(scaleRGB(baseColor, Brightness.NORMAL));
-    const lightHex  = numberToHex(scaleRGB(baseColor, Brightness.LOW));
-    const highHex   = numberToHex(scaleRGB(baseColor, Brightness.HIGH));
+    const lightHex = numberToHex(scaleRGB(baseColor, Brightness.LOW));
+    const highHex = numberToHex(scaleRGB(baseColor, Brightness.HIGH));
     const selectedIndex = selectedBlock != null ? group.indexOf(selectedBlock) : -1;
 
     return (

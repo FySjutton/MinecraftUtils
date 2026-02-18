@@ -39,8 +39,8 @@
     "birch_trapdoor",
     "birch_pressure_plate",
     "birch_sign",
-    "birch_hanging_sign",
-    "suspicious_sand"
+    "suspicious_sand",
+    "birch_shelf"
   ],
   [
     "mushroom_stem",
@@ -75,7 +75,15 @@
     "lodestone",
     "iron_door",
     "heavy_weighted_pressure_plate",
-    "pale_oak_sapling"
+    "pale_oak_sapling",
+    "copper_lantern",
+    "exposed_copper_lantern",
+    "oxidized_copper_lantern",
+    "waxed_copper_lantern",
+    "waxed_exposed_copper_lantern",
+    "waxed_oxidized_copper_lantern",
+    "waxed_weathered_copper_lantern",
+    "weathered_copper_lantern"
   ],
   [
     "oak_leaves",
@@ -180,7 +188,6 @@
     "farmland",
     "dirt_path",
     "jukebox",
-    "hanging_roots",
     "stripped_jungle_log",
     "jungle_wood",
     "stripped_jungle_wood",
@@ -195,7 +202,7 @@
     "jungle_trapdoor",
     "jungle_pressure_plate",
     "jungle_sign",
-    "jungle_hanging_sign"
+    "jungle_shelf"
   ],
   [
     "stone_slab",
@@ -267,7 +274,6 @@
     "seagrass",
     "tall_seagrass",
     "frogspawn",
-    "kelp_plant",
     "bubble_column"
   ],
   [
@@ -316,10 +322,9 @@
     "oak_trapdoor",
     "oak_pressure_plate",
     "oak_sign",
-    "oak_hanging_sign",
-    "spruce_hanging_sign",
     "dead_bush",
-    "bamboo_sapling"
+    "bamboo_sapling",
+    "oak_shelf"
   ],
   [
     "diorite_slab",
@@ -352,7 +357,7 @@
     "pale_oak_trapdoor",
     "pale_oak_pressure_plate",
     "pale_oak_sign",
-    "pale_oak_hanging_sign"
+    "pale_oak_shelf"
   ],
   [
     "red_sandstone_slab",
@@ -414,7 +419,10 @@
     "waxed_copper_grate",
     "acacia_pressure_plate",
     "acacia_sign",
-    "acacia_hanging_sign"
+    "acacia_shelf",
+    "copper_chest",
+    "waxed_copper_chest",
+    "waxed_lightning_rod"
   ],
   [
     "magenta_wool",
@@ -473,7 +481,7 @@
     "bamboo_trapdoor",
     "bamboo_pressure_plate",
     "bamboo_sign",
-    "bamboo_hanging_sign"
+    "bamboo_shelf"
   ],
   [
     "lime_wool",
@@ -540,7 +548,6 @@
     "light_gray_concrete_powder",
     "light_gray_stained_glass",
     "light_gray_glazed_terracotta",
-    "pale_hanging_moss",
     "light_gray_candle",
     "light_gray_shulker_box",
     "structure_block",
@@ -631,7 +638,7 @@
     "dark_oak_trapdoor",
     "dark_oak_pressure_plate",
     "dark_oak_sign",
-    "dark_oak_hanging_sign"
+    "dark_oak_shelf"
   ],
   [
     "green_wool",
@@ -685,7 +692,7 @@
     "mangrove_trapdoor",
     "mangrove_pressure_plate",
     "mangrove_sign",
-    "mangrove_hanging_sign"
+    "mangrove_shelf"
   ],
   [
     "black_wool",
@@ -768,7 +775,8 @@
     "spruce_door",
     "spruce_trapdoor",
     "spruce_pressure_plate",
-    "spruce_sign"
+    "spruce_sign",
+    "spruce_shelf"
   ],
   [
     "netherrack",
@@ -804,7 +812,8 @@
     "cherry_door",
     "cherry_trapdoor",
     "cherry_pressure_plate",
-    "cherry_sign"
+    "cherry_sign",
+    "cherry_shelf"
   ],
   [
     "orange_terracotta",
@@ -831,8 +840,7 @@
   ],
   [
     "pink_terracotta",
-    "stripped_cherry_wood",
-    "cherry_hanging_sign"
+    "stripped_cherry_wood"
   ],
   [
     "gray_terracotta",
@@ -875,7 +883,11 @@
     "exposed_copper_trapdoor",
     "waxed_exposed_copper_trapdoor",
     "exposed_copper_grate",
-    "waxed_exposed_copper_grate"
+    "waxed_exposed_copper_grate",
+    "exposed_copper_chest",
+    "exposed_lightning_rod",
+    "waxed_exposed_copper_chest",
+    "waxed_exposed_lightning_rod"
   ],
   [
     "cyan_terracotta",
@@ -918,7 +930,7 @@
     "crimson_trapdoor",
     "crimson_pressure_plate",
     "crimson_sign",
-    "crimson_hanging_sign"
+    "crimson_shelf"
   ],
   [
     "crimson_hyphae",
@@ -943,7 +955,11 @@
     "oxidized_copper_trapdoor",
     "waxed_oxidized_copper_trapdoor",
     "oxidized_copper_grate",
-    "waxed_oxidized_copper_grate"
+    "waxed_oxidized_copper_grate",
+    "oxidized_copper_chest",
+    "oxidized_lightning_rod",
+    "waxed_oxidized_copper_chest",
+    "waxed_oxidized_lightning_rod"
   ],
   [
     "warped_slab",
@@ -975,7 +991,11 @@
     "waxed_weathered_copper_grate",
     "warped_pressure_plate",
     "warped_sign",
-    "warped_hanging_sign"
+    "warped_shelf",
+    "waxed_weathered_copper_chest",
+    "waxed_weathered_lightning_rod",
+    "weathered_copper_chest",
+    "weathered_lightning_rod"
   ],
   [
     "warped_hyphae",

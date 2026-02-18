@@ -9,8 +9,8 @@ function quadVerts(
     rotationDeg = 0
 ): [number, number][] {
     let verts: [number, number][] = [
-        [-bottomWidth / 2,  height / 2],
-        [ bottomWidth / 2,  height / 2],
+        [-bottomWidth / 2, height / 2],
+        [ bottomWidth / 2, height / 2],
         [ topWidth / 2 + skew, -height / 2],
         [-topWidth / 2 + skew, -height / 2],
     ];
@@ -73,7 +73,7 @@ export const QuadrilateralGenerator: ShapeGenerator = {
         const minYi = Math.ceil(minY);
         const maxYi = Math.floor(maxY);
 
-        const width  = (maxXi - minXi + 1) + 2;
+        const width = (maxXi - minXi + 1) + 2;
         const height = (maxYi - minYi + 1) + 2;
 
         return { width, height };

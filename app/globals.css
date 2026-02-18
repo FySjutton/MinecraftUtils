@@ -235,8 +235,8 @@ input[type="time"]::-webkit-calendar-picker-indicator {
         text-shadow:
                 -1px -1px 0 #000,
                 1px -1px 0 #000,
-                -1px  1px 0 #000,
-                1px  1px 0 #000;
+                -1px 1px 0 #000,
+                1px 1px 0 #000;
     }
 
     .image-pixelated {
