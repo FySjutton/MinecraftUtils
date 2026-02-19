@@ -30,7 +30,7 @@ export default function Page() {
                                     <p>Generate custom banners and shields for minecraft with interactive editor and command output.</p>
                                 </div>
                             </div>
-                            <Button className="mt-3 mx-auto cursor-pointer">Click to open editor!</Button>
+                            <Button className="mt-3 mx-auto">Click to open editor!</Button>
                         </CardContent>
                     </Card>
                 </Link>

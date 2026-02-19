@@ -1,6 +1,6 @@
 import pako from 'pako';
-import {Structure3D} from './utils';
 import {NBT, NBTCompound, NBTType, NBTValue, writeNBT} from "@/lib/schematics/nbtWriter";
+import {Structure3D} from "@/app/generators/mapart/utils/utils";
 
 function buildNBTStructure(structure: Structure3D): NBTCompound {
     // Build palette: map block names to indices

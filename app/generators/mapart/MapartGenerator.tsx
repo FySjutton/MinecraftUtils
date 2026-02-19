@@ -532,7 +532,7 @@ const PaletteGroup = memo(function PaletteGroup({ group, groupId, selectedBlock,
                 <span>Group {groupId + 1}</span><Dot />
                 <span>{group.length > 5 && `${open ? group.length : (5 + (selectedIndex > 4 ? 1 : 0))} /`} {group.length} blocks</span>
                 {group.length > 5 && (
-                    <Button onClick={() => setOpen(o => !o)} variant="secondary" className="h-6 mr-4 px-2 text-xs cursor-pointer">
+                    <Button onClick={() => setOpen(o => !o)} variant="secondary" className="h-6 mr-4 px-2 text-xs">
                         {open ? <p className="flex gap-2">Hide<ChevronUp /></p> : <p className="flex gap-2">Show<ChevronDown /></p>}
                     </Button>
                 )}

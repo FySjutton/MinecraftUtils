@@ -2,10 +2,7 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
-    reactStrictMode: true,
-    images: {
-        domains: ['github.com'],
-    },
+    reactStrictMode: true
 };
 
 export default nextConfig;

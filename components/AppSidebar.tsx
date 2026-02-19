@@ -105,7 +105,7 @@ export function AppSidebar() {
                         <Separator />
                         <div className="flex flex-wrap justify-center text-center mt-4 mb-5">
                             <p className="w-full mb-2 text-gray-200">Show Experimental</p>
-                            <Switch checked={!filterAlpha} onCheckedChange={() => setFilterAlpha(!filterAlpha)} />
+                            <Switch className="cursor-pointer" checked={!filterAlpha} onCheckedChange={() => setFilterAlpha(!filterAlpha)} />
                         </div>
                     </div>
                 )}

@@ -96,6 +96,7 @@ export const tools: ToolCategory[] = [
         url: "/generators",
         defaultOpen: true,
         pages: [
+            { name: "Mapart Generator", url: "mapart", icon: "filled_map", description: "Generate advanced and accurate minecraft maparts, with staircasing, dithering and more.", type: "alpha" },
             { name: "Beacon Generator", url: "beacon-color", icon: "3d_beacon", description: "Calculate the optimal glass order for beacon colors with high accuracy, live preview, reverse mode." },
             { name: "Circle Generator", url: "circle-generator", icon: "circle-generator", description: "Generate pixel perfect circles for minecraft.", type: "beta" },
             { name: "Firework Generator", url: "fireworks", icon: "firework", description: "Generate advanced fireworks with preview, instructions, and output command.", type: "beta" },
@@ -166,6 +167,7 @@ export const externals: ToolCategory[] = [
 export const featuredHomePage: PageItem[] = [
     getPage(tools, "Shape Generator"),
     getPage(tools, "Enchanting Calculator"),
+    getPage(tools, "Mapart Generator"),
     getPage(tools, "Firework Generator"),
     getPage(tools, "Unit Calculator"),
     getPage(tools, "XP to Level Calculator"),
@@ -189,6 +191,7 @@ export const featuredCalculators: PageItem[] = [
 ]
 
 export const featuredGenerators: PageItem[] = [
+    getPage(tools, "Mapart Generator"),
     getPage(tools, "Beacon Generator"),
     getPage(tools, "Shape Generator"),
     getPage(tools, "Firework Generator"),

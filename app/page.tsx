@@ -4,6 +4,7 @@ import GithubIcon from "@/components/icons/GithubIcon";
 import DiscordIcon from "@/components/icons/DiscordIcon";
 import FeaturedUtils from "@/components/FeaturedUtils";
 import {featuredHomePage} from "@/app/AppStructure";
+import {HandHelping} from "lucide-react";
 
 export default function HomePage() {
     return (
@@ -26,6 +27,11 @@ export default function HomePage() {
                         </Button>
                     </a>
                 </div>
+                <a href="/contributors" className="mx-auto">
+                    <Button variant="outline" size="sm">
+                        <HandHelping /> Contributor List
+                    </Button>
+                </a>
             </div>
 
             <FeaturedUtils title="Featured Utilities" description="These are just some of our tools! For all tools, please see the sidebar." utilities={featuredHomePage}/>
