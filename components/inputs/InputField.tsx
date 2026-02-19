@@ -107,7 +107,7 @@ export function InputField({label, showCopy = false, value = "", onChange, varia
                         value={inputValue}
                         onChange={handleChange}
                         readOnly={showCopy}
-                        className={`flex-1 bg-transparent outline-none ${
+                        className={`min-w-0 bg-transparent outline-none ${
                             showCopy ? "cursor-pointer select-all truncate" : ""
                         }`}
                         {...props}

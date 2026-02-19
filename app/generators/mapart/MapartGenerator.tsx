@@ -310,263 +310,273 @@ export default function MapartGenerator() {
     }, []);
 
     return (
-        <div className={`grid-parent ${image ? "grid-full" : "grid-start"}`}>
-            <Card id="upload-image">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        Upload Image
-                        {isUploading && <Loader2 className="animate-spin" size={16} />}
-                    </CardTitle>
-                </CardHeader>
+        <div className="grid-parent">
+            <div className={`grid-handler ${image ? "grid-full" : "grid-start"}`}>
+                <Card id="upload-image">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            Upload Image
+                            {isUploading && <Loader2 className="animate-spin" size={16} />}
+                        </CardTitle>
+                    </CardHeader>
 
-                <CardContent>
-                    <div
-                        className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer ${isUploading ? 'opacity-60 pointer-events-none' : isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25'}`}
-                        onDrop={handleDrop}
-                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                        onDragLeave={() => setIsDragging(false)}
-                        onClick={() => !isUploading && fileInputRef.current?.click()}
-                    >
-                        {isUploading ? (
-                            <div className="flex flex-col items-center gap-2">
-                                <Loader2 className="animate-spin" size={32} />
-                                <p className="text-sm text-muted-foreground">Loading image…</p>
-                            </div>
-                        ) : (
-                            <>
-                                <Upload className="mx-auto mb-2" size={32} />
-                                <p className="text-sm">Drop image or click to browse</p>
-                            </>
-                        )}
-
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => handleFileUpload(e.target.files?.[0] || null)}
-                            className="hidden"
-                        />
-                    </div>
-                </CardContent>
-            </Card>
-
-            {image && (
-                <>
-                    <ImagePreprocessing
-                        sourceImage={sourceImageElement}
-                        targetWidth={mapWidth * 128}
-                        targetHeight={mapHeight * 128}
-                        onProcessed={setPreprocessedCanvas}
-                        id="preprocessing"
-                    />
-
-                    <Card id="settings">
-                        <CardHeader><CardTitle>Settings</CardTitle></CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-2 gap-4">
-                                <InputField value={mapWidth} onChange={(e) => setMapWidth(parseInt(e))} max={20} min={1} variant="number" label="Map Width (X)" />
-                                <InputField value={mapHeight} onChange={(e) => setMapHeight(parseInt(e))} max={20} min={1} variant="number" label="Map Height (Y)" />
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1 ml-1">
-                                Total size: {mapWidth * 128}x{mapHeight * 128} pixels ({mapWidth}x{mapHeight} maps)
-                            </p>
-
-                            <Label className="mt-4 mb-2">Dithering Method</Label>
-                            <ComboBox
-                                items={Object.keys(ditheringMethods)}
-                                value={ditheringMethod}
-                                onChange={(e) => setDitheringMethod(e as DitheringMethodName)}
-                                getDisplayName={(v) => {
-                                    return ditheringMethods[v as DitheringMethodName].name
-                                }}
-                                getTooltip={(v) => {
-                                    return ditheringMethods[v as DitheringMethodName].description
-                                }}
-                            />
-
-                            <Label className="mt-4 mb-2">Staircasing Method</Label>
-                            <div className="flex gap-2 w-full relative box-border">
-                                {/* TODO: This inline isn't perfect on minimum 320*/}
-                                <div>
-                                    <ComboBox
-                                        items={Object.values(StaircasingMode)} value={staircasingMode}
-                                        onChange={(e) => setStaircasingMode(e as StaircasingMode)}
-                                        getDisplayName={(v) => v === StaircasingMode.NONE ? "Flat Map (2d)" : v === StaircasingMode.STANDARD ? "Staircasing 3d" : v === StaircasingMode.VALLEY ? "Valley" : `3d Limited Height (${maxHeight})`}
-                                    />
+                    <CardContent>
+                        <div
+                            className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer ${isUploading ? 'opacity-60 pointer-events-none' : isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25'}`}
+                            onDrop={handleDrop}
+                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                            onDragLeave={() => setIsDragging(false)}
+                            onClick={() => !isUploading && fileInputRef.current?.click()}
+                        >
+                            {isUploading ? (
+                                <div className="flex flex-col items-center gap-2">
+                                    <Loader2 className="animate-spin" size={32} />
+                                    <p className="text-sm text-muted-foreground">Loading image…</p>
                                 </div>
-                                {staircasingMode == StaircasingMode.VALLEY_CUSTOM && (
-                                    <div className="min-w-0">
+                            ) : (
+                                <>
+                                    <Upload className="mx-auto mb-2" size={32} />
+                                    <p className="text-sm">Drop image or click to browse</p>
+                                </>
+                            )}
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleFileUpload(e.target.files?.[0] || null)}
+                                className="hidden"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
+                {image && (
+                    <>
+                        <ImagePreprocessing
+                            sourceImage={sourceImageElement}
+                            targetWidth={mapWidth * 128}
+                            targetHeight={mapHeight * 128}
+                            onProcessed={setPreprocessedCanvas}
+                            id="preprocessing"
+                        />
+
+                        <Card id="settings">
+                            <CardHeader><CardTitle>Settings</CardTitle></CardHeader>
+                            <CardContent>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <InputField value={mapWidth} onChange={(e) => setMapWidth(parseInt(e))} max={20} min={1} variant="number" label="Map Width (X)" />
+                                    <InputField value={mapHeight} onChange={(e) => setMapHeight(parseInt(e))} max={20} min={1} variant="number" label="Map Height (Y)" />
+                                </div>
+                                <p className="text-xs text-muted-foreground mt-1 ml-1">
+                                    Total size: {mapWidth * 128}x{mapHeight * 128} pixels ({mapWidth}x{mapHeight} maps)
+                                </p>
+
+                                <Label className="mt-4 mb-2">Dithering Method</Label>
+                                <ComboBox
+                                    items={Object.keys(ditheringMethods)}
+                                    value={ditheringMethod}
+                                    onChange={(e) => setDitheringMethod(e as DitheringMethodName)}
+                                    getDisplayName={(v) => {
+                                        return ditheringMethods[v as DitheringMethodName].name
+                                    }}
+                                    getTooltip={(v) => {
+                                        return ditheringMethods[v as DitheringMethodName].description
+                                    }}
+                                />
+
+                                <Label className="mt-4 mb-2">Staircasing Method</Label>
+                                <div className="flex gap-2 w-full relative box-border">
+                                    <div className="flex-1 min-w-0">
+                                        <ComboBox
+                                            items={Object.values(StaircasingMode)}
+                                            value={staircasingMode}
+                                            onChange={(e) => setStaircasingMode(e as StaircasingMode)}
+                                            getDisplayName={(v) =>
+                                                v === StaircasingMode.NONE
+                                                    ? "Flat Map (2d)"
+                                                    : v === StaircasingMode.STANDARD
+                                                        ? "Staircasing 3d"
+                                                        : v === StaircasingMode.VALLEY
+                                                            ? "Valley"
+                                                            : `3d Limited Height (${maxHeight})`
+                                            }
+                                        />
+                                    </div>
+
+                                    {staircasingMode === StaircasingMode.VALLEY_CUSTOM && (
+                                        <div className="flex-none w-15">
+                                            <InputField
+                                                value={maxHeight}
+                                                onChange={(e) => setMaxHeight(parseInt(e))}
+                                                variant="number"
+                                                min={3}
+                                            />
+                                        </div>
+                                    )}
+                                </div>
+
+                                <Separator className="my-4" />
+
+                                <Label className="mt-4 mb-2">Support Blocks</Label>
+                                <ComboBox
+                                    items={Object.values(SupportBlockMode)}
+                                    value={supportMode}
+                                    onChange={(e) => setSupportMode(e as SupportBlockMode)}
+                                    getDisplayName={(v) => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
+                                />
+
+                                {supportMode !== SupportBlockMode.NONE && (
+                                    <div className="mt-3">
                                         <InputField
-                                            value={maxHeight}
-                                            onChange={(e) => setMaxHeight(parseInt(e))}
-                                            variant="number"
-                                            min={3}
+                                            label="Support Block"
+                                            value={supportBlockName}
+                                            onChange={setSupportBlockName}
+                                            variant="text"
+                                            placeholder="e.g. netherrack"
                                         />
                                     </div>
                                 )}
-                            </div>
 
-
-                            <Separator className="my-4" />
-
-                            <Label className="mt-4 mb-2">Support Blocks</Label>
-                            <ComboBox
-                                items={Object.values(SupportBlockMode)}
-                                value={supportMode}
-                                onChange={(e) => setSupportMode(e as SupportBlockMode)}
-                                getDisplayName={(v) => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
-                            />
-
-                            {supportMode !== SupportBlockMode.NONE && (
-                                <div className="mt-3">
-                                    <InputField
-                                        label="Support Block"
-                                        value={supportBlockName}
-                                        onChange={setSupportBlockName}
-                                        variant="text"
-                                        placeholder="e.g. netherrack"
-                                    />
-                                </div>
-                            )}
-
-                            <Label className="mt-4 mb-2">Color Matching</Label>
-                            <ComboBox
-                                items={Object.values(ColorDistanceMethod)} value={colorDistanceMethod}
-                                onChange={(e) => setColorDistanceMethod(e as ColorDistanceMethod)}
-                                getDisplayName={(v) => v === ColorDistanceMethod.WEIGHTED_RGB ? "Weighted RGB" : v === ColorDistanceMethod.EUCLIDEAN ? "Euclidean" : "Delta E"}
-                                renderItem={(v) => v === ColorDistanceMethod.WEIGHTED_RGB ? "Recommended" : v === ColorDistanceMethod.EUCLIDEAN ? "Fast" : "Perceptual"}
-                            />
-                        </CardContent>
-                    </Card>
-
-                    <Card id="exporting">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                Exporting
-                                {isProcessing && <Loader2 className="animate-spin text-muted-foreground" size={16} />}
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex flex-col gap-2">
-                            <div className="flex gap-2 w-full">
-                                <Button onClick={async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, false)} className="flex-1" disabled={!processingStats || isProcessing}>
-                                    <Download className="mr-2" size={16} />Export NBT
-                                </Button>
-                                {(mapHeight > 1 || mapWidth > 1) && (
-                                    <Button className="flex-1" disabled={!processingStats || isProcessing} onClick={
-                                        async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, true)
-                                    }>
-                                        <Download className="mr-2" size={16} />Export NBT (Split in 1x1 .zip)
-                                    </Button>
-                                )}
-                            </div>
-                            <p className="text-xs text-gray-300 mb-3">You can use NBT files to preview them in 3d inside minecraft using Litematica, or paste them directly using Worldedit or Structure Blocks.</p>
-                            <div className="flex gap-2 w-full">
-                                <Button className="flex-1" variant="secondary" onClick={async () => await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)} disabled={!processingStats || isProcessing}>
-                                    <Download className="mr-2" size={16} />Export PNG
-                                </Button>
-
-                                <Button onClick={handleReset} variant="destructive" className="flex-1">
-                                    <RotateCcw className="mr-2" size={16} />Reset
-                                </Button>
-                            </div>
-                            <p className="text-xs text-gray-300">If you want an image, you can export it as a PNG file. You can also press reset to clear everything inputted, or refresh the page.</p>
-                        </CardContent>
-                    </Card>
-
-                    <Card id="palette">
-                        <CardHeader>
-                            <CardTitle>Block Palette</CardTitle>
-                            <CardDescription className="space-y-2 text-sm">
-                                {Object.keys(blockSelection).length} / 61 colors enabled
-                            </CardDescription>
-                            <div className="flex gap-2 mt-4">
-                                <div className="flex-1">
-                                    <ComboBox items={[...Presets]} value={currentPreset} onChange={(value) => applyPreset(value)} />
-                                </div>
-                                <Button variant="outline" onClick={handleExportPreset}><Download size={14} /></Button>
-                                <Button variant="outline" onClick={() => presetInputRef.current?.click()}><Upload size={14} /></Button>
-                                <input ref={presetInputRef} type="file" accept=".json"
-                                       onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportPreset(f); }}
-                                       className="hidden" />
-                            </div>
-                        </CardHeader>
-                        <CardContent className="aspect-square space-y-2 overflow-y-auto">
-                            {BLOCK_GROUPS.map((group, groupId) => (
-                                <PaletteGroup
-                                    key={groupId}
-                                    group={group}
-                                    groupId={groupId}
-                                    selectedBlock={blockSelection[groupId] ?? null}
-                                    toggleBlockSelection={toggleBlockSelection}
+                                <Label className="mt-4 mb-2">Color Matching</Label>
+                                <ComboBox
+                                    items={Object.values(ColorDistanceMethod)} value={colorDistanceMethod}
+                                    onChange={(e) => setColorDistanceMethod(e as ColorDistanceMethod)}
+                                    getDisplayName={(v) => v === ColorDistanceMethod.WEIGHTED_RGB ? "Weighted RGB" : v === ColorDistanceMethod.EUCLIDEAN ? "Euclidean" : "Delta E"}
+                                    renderItem={(v) => v === ColorDistanceMethod.WEIGHTED_RGB ? "Recommended" : v === ColorDistanceMethod.EUCLIDEAN ? "Fast" : "Perceptual"}
                                 />
-                            ))}
-                        </CardContent>
-                    </Card>
-
-                    <PreviewCard
-                        isProcessing={isProcessing}
-                        processedImageData={processedImageData}
-                        processingStats={processingStats}
-                        groupIdMap={groupIdMap}
-                        blockSelection={blockSelection}
-                        sourceImage={preprocessedImageUrl}
-                    />
-
-                    {materialList.length > 0 && (
-                        <Card className="gap-2" id="material-list">
-                            <CardHeader>
-                                <CardTitle>Material List</CardTitle>
-                                <CardDescription>Click on materials to edit them.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-sm">
-                                    <Separator />
-                                    <p className="flex text-gray-400 mt-2 mb-1">Stats: {processingStats?.uniqueBlocks} materials<Dot />{processingStats?.totalBlocks} blocks</p>
-                                    <Separator />
-                                    <div className={`space-y-2 overflow-y-auto mt-1 ${supportMode == SupportBlockMode.NONE ? "max-h-90" : "max-h-105"}`}>
-                                        {materialList.map((material, idx) => {
-                                            const selectedBlock = blockSelection[material.groupId] as string;
-                                            if (!selectedBlock) return null;
-                                            const imageName = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
-                                            const isExpanded = expandedGroup === material.groupId;
-
-                                            return (
-                                                <div key={idx}>
-                                                    {!isExpanded ? (
-                                                        <div className="flex items-center justify-between p-2 border rounded-md mr-2 cursor-pointer"
-                                                             onClick={(e) => { e.stopPropagation(); setExpandedGroup(material.groupId); }}>
-                                                            <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
-                                                                <ImageObj src={findImageAsset(imageName, "block")} alt={selectedBlock} width={16} height={16} className="h-full w-auto image-pixelated aspect-ratio" />
-                                                                <span className="truncate text-xs">{toTitleCase(selectedBlock, true)}</span>
-                                                            </div>
-                                                            <span className="font-mono text-xs shrink-0">{formatItemCount(material.count)}</span>
-                                                        </div>
-                                                    ) : (
-                                                        <div ref={expandedRef} className="mt-1 border p-2 rounded-md">
-                                                            <Label className="mb-2 ml-1 mt-1">Select which material to use:</Label>
-                                                            <InlineGroupSwitch
-                                                                group={BLOCK_GROUPS[material.groupId]}
-                                                                selectedBlock={blockSelection[material.groupId] ?? null}
-                                                                callback={(gId, block) => {
-                                                                    setExpandedGroup(null);
-                                                                    if (selectedBlock !== block) toggleBlockSelection(gId, block ? block : selectedBlock);
-                                                                }}
-                                                                groupId={material.groupId}
-                                                                open={true}
-                                                                removeBtn={true}
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
                             </CardContent>
                         </Card>
-                    )}
-                </>
-            )}
+
+                        <Card id="exporting">
+                            <CardHeader>
+                                <CardTitle className="flex items-center gap-2">
+                                    Exporting
+                                    {isProcessing && <Loader2 className="animate-spin text-muted-foreground" size={16} />}
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="flex flex-col gap-2">
+                                <div className="flex gap-2 w-full">
+                                    <Button onClick={async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, false)} className="flex-1" disabled={!processingStats || isProcessing}>
+                                        <Download className="mr-2" size={16} />Export NBT
+                                    </Button>
+                                    {(mapHeight > 1 || mapWidth > 1) && (
+                                        <Button className="flex-1" disabled={!processingStats || isProcessing} onClick={
+                                            async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, true)
+                                        }>
+                                            <Download className="mr-2" size={16} />Export NBT (Split in 1x1 .zip)
+                                        </Button>
+                                    )}
+                                </div>
+                                <p className="text-xs text-gray-300 mb-3">You can use NBT files to preview them in 3d inside minecraft using Litematica, or paste them directly using Worldedit or Structure Blocks.</p>
+                                <div className="flex gap-2 w-full">
+                                    <Button className="flex-1" variant="secondary" onClick={async () => await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)} disabled={!processingStats || isProcessing}>
+                                        <Download className="mr-2" size={16} />Export PNG
+                                    </Button>
+
+                                    <Button onClick={handleReset} variant="destructive" className="flex-1">
+                                        <RotateCcw className="mr-2" size={16} />Reset
+                                    </Button>
+                                </div>
+                                <p className="text-xs text-gray-300">If you want an image, you can export it as a PNG file. You can also press reset to clear everything inputted, or refresh the page.</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card id="palette">
+                            <CardHeader>
+                                <CardTitle>Block Palette</CardTitle>
+                                <CardDescription className="space-y-2 text-sm">
+                                    {Object.keys(blockSelection).length} / 61 colors enabled
+                                </CardDescription>
+                                <div className="flex gap-2 mt-4">
+                                    <div className="flex-1">
+                                        <ComboBox items={[...Presets]} value={currentPreset} onChange={(value) => applyPreset(value)} />
+                                    </div>
+                                    <Button variant="outline" onClick={handleExportPreset}><Download size={14} /></Button>
+                                    <Button variant="outline" onClick={() => presetInputRef.current?.click()}><Upload size={14} /></Button>
+                                    <input ref={presetInputRef} type="file" accept=".json"
+                                           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportPreset(f); }}
+                                           className="hidden" />
+                                </div>
+                            </CardHeader>
+                            <CardContent className="aspect-square space-y-2 overflow-y-auto">
+                                {BLOCK_GROUPS.map((group, groupId) => (
+                                    <PaletteGroup
+                                        key={groupId}
+                                        group={group}
+                                        groupId={groupId}
+                                        selectedBlock={blockSelection[groupId] ?? null}
+                                        toggleBlockSelection={toggleBlockSelection}
+                                    />
+                                ))}
+                            </CardContent>
+                        </Card>
+
+                        <PreviewCard
+                            isProcessing={isProcessing}
+                            processedImageData={processedImageData}
+                            processingStats={processingStats}
+                            groupIdMap={groupIdMap}
+                            blockSelection={blockSelection}
+                            sourceImage={preprocessedImageUrl}
+                        />
+
+                        {materialList.length > 0 && (
+                            <Card className="gap-2" id="material-list">
+                                <CardHeader>
+                                    <CardTitle>Material List</CardTitle>
+                                    <CardDescription>Click on materials to edit them.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-sm">
+                                        <Separator />
+                                        <p className="flex text-gray-400 mt-2 mb-1">Stats: {processingStats?.uniqueBlocks} materials<Dot />{processingStats?.totalBlocks} blocks</p>
+                                        <Separator />
+                                        <div className={`space-y-2 overflow-y-auto mt-1 ${supportMode == SupportBlockMode.NONE ? "max-h-90" : "max-h-105"}`}>
+                                            {materialList.map((material, idx) => {
+                                                const selectedBlock = blockSelection[material.groupId] as string;
+                                                if (!selectedBlock) return null;
+                                                const imageName = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
+                                                const isExpanded = expandedGroup === material.groupId;
+
+                                                return (
+                                                    <div key={idx}>
+                                                        {!isExpanded ? (
+                                                            <div className="flex items-center justify-between p-2 border rounded-md mr-2 cursor-pointer"
+                                                                 onClick={(e) => { e.stopPropagation(); setExpandedGroup(material.groupId); }}>
+                                                                <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
+                                                                    <ImageObj src={findImageAsset(imageName, "block")} alt={selectedBlock} width={16} height={16} className="h-full w-auto image-pixelated aspect-ratio" />
+                                                                    <span className="truncate text-xs">{toTitleCase(selectedBlock, true)}</span>
+                                                                </div>
+                                                                <span className="font-mono text-xs shrink-0">{formatItemCount(material.count)}</span>
+                                                            </div>
+                                                        ) : (
+                                                            <div ref={expandedRef} className="mt-1 border p-2 rounded-md">
+                                                                <Label className="mb-2 ml-1 mt-1">Select which material to use:</Label>
+                                                                <InlineGroupSwitch
+                                                                    group={BLOCK_GROUPS[material.groupId]}
+                                                                    selectedBlock={blockSelection[material.groupId] ?? null}
+                                                                    callback={(gId, block) => {
+                                                                        setExpandedGroup(null);
+                                                                        if (selectedBlock !== block) toggleBlockSelection(gId, block ? block : selectedBlock);
+                                                                    }}
+                                                                    groupId={material.groupId}
+                                                                    open={true}
+                                                                    removeBtn={true}
+                                                                />
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )}
+                    </>
+                )}
+            </div>
         </div>
     );
 }

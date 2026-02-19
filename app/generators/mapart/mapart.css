@@ -1,5 +1,9 @@
 @layer utilities {
     .grid-parent {
+        container-type: inline-size;
+    }
+
+    .grid-handler {
         display: grid;
         grid-template-columns: calc(50% - 7px) calc(50% - 7px);
         gap: 14px;
@@ -18,7 +22,7 @@
             "preprocessing exporting";
     }
 
-    @media (max-width: 800px) {
+    @container (max-width: 800px) {
         .grid-full {
             grid-template-columns: 100%;
             grid-template-areas:

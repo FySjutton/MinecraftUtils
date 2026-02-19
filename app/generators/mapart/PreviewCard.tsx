@@ -237,19 +237,19 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
     return (
         <>
             <Card id="preview" className="pb-0">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                        Preview
-                        {isProcessing && <Loader2 className="animate-spin text-muted-foreground" size={16} />}
-                    </CardTitle>
-                    {processingStats && !isProcessing && (
-                        <CardAction className="flex items-center gap-2">
-                            {modeToggle}
-                            <Button variant="outline" onClick={() => setIsFullscreen(true)}><Maximize2 size={15} /></Button>
-                        </CardAction>
-                    )}
-                </CardHeader>
                 <CardContent className="w-full p-0 m-0">
+                    <div className="flex flex-wrap mx-6">
+                        <CardTitle className="flex items-center gap-2 pb-2 mr-auto">
+                            Preview
+                            {isProcessing && <Loader2 className="animate-spin text-muted-foreground" size={16} />}
+                        </CardTitle>
+                        {processingStats && !isProcessing && (
+                            <CardAction className="flex items-center gap-2">
+                                {modeToggle}
+                                <Button variant="outline" onClick={() => setIsFullscreen(true)}><Maximize2 size={15} /></Button>
+                            </CardAction>
+                        )}
+                    </div>
                     <div className="aspect-square p-2 relative">
                         {isProcessing && (
                             <div className="absolute inset-0 flex items-center justify-center z-10 bg-background/60 rounded-md">
@@ -287,9 +287,9 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
 
             {isFullscreen && processingStats && createPortal(
                 <div className="fixed inset-0 z-[9999] flex flex-col bg-background">
-                    <div className="flex items-center justify-between px-4 py-2 border-b shrink-0">
+                    <div className="flex flex-wrap items-center justify-between px-4 py-2 gap-x-4 gap-y-1 pt-4 border-b shrink-0">
                         <span className="font-semibold text-sm">Fullscreen Mapart Preview</span>
-                        <div className="flex items-center gap-2">
+                        <div className="flex flex-wrap justify-center gap-2">
                             {modeToggle}
                             <Button variant="outline" onClick={() => setIsFullscreen(false)}>Close</Button>
                         </div>
