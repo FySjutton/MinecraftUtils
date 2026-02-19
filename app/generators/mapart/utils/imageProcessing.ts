@@ -2,33 +2,36 @@ import { findNearestMapColor, getColorWithBrightness, numberToRGB, calculateDist
 import {Brightness, ColorDistanceMethod, getAllowedBrightnesses, StaircasingMode} from './utils';
 import { applyDithering, DitheringMethodName } from './dithering';
 
-export function getBaseY(mode: StaircasingMode): number {
+const MAX_WORLD_HEIGHT = 384;
+
+export function getBaseY(mode: StaircasingMode, maxHeight: number = 0): number {
     switch (mode) {
         case StaircasingMode.NONE:
             return 0;
         case StaircasingMode.STANDARD:
             return 0;
         case StaircasingMode.VALLEY:
-        case StaircasingMode.VALLEY_3_LEVEL:
             return 1;
+        case StaircasingMode.VALLEY_CUSTOM:
+            return Math.floor(maxHeight / 2);
         default:
             return 0;
     }
 }
 
-export function getYRange(mode: StaircasingMode): { min: number; max: number } {
-    switch (mode) {
-        case StaircasingMode.NONE:
-            return { min: 0, max: 0 };
-        case StaircasingMode.STANDARD:
-            return { min: -1000, max: 1000 };
-        case StaircasingMode.VALLEY:
-            return { min: -1000, max: 1000 };
-        case StaircasingMode.VALLEY_3_LEVEL:
-            return { min: 0, max: 2 };
-        default:
-            return { min: 0, max: 0 };
+export function getYRange(
+    mode: StaircasingMode,
+    maxHeight: number
+): { min: number; max: number } {
+    if (mode === StaircasingMode.NONE) {
+        return { min: 0, max: 0 };
     }
+
+    if (mode === StaircasingMode.VALLEY_CUSTOM) {
+        return { min: 0, max: Math.min(maxHeight, MAX_WORLD_HEIGHT - 1) };
+    }
+
+    return { min: -192, max: 191 };
 }
 
 export interface ProcessedImageResult {
@@ -37,6 +40,9 @@ export interface ProcessedImageResult {
     groupIdMap: number[][];
     yMap: number[][];
 }
+
+const NO_DITHERING_KEY: DitheringMethodName = 'none';
+
 export function processImageDataDirect(
     imageData: ImageData,
     width: number,
@@ -44,32 +50,25 @@ export function processImageDataDirect(
     enabledGroups: Set<number>,
     ditheringMethod: DitheringMethodName,
     staircasingMode: StaircasingMode,
-    colorMethod: ColorDistanceMethod
+    colorMethod: ColorDistanceMethod,
+    maxHeight: number
 ): ProcessedImageResult {
     const shouldApplyDithering =
-        ditheringMethod !== 'None' &&
-        ditheringMethod !== null &&
-        ditheringMethod !== undefined &&
-        String(ditheringMethod) !== 'None';
+        ditheringMethod != null &&
+        (ditheringMethod as string) !== '' &&
+        ditheringMethod !== NO_DITHERING_KEY;
 
     if (shouldApplyDithering) {
         return applyDithering(
-            imageData,
-            width,
-            height,
-            enabledGroups,
-            staircasingMode,
-            colorMethod,
-            ditheringMethod
+            imageData, width, height,
+            enabledGroups, staircasingMode, colorMethod,
+            ditheringMethod, maxHeight
         );
     } else {
         return processWithoutDithering(
-            imageData,
-            width,
-            height,
-            enabledGroups,
-            staircasingMode,
-            colorMethod
+            imageData, width, height,
+            enabledGroups, staircasingMode, colorMethod,
+            maxHeight
         );
     }
 }
@@ -80,15 +79,15 @@ function processWithoutDithering(
     height: number,
     enabledGroups: Set<number>,
     staircasingMode: StaircasingMode,
-    colorMethod: ColorDistanceMethod
+    colorMethod: ColorDistanceMethod,
+    maxHeight: number
 ): ProcessedImageResult {
     const sourceData = sourceImageData.data;
     const resultData = new Uint8ClampedArray(sourceData.length);
 
-    const baseY = getBaseY(staircasingMode);
-    const yRange = getYRange(staircasingMode);
+    const baseY = getBaseY(staircasingMode, maxHeight);
+    const yRange = getYRange(staircasingMode, maxHeight);
 
-    // Initialize maps
     const brightnessMap: Brightness[][] = Array(height).fill(0).map(() => Array(width));
     const groupIdMap: number[][] = Array(height).fill(0).map(() => Array(width));
     const yMap: number[][] = Array(height).fill(0).map(() => Array(width));
@@ -107,9 +106,7 @@ function processWithoutDithering(
             if (staircasingMode === StaircasingMode.NONE) {
                 const result = findNearestMapColor(
                     targetR, targetG, targetB,
-                    enabledGroups,
-                    false,
-                    colorMethod
+                    enabledGroups, false, colorMethod
                 );
                 const rgb = numberToRGB(result.color);
 
@@ -141,15 +138,10 @@ function processWithoutDithering(
                     if (groupId === 11) {
                         targetY = currentY;
                     } else {
-                        if (z === 0) {
-                            if (brightness === Brightness.HIGH) targetY = baseY + 1;
-                            else if (brightness === Brightness.NORMAL) targetY = baseY;
-                            else targetY = baseY - 1;
-                        } else {
-                            if (brightness === Brightness.HIGH) targetY = currentY + 1;
-                            else if (brightness === Brightness.NORMAL) targetY = currentY;
-                            else targetY = currentY - 1;
-                        }
+                        const base = z === 0 ? baseY : currentY;
+                        if (brightness === Brightness.HIGH) targetY = base + 1;
+                        else if (brightness === Brightness.NORMAL) targetY = base;
+                        else                          targetY = base - 1;
                     }
 
                     if (targetY < yRange.min || targetY > yRange.max) continue;

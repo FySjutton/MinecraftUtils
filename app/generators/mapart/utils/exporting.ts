@@ -1,4 +1,10 @@
-import {BlockSelection, Brightness, ProcessingStats, StaircasingMode} from "@/app/generators/mapart/utils/utils";
+import {
+    BlockSelection,
+    Brightness,
+    ProcessingStats,
+    StaircasingMode,
+    SupportBlockMode
+} from "@/app/generators/mapart/utils/utils";
 import {calculate3DStructure} from "@/app/generators/mapart/utils/staircasing";
 import {exportStructureNBT, exportStructureNBTToBlob} from "@/lib/schematics/nbtExport";
 
@@ -69,24 +75,31 @@ export async function exportPNG(processedImageData: ImageData | null, processing
 }
 
 export async function export3d(
-    processedImageData: ImageData | null, processingStats: ProcessingStats | null,
-    mapWidth: number, mapHeight: number, brightnessMap: Brightness[][] | null,
-    groupIdMap: number[][] | null, yMap: number[][] | null,
-    blockSelection: BlockSelection, staircasingMode: StaircasingMode,
-    addSupportBlocks: boolean
+    processedImageData: ImageData | null,
+    processingStats: ProcessingStats | null,
+    mapWidth: number,
+    mapHeight: number,
+    brightnessMap: Brightness[][] | null,
+    groupIdMap: number[][] | null,
+    yMap: number[][] | null,
+    blockSelection: BlockSelection,
+    staircasingMode: StaircasingMode,
+    supportMode: SupportBlockMode,
+    supportBlock: string,
+    splitIntoChunks: boolean
 ) {
     if (!processedImageData || !processingStats || !brightnessMap || !groupIdMap || !yMap) return;
 
-    // If single map, export directly
-    if (mapWidth === 1 && mapHeight === 1) {
+    // If not splitting or single map, export directly
+    if (!splitIntoChunks || (mapWidth === 1 && mapHeight === 1)) {
         const structure = calculate3DStructure(
             brightnessMap,
             groupIdMap,
             yMap,
             blockSelection,
             staircasingMode,
-            addSupportBlocks,
-            'netherrack'
+            supportMode,
+            supportBlock
         );
         exportStructureNBT(structure, 'minecraftutils_mapart.nbt');
         return;
@@ -98,7 +111,6 @@ export async function export3d(
 
     for (let row = 0; row < mapHeight; row++) {
         for (let col = 0; col < mapWidth; col++) {
-            // Extract 128x128 chunk from maps
             const chunkBrightnessMap: Brightness[][] = [];
             const chunkGroupIdMap: number[][] = [];
             const chunkYMap: number[][] = [];
@@ -123,21 +135,19 @@ export async function export3d(
                 chunkYMap,
                 blockSelection,
                 staircasingMode,
-                addSupportBlocks,
-                'netherrack'
+                supportMode,
+                supportBlock
             );
 
-            // Export to memory instead of downloading
             const nbtData = exportStructureNBTToBlob(structure);
             zip.file(`map_${col}_${row}.nbt`, nbtData);
         }
     }
 
-    // Generate and download zip
     const content = await zip.generateAsync({ type: 'blob' });
     const link = document.createElement('a');
     link.download = 'minecraft-map-art-3d.zip';
     link.href = URL.createObjectURL(content);
     link.click();
     URL.revokeObjectURL(link.href);
-};
+}

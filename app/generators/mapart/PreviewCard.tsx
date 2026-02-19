@@ -226,7 +226,7 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
 
     const modeToggle = (
         <Tabs value={mode} onValueChange={v => setMode(v as Mode)} className="h-auto">
-            <TabsList className="h-auto">
+            <TabsList className="h-auto flex-wrap">
                 <TabsTrigger value="preview">Preview</TabsTrigger>
                 <TabsTrigger value="textures">Textures</TabsTrigger>
                 {sourceImage && <TabsTrigger value="compare">Compare</TabsTrigger>}

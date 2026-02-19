@@ -1,24 +1,29 @@
 'use client';
 
-import React, {useState, useRef, useEffect, useCallback, memo, useMemo} from 'react';
-import {Upload, Download, RotateCcw, ChevronDown, ChevronUp, Dot, Loader2} from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import {ChevronDown, ChevronUp, Dot, Download, Loader2, RotateCcw, Upload} from 'lucide-react';
+import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
+import {Label} from '@/components/ui/label';
 import {
-    ProcessingStats,
+    ALIASES,
+    BASE_COLORS,
+    BLOCK_GROUPS,
     BlockSelection,
-    MaterialCount,
-    ColorDistanceMethod,
-    StaircasingMode,
     Brightness,
-    scaleRGB,
+    ColorDistanceMethod,
+    getEverythingBlockSelection,
     getMaterialList,
-    BLOCK_GROUPS, BASE_COLORS, ALIASES, Preset, Presets, getEverythingBlockSelection
+    MaterialCount,
+    Preset,
+    Presets,
+    ProcessingStats,
+    scaleRGB,
+    StaircasingMode,
+    SupportBlockMode
 } from './utils/utils';
 import {numberToHex} from './utils/colorMatching';
-import {ditheringMethods, DitheringMethodName, DitheringMethods} from './utils/dithering';
+import {DitheringMethodName, ditheringMethods, DitheringMethods} from './utils/dithering';
 import ImageObj from "next/image";
 import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
@@ -31,8 +36,9 @@ import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/compon
 import "./mapart.css"
 import {export3d, exportPNG} from "@/app/generators/mapart/utils/exporting";
 import presetsData from './inputs/presets.json';
-import type { WorkerRequest, WorkerResponse } from './utils/mapart.worker';
+import type {WorkerRequest, WorkerResponse} from './utils/mapart.worker';
 import {PreviewCard} from "@/app/generators/mapart/PreviewCard";
+import {formatItemCount} from "@/lib/utils";
 
 function useDebounce<T>(value: T, delay: number): T {
     const [debounced, setDebounced] = useState<T>(value);
@@ -48,20 +54,28 @@ export default function MapartGenerator() {
     const [mapWidth, setMapWidth] = useState(1);
     const [mapHeight, setMapHeight] = useState(1);
     const [isDragging, setIsDragging] = useState(false);
-    const [ditheringMethod, setDitheringMethod] = useState<DitheringMethodName>(DitheringMethods.FloydSteinberg);
+
+    const [ditheringMethod, setDitheringMethod] = useState<DitheringMethodName>(DitheringMethods.floyd_steinberg);
     const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.STANDARD);
     const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.WEIGHTED_RGB);
+
     const [processingStats, setProcessingStats] = useState<ProcessingStats | null>(null);
     const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getEverythingBlockSelection());
     const [materialList, setMaterialList] = useState<MaterialCount[]>([]);
+
+    const [supportMode, setSupportMode] = useState<SupportBlockMode>(SupportBlockMode.NONE);
+    const [supportBlockName, setSupportBlockName] = useState('netherrack');
+    const [maxHeight, setMaxHeight] = useState(3);
+
     const [processedImageData, setProcessedImageData] = useState<ImageData | null>(null);
     const [brightnessMap, setBrightnessMap] = useState<Brightness[][] | null>(null);
     const [groupIdMap, setGroupIdMap] = useState<number[][] | null>(null);
     const [yMap, setYMap] = useState<number[][] | null>(null);
-    const [addSupportBlocks, setAddSupportBlocks] = useState(true);
+
     const [preprocessedCanvas, setPreprocessedCanvas] = useState<HTMLCanvasElement | null>(null);
     const [sourceImageElement, setSourceImageElement] = useState<HTMLImageElement | null>(null);
     const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
+
     const [isProcessing, setIsProcessing] = useState(false);
     const [isUploading, setIsUploading] = useState(false);
 
@@ -200,9 +214,10 @@ export default function MapartGenerator() {
             enabledGroups,
             ditheringMethod, staircasingMode,
             colorMethod: colorDistanceMethod,
+            maxHeight: staircasingMode === StaircasingMode.VALLEY_CUSTOM ? maxHeight - 1 : 191,
         };
         workerRef.current.postMessage(message, [buffer]);
-    }, [ditheringMethod, staircasingMode, colorDistanceMethod]);
+    }, [ditheringMethod, staircasingMode, colorDistanceMethod, maxHeight]);
 
     useEffect(() => {
         if (!preprocessedCanvas) return;
@@ -357,21 +372,62 @@ export default function MapartGenerator() {
                             </p>
 
                             <Label className="mt-4 mb-2">Dithering Method</Label>
-                            <ComboBox items={Object.keys(ditheringMethods)} value={ditheringMethod} onChange={(e) => setDitheringMethod(e as DitheringMethodName)} />
-
-                            <Label className="mt-4 mb-2">Staircasing Method</Label>
                             <ComboBox
-                                items={Object.values(StaircasingMode)} value={staircasingMode}
-                                onChange={(e) => setStaircasingMode(e as StaircasingMode)}
-                                getDisplayName={(v) => v === StaircasingMode.NONE ? "Flat Map (2d)" : v === StaircasingMode.STANDARD ? "Staircasing 3d" : v === StaircasingMode.VALLEY ? "Valley" : "Valley (Max 3)"}
-                                renderItem={(v) => v === StaircasingMode.VALLEY_3_LEVEL ? "Max 3 high" : ""}
+                                items={Object.keys(ditheringMethods)}
+                                value={ditheringMethod}
+                                onChange={(e) => setDitheringMethod(e as DitheringMethodName)}
+                                getDisplayName={(v) => {
+                                    return ditheringMethods[v as DitheringMethodName].name
+                                }}
+                                getTooltip={(v) => {
+                                    return ditheringMethods[v as DitheringMethodName].description
+                                }}
                             />
 
-                            <Separator className="my-4" />
-                            <div className="flex items-center space-x-2">
-                                <Checkbox id="support" checked={addSupportBlocks} onCheckedChange={(checked) => setAddSupportBlocks(checked as boolean)} />
-                                <Label htmlFor="support">Add Support Blocks</Label>
+                            <Label className="mt-4 mb-2">Staircasing Method</Label>
+                            <div className="flex gap-2 w-full relative box-border">
+                                {/* TODO: This inline isn't perfect on minimum 320*/}
+                                <div>
+                                    <ComboBox
+                                        items={Object.values(StaircasingMode)} value={staircasingMode}
+                                        onChange={(e) => setStaircasingMode(e as StaircasingMode)}
+                                        getDisplayName={(v) => v === StaircasingMode.NONE ? "Flat Map (2d)" : v === StaircasingMode.STANDARD ? "Staircasing 3d" : v === StaircasingMode.VALLEY ? "Valley" : `3d Limited Height (${maxHeight})`}
+                                    />
+                                </div>
+                                {staircasingMode == StaircasingMode.VALLEY_CUSTOM && (
+                                    <div className="min-w-0">
+                                        <InputField
+                                            value={maxHeight}
+                                            onChange={(e) => setMaxHeight(parseInt(e))}
+                                            variant="number"
+                                            min={3}
+                                        />
+                                    </div>
+                                )}
                             </div>
+
+
+                            <Separator className="my-4" />
+
+                            <Label className="mt-4 mb-2">Support Blocks</Label>
+                            <ComboBox
+                                items={Object.values(SupportBlockMode)}
+                                value={supportMode}
+                                onChange={(e) => setSupportMode(e as SupportBlockMode)}
+                                getDisplayName={(v) => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
+                            />
+
+                            {supportMode !== SupportBlockMode.NONE && (
+                                <div className="mt-3">
+                                    <InputField
+                                        label="Support Block"
+                                        value={supportBlockName}
+                                        onChange={setSupportBlockName}
+                                        variant="text"
+                                        placeholder="e.g. netherrack"
+                                    />
+                                </div>
+                            )}
 
                             <Label className="mt-4 mb-2">Color Matching</Label>
                             <ComboBox
@@ -391,15 +447,29 @@ export default function MapartGenerator() {
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="flex flex-col gap-2">
-                            <Button onClick={async () => await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)} className="max-w-150" disabled={!processingStats || isProcessing}>
-                                <Download className="mr-2" size={16} />Export PNG
-                            </Button>
-                            <Button onClick={async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, addSupportBlocks)} className="max-w-150" disabled={!processingStats || isProcessing}>
-                                <Download className="mr-2" size={16} />Export NBT
-                            </Button>
-                            <Button onClick={handleReset} variant="destructive" className="max-w-150">
-                                <RotateCcw className="mr-2" size={16} />Reset
-                            </Button>
+                            <div className="flex gap-2 w-full">
+                                <Button onClick={async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, false)} className="flex-1" disabled={!processingStats || isProcessing}>
+                                    <Download className="mr-2" size={16} />Export NBT
+                                </Button>
+                                {(mapHeight > 1 || mapWidth > 1) && (
+                                    <Button className="flex-1" disabled={!processingStats || isProcessing} onClick={
+                                        async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, true)
+                                    }>
+                                        <Download className="mr-2" size={16} />Export NBT (Split in 1x1 .zip)
+                                    </Button>
+                                )}
+                            </div>
+                            <p className="text-xs text-gray-300 mb-3">You can use NBT files to preview them in 3d inside minecraft using Litematica, or paste them directly using Worldedit or Structure Blocks.</p>
+                            <div className="flex gap-2 w-full">
+                                <Button className="flex-1" variant="secondary" onClick={async () => await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)} disabled={!processingStats || isProcessing}>
+                                    <Download className="mr-2" size={16} />Export PNG
+                                </Button>
+
+                                <Button onClick={handleReset} variant="destructive" className="flex-1">
+                                    <RotateCcw className="mr-2" size={16} />Reset
+                                </Button>
+                            </div>
+                            <p className="text-xs text-gray-300">If you want an image, you can export it as a PNG file. You can also press reset to clear everything inputted, or refresh the page.</p>
                         </CardContent>
                     </Card>
 
@@ -453,7 +523,7 @@ export default function MapartGenerator() {
                                     <Separator />
                                     <p className="flex text-gray-400 mt-2 mb-1">Stats: {processingStats?.uniqueBlocks} materials<Dot />{processingStats?.totalBlocks} blocks</p>
                                     <Separator />
-                                    <div className="space-y-2 max-h-90 overflow-y-auto mt-1">
+                                    <div className={`space-y-2 overflow-y-auto mt-1 ${supportMode == SupportBlockMode.NONE ? "max-h-90" : "max-h-105"}`}>
                                         {materialList.map((material, idx) => {
                                             const selectedBlock = blockSelection[material.groupId] as string;
                                             if (!selectedBlock) return null;
@@ -469,7 +539,7 @@ export default function MapartGenerator() {
                                                                 <ImageObj src={findImageAsset(imageName, "block")} alt={selectedBlock} width={16} height={16} className="h-full w-auto image-pixelated aspect-ratio" />
                                                                 <span className="truncate text-xs">{toTitleCase(selectedBlock, true)}</span>
                                                             </div>
-                                                            <span className="font-mono text-xs shrink-0">{material.count}</span>
+                                                            <span className="font-mono text-xs shrink-0">{formatItemCount(material.count)}</span>
                                                         </div>
                                                     ) : (
                                                         <div ref={expandedRef} className="mt-1 border p-2 rounded-md">

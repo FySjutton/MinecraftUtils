@@ -8,16 +8,57 @@ export const DitheringMethods = Object.fromEntries(
     Object.keys(ditheringMethods).map(key => [key, key])
 ) as Record<DitheringMethodName, DitheringMethodName>;
 
-interface DitheringMethod {
-    uniqueId: number;
+type DitheringMethodNone = {
+    uniqueId?: number;
     name: string;
     description: string;
-    type?: 'error_diffusion' | 'ordered';
+    type: 'none';
+};
+
+type DitheringMethodErrorDiffusion = {
+    uniqueId?: number;
+    name: string;
+    description: string;
+    type: 'error_diffusion';
     ditherMatrix: number[][];
-    ditherDivisor?: number;
+    ditherDivisor: number;
+    centerX: number;
+    centerY: number;
+};
+
+type DitheringMethodOrdered = {
+    uniqueId?: number;
+    name: string;
+    description: string;
+    type: 'ordered';
+    ditherMatrix: number[][];
+    ditherDivisor: number;
     centerX?: number;
     centerY?: number;
-}
+};
+
+type DitheringMethodThreshold = {
+    uniqueId?: number;
+    name: string;
+    description: string;
+    type: 'threshold';
+    threshold: number;
+};
+
+type DitheringMethodStochastic = {
+    uniqueId?: number;
+    name: string;
+    description: string;
+    type: 'stochastic';
+    noiseRange: number;
+};
+
+type DitheringMethod =
+    | DitheringMethodNone
+    | DitheringMethodErrorDiffusion
+    | DitheringMethodOrdered
+    | DitheringMethodThreshold
+    | DitheringMethodStochastic;
 
 export function applyDithering(
     imageData: ImageData,
@@ -26,30 +67,34 @@ export function applyDithering(
     enabledGroups: Set<number>,
     staircasingMode: StaircasingMode,
     colorMethod: ColorDistanceMethod,
-    ditheringMethod: DitheringMethodName
+    ditheringMethod: DitheringMethodName,
+    maxHeight: number
 ): ProcessedImageResult {
     const method = ditheringMethods[ditheringMethod] as DitheringMethod;
 
-    if (method.type === 'ordered') {
-        return applyOrderedDithering(
-            imageData,
-            width,
-            height,
-            enabledGroups,
-            staircasingMode,
-            colorMethod,
-            method
-        );
-    } else {
-        return applyErrorDiffusion(
-            imageData,
-            width,
-            height,
-            enabledGroups,
-            staircasingMode,
-            colorMethod,
-            method
-        );
+    switch (method.type) {
+        case 'ordered':
+            return applyOrderedDithering(
+                imageData, width, height,
+                enabledGroups, staircasingMode, colorMethod, method, maxHeight
+            );
+        case 'threshold':
+            return applyThresholdDithering(
+                imageData, width, height,
+                enabledGroups, staircasingMode, colorMethod, method, maxHeight
+            );
+        case 'stochastic':
+            return applyStochasticDithering(
+                imageData, width, height,
+                enabledGroups, staircasingMode, colorMethod, method, maxHeight
+            );
+        case 'error_diffusion':
+        default:
+            return applyErrorDiffusion(
+                imageData, width, height,
+                enabledGroups, staircasingMode, colorMethod,
+                method as DitheringMethodErrorDiffusion, maxHeight
+            );
     }
 }
 
@@ -60,7 +105,8 @@ function applyErrorDiffusion(
     enabledGroups: Set<number>,
     staircasingMode: StaircasingMode,
     colorMethod: ColorDistanceMethod,
-    method: DitheringMethod
+    method: DitheringMethodErrorDiffusion,
+    maxHeight: number
 ): ProcessedImageResult {
     const workingData = new Float32Array(width * height * 4);
     const outputData = new Uint8ClampedArray(imageData.data.length);
@@ -70,10 +116,9 @@ function applyErrorDiffusion(
         outputData[i] = imageData.data[i];
     }
 
-    const baseY = getBaseY(staircasingMode);
-    const yRange = getYRange(staircasingMode);
+    const baseY = getBaseY(staircasingMode, maxHeight);
+    const yRange = getYRange(staircasingMode, maxHeight);
 
-    // Initialize maps
     const brightnessMap: Brightness[][] = Array(height).fill(0).map(() => Array(width));
     const groupIdMap: number[][] = Array(height).fill(0).map(() => Array(width));
     const yMap: number[][] = Array(height).fill(0).map(() => Array(width));
@@ -88,7 +133,11 @@ function applyErrorDiffusion(
             const oldG = Math.max(0, Math.min(255, Math.round(workingData[idx + 1])));
             const oldB = Math.max(0, Math.min(255, Math.round(workingData[idx + 2])));
 
-            const bestMatch = findBestMatch(colorMethod, staircasingMode, oldR, oldG, oldB, enabledGroups, yRange, z, currentY, baseY);
+            const bestMatch = findBestMatch(
+                colorMethod, staircasingMode,
+                oldR, oldG, oldB,
+                enabledGroups, yRange, z, currentY, baseY
+            );
 
             if (bestMatch) {
                 const rgb = numberToRGB(bestMatch.color);
@@ -101,11 +150,12 @@ function applyErrorDiffusion(
                 groupIdMap[z][x] = bestMatch.groupId;
                 yMap[z][x] = bestMatch.y;
 
-                const errR = oldR - rgb.r;
-                const errG = oldG - rgb.g;
-                const errB = oldB - rgb.b;
+                distributeError(
+                    workingData, width, height, x, z,
+                    oldR - rgb.r, oldG - rgb.g, oldB - rgb.b,
+                    method
+                );
 
-                distributeError(workingData, width, height, x, z, errR, errG, errB, method);
                 currentY = bestMatch.y;
             } else {
                 outputData[idx] = 0;
@@ -134,17 +184,17 @@ function applyOrderedDithering(
     enabledGroups: Set<number>,
     staircasingMode: StaircasingMode,
     colorMethod: ColorDistanceMethod,
-    method: DitheringMethod
+    method: DitheringMethodOrdered,
+    maxHeight: number
 ): ProcessedImageResult {
     const data = new Uint8ClampedArray(imageData.data);
-    const baseY = getBaseY(staircasingMode);
-    const yRange = getYRange(staircasingMode);
+    const baseY = getBaseY(staircasingMode, maxHeight);
+    const yRange = getYRange(staircasingMode, maxHeight);
 
     const matrixHeight = method.ditherMatrix.length;
     const matrixWidth = method.ditherMatrix[0].length;
-    const divisor = method.ditherDivisor || 1;
+    const divisor = method.ditherDivisor;
 
-    // Initialize maps
     const brightnessMap: Brightness[][] = Array(height).fill(0).map(() => Array(width));
     const groupIdMap: number[][] = Array(height).fill(0).map(() => Array(width));
     const yMap: number[][] = Array(height).fill(0).map(() => Array(width));
@@ -162,7 +212,147 @@ function applyOrderedDithering(
             const oldG = Math.max(0, Math.min(255, data[idx + 1] + threshold));
             const oldB = Math.max(0, Math.min(255, data[idx + 2] + threshold));
 
-            const bestMatch = findBestMatch(colorMethod, staircasingMode, oldR, oldG, oldB, enabledGroups, yRange, z, currentY, baseY);
+            const bestMatch = findBestMatch(
+                colorMethod, staircasingMode,
+                oldR, oldG, oldB,
+                enabledGroups, yRange, z, currentY, baseY
+            );
+
+            if (bestMatch) {
+                const rgb = numberToRGB(bestMatch.color);
+                data[idx] = rgb.r;
+                data[idx + 1] = rgb.g;
+                data[idx + 2] = rgb.b;
+
+                brightnessMap[z][x] = bestMatch.brightness;
+                groupIdMap[z][x] = bestMatch.groupId;
+                yMap[z][x] = bestMatch.y;
+
+                currentY = bestMatch.y;
+            } else {
+                data[idx] = 0;
+                data[idx + 1] = 0;
+                data[idx + 2] = 0;
+
+                brightnessMap[z][x] = Brightness.NORMAL;
+                groupIdMap[z][x] = 0;
+                yMap[z][x] = currentY;
+            }
+        }
+    }
+
+    return {
+        imageData: new ImageData(data, width, height),
+        brightnessMap,
+        groupIdMap,
+        yMap
+    };
+}
+
+function applyThresholdDithering(
+    imageData: ImageData,
+    width: number,
+    height: number,
+    enabledGroups: Set<number>,
+    staircasingMode: StaircasingMode,
+    colorMethod: ColorDistanceMethod,
+    method: DitheringMethodThreshold,
+    maxHeight: number
+): ProcessedImageResult {
+    const data = new Uint8ClampedArray(imageData.data);
+    const baseY = getBaseY(staircasingMode, maxHeight);
+    const yRange = getYRange(staircasingMode, maxHeight);
+
+    const bias = (method.threshold - 0.5) * 255;
+
+    const brightnessMap: Brightness[][] = Array(height).fill(0).map(() => Array(width));
+    const groupIdMap: number[][] = Array(height).fill(0).map(() => Array(width));
+    const yMap: number[][] = Array(height).fill(0).map(() => Array(width));
+
+    for (let x = 0; x < width; x++) {
+        let currentY = baseY;
+
+        for (let z = 0; z < height; z++) {
+            const idx = (z * width + x) * 4;
+
+            const oldR = Math.max(0, Math.min(255, data[idx] + bias));
+            const oldG = Math.max(0, Math.min(255, data[idx + 1] + bias));
+            const oldB = Math.max(0, Math.min(255, data[idx + 2] + bias));
+
+            const bestMatch = findBestMatch(
+                colorMethod, staircasingMode,
+                oldR, oldG, oldB,
+                enabledGroups, yRange, z, currentY, baseY
+            );
+
+            if (bestMatch) {
+                const rgb = numberToRGB(bestMatch.color);
+                data[idx] = rgb.r;
+                data[idx + 1] = rgb.g;
+                data[idx + 2] = rgb.b;
+
+                brightnessMap[z][x] = bestMatch.brightness;
+                groupIdMap[z][x] = bestMatch.groupId;
+                yMap[z][x] = bestMatch.y;
+
+                currentY = bestMatch.y;
+            } else {
+                data[idx] = 0;
+                data[idx + 1] = 0;
+                data[idx + 2] = 0;
+
+                brightnessMap[z][x] = Brightness.NORMAL;
+                groupIdMap[z][x] = 0;
+                yMap[z][x] = currentY;
+            }
+        }
+    }
+
+    return {
+        imageData: new ImageData(data, width, height),
+        brightnessMap,
+        groupIdMap,
+        yMap
+    };
+}
+
+function applyStochasticDithering(
+    imageData: ImageData,
+    width: number,
+    height: number,
+    enabledGroups: Set<number>,
+    staircasingMode: StaircasingMode,
+    colorMethod: ColorDistanceMethod,
+    method: DitheringMethodStochastic,
+    maxHeight: number
+): ProcessedImageResult {
+    const data = new Uint8ClampedArray(imageData.data);
+    const baseY = getBaseY(staircasingMode, maxHeight);
+    const yRange = getYRange(staircasingMode, maxHeight);
+
+    const halfRange = (method.noiseRange / 2) * 255;
+
+    const brightnessMap: Brightness[][] = Array(height).fill(0).map(() => Array(width));
+    const groupIdMap: number[][] = Array(height).fill(0).map(() => Array(width));
+    const yMap: number[][] = Array(height).fill(0).map(() => Array(width));
+
+    for (let x = 0; x < width; x++) {
+        let currentY = baseY;
+
+        for (let z = 0; z < height; z++) {
+            const idx = (z * width + x) * 4;
+
+            const noise = (Math.random() - 0.5) * 2 * halfRange;
+
+            const oldR = Math.max(0, Math.min(255, data[idx] + noise));
+            const oldG = Math.max(0, Math.min(255, data[idx + 1] + noise));
+            const oldB = Math.max(0, Math.min(255, data[idx + 2] + noise));
+
+            const bestMatch = findBestMatch(
+                colorMethod, staircasingMode,
+                oldR, oldG, oldB,
+                enabledGroups, yRange, z, currentY, baseY
+            );
 
             if (bestMatch) {
                 const rgb = numberToRGB(bestMatch.color);
@@ -207,8 +397,6 @@ function findBestMatch(
     currentY: number,
     baseY: number
 ): { y: number; color: number; groupId: number; brightness: Brightness } | null {
-    let bestMatch: { y: number; color: number; groupId: number; brightness: Brightness } | null = null;
-
     if (staircasingMode === StaircasingMode.NONE) {
         const result = findBestColorAtBrightness(
             oldR, oldG, oldB,
@@ -216,46 +404,46 @@ function findBestMatch(
             Brightness.NORMAL,
             colorMethod
         );
-        bestMatch = {
+        return {
             y: 0,
             color: result.color,
             groupId: result.groupId,
             brightness: Brightness.NORMAL
         };
-    } else {
-        let bestDistance = Infinity;
+    }
 
-        for (const groupId of enabledGroups) {
-            const allowedBrightnesses = getAllowedBrightnesses(groupId);
+    let bestMatch: { y: number; color: number; groupId: number; brightness: Brightness } | null = null;
+    let bestDistance = Infinity;
 
-            for (const brightness of allowedBrightnesses) {
-                const targetY = (groupId === 11)
-                    ? currentY
-                    : calculateTargetY(brightness, z, currentY, baseY);
+    for (const groupId of enabledGroups) {
+        const allowedBrightnesses = getAllowedBrightnesses(groupId);
 
-                if (targetY < yRange.min || targetY > yRange.max) {
-                    continue;
-                }
+        for (const brightness of allowedBrightnesses) {
+            const targetY = (groupId === 11)
+                ? currentY
+                : calculateTargetY(brightness, z, currentY, baseY);
 
-                const result = findBestColorAtBrightness(
-                    oldR, oldG, oldB,
-                    new Set([groupId]),
-                    brightness,
-                    colorMethod
-                );
+            if (targetY < yRange.min || targetY > yRange.max) continue;
 
-                if (result.distance < bestDistance) {
-                    bestDistance = result.distance;
-                    bestMatch = {
-                        y: targetY,
-                        color: result.color,
-                        groupId: groupId,
-                        brightness: brightness
-                    };
-                }
+            const result = findBestColorAtBrightness(
+                oldR, oldG, oldB,
+                new Set([groupId]),
+                brightness,
+                colorMethod
+            );
+
+            if (result.distance < bestDistance) {
+                bestDistance = result.distance;
+                bestMatch = {
+                    y: targetY,
+                    color: result.color,
+                    groupId,
+                    brightness
+                };
             }
         }
     }
+
     return bestMatch;
 }
 
@@ -268,23 +456,20 @@ function distributeError(
     errR: number,
     errG: number,
     errB: number,
-    method: DitheringMethod
+    method: DitheringMethodErrorDiffusion
 ): void {
     const matrix = method.ditherMatrix;
-    const divisor = method.ditherDivisor || 16;
-    const centerX = method.centerX || 0;
-    const centerY = method.centerY || 0;
+    const divisor = method.ditherDivisor;
+    const centerX = method.centerX;
+    const centerY = method.centerY;
 
     for (let dy = 0; dy < matrix.length; dy++) {
         for (let dx = 0; dx < matrix[dy].length; dx++) {
             const weight = matrix[dy][dx];
             if (weight === 0) continue;
 
-            const offsetX = dx - centerX;
-            const offsetY = dy - centerY;
-
-            const newX = x + offsetX;
-            const newZ = z + offsetY;
+            const newX = x + (dx - centerX);
+            const newZ = z + (dy - centerY);
 
             if (newX >= 0 && newX < width && newZ >= 0 && newZ < height) {
                 const newIdx = (newZ * width + newX) * 4;
@@ -336,17 +521,10 @@ function calculateTargetY(
     currentY: number,
     baseY: number
 ): number {
-    if (z === 0) {
-        // First pixel - compare to virtual baseY
-        if (brightness === Brightness.HIGH) return baseY + 1;
-        if (brightness === Brightness.NORMAL) return baseY;
-        return baseY - 1;
-    } else {
-        // Compare to previous pixel's Y
-        if (brightness === Brightness.HIGH) return currentY + 1;
-        if (brightness === Brightness.NORMAL) return currentY;
-        return currentY - 1;
-    }
+    const base = z === 0 ? baseY : currentY;
+    if (brightness === Brightness.HIGH) return base + 1;
+    if (brightness === Brightness.NORMAL) return base;
+    return base - 1;
 }
 
 export { ditheringMethods };

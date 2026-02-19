@@ -11,6 +11,7 @@ export type WorkerRequest = {
     ditheringMethod: DitheringMethodName;
     staircasingMode: StaircasingMode;
     colorMethod: ColorDistanceMethod;
+    maxHeight: number;
 };
 
 export type WorkerResponse =
@@ -31,20 +32,17 @@ export type WorkerResponse =
 };
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-    const {requestId, buffer, width, height, enabledGroups, ditheringMethod, staircasingMode, colorMethod,} = event.data;
+    const { requestId, buffer, width, height, enabledGroups, ditheringMethod, staircasingMode, colorMethod, maxHeight } = event.data;
 
     try {
         const pixels = new Uint8ClampedArray(buffer);
         const imageData = new ImageData(pixels, width, height);
 
         const result = processImageDataDirect(
-            imageData,
-            width,
-            height,
+            imageData, width, height,
             new Set(enabledGroups),
-            ditheringMethod,
-            staircasingMode,
-            colorMethod
+            ditheringMethod, staircasingMode, colorMethod,
+            maxHeight
         );
 
         const outBuffer = result.imageData.data.buffer;

@@ -78,7 +78,13 @@ export enum StaircasingMode {
     NONE = 'none',
     STANDARD = 'standard',
     VALLEY = 'valley',
-    VALLEY_3_LEVEL = 'valley_3_level',
+    VALLEY_CUSTOM = 'valley_custom',
+}
+
+export enum SupportBlockMode {
+    NONE = 'None',
+    THIN = 'All (Thin)',
+    HEAVY = 'All (Heavy)',
 }
 
 export interface Structure3D {

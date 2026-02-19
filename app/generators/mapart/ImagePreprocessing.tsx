@@ -23,7 +23,7 @@ export default function ImagePreprocessing({sourceImage, targetWidth, targetHeig
     const [brightness, setBrightness] = useState(100);
     const [contrast, setContrast] = useState(100);
     const [saturation, setSaturation] = useState(100);
-    const [cropMode, setCropMode] = useState<CropMode>(CropMode.STRETCH);
+    const [cropMode, setCropMode] = useState<CropMode>(CropMode.SCALE_CROP);
     const [xOffset, setXOffset] = useState(50); // 0-100, where 50 is center
     const [yOffset, setYOffset] = useState(50); // 0-100, where 50 is center
 

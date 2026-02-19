@@ -1,30 +1,30 @@
 {
-  "None": {
-    "uniqueId": 0,
+  "none": {
     "name": "None",
-    "description": "No dithering applied"
+    "description": "No dithering applied",
+    "type": "none"
   },
-  "FloydSteinberg": {
-    "uniqueId": 1,
-    "name": "Floyd-Steinberg",
-    "description": "Classic error diffusion dithering",
+
+  "floyd_steinberg": {
+    "name": "Floyd Steinberg",
+    "description": "Classic error-diffusion dithering (fast, good quality)",
     "type": "error_diffusion",
     "ditherMatrix": [
-      [0, 0, 0, 7.0, 0],
-      [0, 3.0, 5.0, 1.0, 0],
-      [0, 0, 0, 0, 0]
+      [0.0, 0.0, 0.0, 7.0, 0.0],
+      [0.0, 3.0, 5.0, 1.0, 0.0],
+      [0.0, 0.0, 0.0, 0.0, 0.0]
     ],
     "ditherDivisor": 16.0,
     "centerX": 2,
     "centerY": 0
   },
-  "JarvisJudiceNinke": {
-    "uniqueId": 2,
-    "name": "Jarvis-Judice-Ninke",
-    "description": "High quality error diffusion",
+
+  "jarvis_judice_ninke": {
+    "name": "Jarvis Judice Ninke",
+    "description": "High-quality error diffusion (smoother, heavier kernel)",
     "type": "error_diffusion",
     "ditherMatrix": [
-      [0, 0, 0, 7.0, 5.0],
+      [0.0, 0.0, 0.0, 7.0, 5.0],
       [3.0, 5.0, 7.0, 5.0, 3.0],
       [1.0, 3.0, 5.0, 3.0, 1.0]
     ],
@@ -32,13 +32,13 @@
     "centerX": 2,
     "centerY": 0
   },
-  "Stucki": {
-    "uniqueId": 3,
+
+  "stucki": {
     "name": "Stucki",
-    "description": "Balanced error diffusion",
+    "description": "Balanced error diffusion (good compromise of quality and speed)",
     "type": "error_diffusion",
     "ditherMatrix": [
-      [0, 0, 0, 8.0, 4.0],
+      [0.0, 0.0, 0.0, 8.0, 4.0],
       [2.0, 4.0, 8.0, 4.0, 2.0],
       [1.0, 2.0, 4.0, 2.0, 1.0]
     ],
@@ -46,10 +46,10 @@
     "centerX": 2,
     "centerY": 0
   },
-  "Burkes": {
-    "uniqueId": 4,
+
+  "burkes": {
     "name": "Burkes",
-    "description": "Fast error diffusion",
+    "description": "Fast error diffusion with compact kernel",
     "type": "error_diffusion",
     "ditherMatrix": [
       [0.0, 0.0, 0.0, 8.0, 4.0],
@@ -60,52 +60,66 @@
     "centerX": 2,
     "centerY": 0
   },
-  "Sierra": {
-    "uniqueId": 5,
+
+  "sierra": {
     "name": "Sierra",
-    "description": "Sierra error diffusion",
+    "description": "Sierra family error diffusion (good tonal balance)",
     "type": "error_diffusion",
     "ditherMatrix": [
-      [0, 0, 0, 5.0, 3.0],
+      [0.0, 0.0, 0.0, 5.0, 3.0],
       [2.0, 4.0, 5.0, 4.0, 2.0],
-      [0, 2.0, 3.0, 2.0, 0]
+      [0.0, 2.0, 3.0, 2.0, 0.0]
     ],
     "ditherDivisor": 32.0,
     "centerX": 2,
     "centerY": 0
   },
-  "SierraLite": {
-    "uniqueId": 6,
-    "name": "Sierra-Lite",
-    "description": "Lightweight Sierra",
+
+  "sierra_lite": {
+    "name": "Sierra Lite",
+    "description": "Lightweight Sierra (very fast, lower artifacting)",
     "type": "error_diffusion",
     "ditherMatrix": [
-      [0, 0, 0, 2.0, 0],
-      [0, 1.0, 1.0, 0, 0],
-      [0, 0, 0, 0, 0]
+      [0.0, 0.0, 0.0, 2.0, 0.0],
+      [0.0, 1.0, 1.0, 0.0, 0.0],
+      [0.0, 0.0, 0.0, 0.0, 0.0]
     ],
     "ditherDivisor": 4.0,
     "centerX": 2,
     "centerY": 0
   },
-  "Atkinson": {
-    "uniqueId": 7,
+
+  "atkinson": {
     "name": "Atkinson",
-    "description": "HyperCard-style dithering",
+    "description": "Atkinson dithering (used by HyperCard; subtle, local diffusion)",
     "type": "error_diffusion",
     "ditherMatrix": [
-      [0, 0, 0, 1.0, 1.0],
-      [0, 1.0, 1.0, 1.0, 0],
-      [0, 0, 1.0, 0, 0]
+      [0.0, 0.0, 0.0, 1.0, 1.0],
+      [0.0, 1.0, 1.0, 1.0, 0.0],
+      [0.0, 0.0, 1.0, 0.0, 0.0]
     ],
     "ditherDivisor": 8.0,
     "centerX": 2,
     "centerY": 0
   },
-  "Bayer2x2": {
-    "uniqueId": 8,
-    "name": "Bayer 2×2",
-    "description": "Ordered dithering, small pattern",
+
+  "threshold": {
+    "name": "Simple Threshold",
+    "description": "Per-pixel thresholding (no pattern, no diffusion). Fast and harsh.",
+    "type": "threshold",
+    "threshold": 0.5
+  },
+
+  "random_noise": {
+    "name": "Random Noise",
+    "description": "Add random noise before thresholding to reduce banding (stochastic dithering)",
+    "type": "stochastic",
+    "noiseRange": 0.5
+  },
+
+  "bayer_2x2": {
+    "name": "Bayer 2x2",
+    "description": "Ordered dithering, very small pattern",
     "type": "ordered",
     "ditherMatrix": [
       [0, 2],
@@ -113,9 +127,9 @@
     ],
     "ditherDivisor": 4.0
   },
-  "Bayer4x4": {
-    "uniqueId": 9,
-    "name": "Bayer 4×4",
+
+  "bayer_4x4": {
+    "name": "Bayer 4x4",
     "description": "Ordered dithering, medium pattern",
     "type": "ordered",
     "ditherMatrix": [
@@ -126,10 +140,10 @@
     ],
     "ditherDivisor": 16.0
   },
-  "Bayer8x8": {
-    "uniqueId": 10,
-    "name": "Bayer 8×8",
-    "description": "Ordered dithering, large pattern",
+
+  "bayer_8x8": {
+    "name": "Bayer 8x8",
+    "description": "Ordered dithering, large pattern (fine-grained texture)",
     "type": "ordered",
     "ditherMatrix": [
       [0, 32, 8, 40, 2, 34, 10, 42],
@@ -142,5 +156,18 @@
       [63, 31, 55, 23, 61, 29, 53, 21]
     ],
     "ditherDivisor": 64.0
+  },
+
+  "clustered_4x4": {
+    "name": "Clustered Dot 4x4",
+    "description": "Ordered clustered-dot pattern (preserves larger dots for printing)",
+    "type": "ordered",
+    "ditherMatrix": [
+      [0, 12, 3, 15],
+      [8, 4, 11, 7],
+      [2, 14, 1, 13],
+      [10, 6, 9, 5]
+    ],
+    "ditherDivisor": 16.0
   }
 }

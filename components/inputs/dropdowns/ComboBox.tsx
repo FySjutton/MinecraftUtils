@@ -16,6 +16,12 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { IconCheck, IconSelector } from "@tabler/icons-react"
 import {useState} from "react";
 
@@ -31,11 +37,12 @@ interface ComboBoxProps {
     placeholderSearch?: string
     className?: string
     getDisplayName?: (value: string) => string
+    getTooltip?: (value: string) => string | undefined
     renderItem?: (item: string) => React.ReactNode
     renderIcon?: (item: string) => React.ReactNode
 }
 
-export function ComboBox({items, value, onChange, getDisplayName, placeholder = "Select...", placeholderSearch = "Search...", className, renderItem, renderIcon}: ComboBoxProps) {
+export function ComboBox({items, value, onChange, getDisplayName, getTooltip, placeholder = "Select...", placeholderSearch = "Search...", className, renderItem, renderIcon}: ComboBoxProps) {
     const [open, setOpen] = useState(false)
 
     const normalizedItems = React.useMemo(() => {
@@ -94,37 +101,56 @@ export function ComboBox({items, value, onChange, getDisplayName, placeholder = 
                     <CommandList>
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup>
-                            {normalizedItems.map(({ value: item, aliases }) => (
-                                <CommandItem
-                                    key={item}
-                                    value={item}
-                                    keywords={[item, ...aliases]}
-                                    onSelect={() => {
-                                        onChange(item)
-                                        setOpen(false)
-                                    }}
-                                    className="flex items-center gap-2"
-                                >
-                                    {renderIcon && (
-                                        <span className="relative w-6 h-6 flex-shrink-0">
-                                          {renderIcon(item)}
-                                        </span>
-                                    )}
+                            <TooltipProvider>
+                                {normalizedItems.map(({ value: item, aliases }) => {
+                                    const tooltip = getTooltip?.(item)
 
-                                    <span className="flex-1 truncate">
-                                        {getDisplayName ? getDisplayName(item) : item}
-                                    </span>
+                                    return (
+                                        <CommandItem
+                                            key={item}
+                                            value={item}
+                                            keywords={[item, ...aliases]}
+                                            onSelect={() => {
+                                                onChange(item)
+                                                setOpen(false)
+                                            }}
+                                            className="flex items-center gap-2"
+                                        >
+                                            {renderIcon && (
+                                                <span className="relative w-6 h-6 flex-shrink-0">
+                                                  {renderIcon(item)}
+                                                </span>
+                                            )}
 
-                                    {renderItem?.(item)}
+                                            {tooltip ? (
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                        <span className="flex-1 truncate">
+                                                            {getDisplayName ? getDisplayName(item) : item}
+                                                        </span>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="right">
+                                                        {tooltip}
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            ) : (
+                                                <span className="flex-1 truncate">
+                                                    {getDisplayName ? getDisplayName(item) : item}
+                                                </span>
+                                            )}
 
-                                    <IconCheck
-                                        className={cn(
-                                            "ml-auto shrink-0",
-                                            value === item ? "opacity-100" : "opacity-0"
-                                        )}
-                                    />
-                                </CommandItem>
-                            ))}
+                                            {renderItem?.(item)}
+
+                                            <IconCheck
+                                                className={cn(
+                                                    "ml-auto shrink-0",
+                                                    value === item ? "opacity-100" : "opacity-0"
+                                                )}
+                                            />
+                                        </CommandItem>
+                                    )
+                                })}
+                            </TooltipProvider>
                         </CommandGroup>
                     </CommandList>
                 </Command>
