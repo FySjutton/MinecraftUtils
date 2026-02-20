@@ -39,10 +39,11 @@ interface ComboBoxProps {
     getDisplayName?: (value: string) => string
     getTooltip?: (value: string) => string | undefined
     renderItem?: (item: string) => React.ReactNode
-    renderIcon?: (item: string) => React.ReactNode
+    renderIcon?: (item: string) => React.ReactNode,
+    infoButton?: React.ReactNode,
 }
 
-export function ComboBox({items, value, onChange, getDisplayName, getTooltip, placeholder = "Select...", placeholderSearch = "Search...", className, renderItem, renderIcon}: ComboBoxProps) {
+export function ComboBox({items, value, onChange, getDisplayName, getTooltip, placeholder = "Select...", placeholderSearch = "Search...", className, renderItem, renderIcon, infoButton}: ComboBoxProps) {
     const [open, setOpen] = useState(false)
 
     const normalizedItems = React.useMemo(() => {
@@ -91,13 +92,20 @@ export function ComboBox({items, value, onChange, getDisplayName, getTooltip, pl
                 side="bottom"
                 sideOffset={4}
                 avoidCollisions={false}
-                className={cn("p-0", className)}
+                className={cn("p-0 w-full", className)}
             >
                 <Command>
-                    <CommandInput
-                        placeholder={placeholderSearch}
-                        className="h-9"
-                    />
+                    <div className="flex items-center">
+                        <CommandInput
+                            placeholder={placeholderSearch}
+                            className="h-9 w-full"
+                        />
+                        {infoButton && (
+                            <div className="ml-auto">
+                                {infoButton}
+                            </div>
+                        )}
+                    </div>
                     <CommandList>
                         <CommandEmpty>No results found.</CommandEmpty>
                         <CommandGroup>

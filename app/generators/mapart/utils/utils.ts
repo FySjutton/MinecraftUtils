@@ -79,8 +79,31 @@ export enum StaircasingMode {
     STANDARD = 'standard',
     STANDARD_CUSTOM = 'standard_custom',
     VALLEY = 'valley',
-    VALLEY_CUSTOM = 'valley_custom'
+    VALLEY_CUSTOM = 'valley_custom',
 }
+
+export const StaircasingModes: Record<StaircasingMode, { title: string; description: string }> = {
+    [StaircasingMode.NONE]: {
+        title: 'Flat Map (2d)',
+        description: 'Completely flat map, less accurate',
+    },
+    [StaircasingMode.STANDARD]: {
+        title: 'Classic',
+        description: 'Full 3d map, fully accurate',
+    },
+    [StaircasingMode.STANDARD_CUSTOM]: {
+        title: 'Classic Limited Height (%s)',
+        description: 'Limited 3d map, mostly accurate, easier to build',
+    },
+    [StaircasingMode.VALLEY]: {
+        title: 'Valley',
+        description: 'Valley map, fully accurate, easier to build',
+    },
+    [StaircasingMode.VALLEY_CUSTOM]: {
+        title: 'Valley Limited Height (%s)',
+        description: 'Limited valley map, mostly accurate, even easier to build',
+    },
+};
 
 export enum SupportBlockMode {
     NONE = 'None',
@@ -104,14 +127,15 @@ export interface Block3D {
 
 export function getMaterialList(
     brightnessMap: Brightness[][],
-    groupIdMap: number[][]
+    groupIdMap: number[][],
+    yMap: number[][],
+    supportMode: SupportBlockMode,
+    mapWidth: number
 ): MaterialCount[] {
     const height = brightnessMap.length;
     const width = brightnessMap[0].length;
 
-    // Count materials by groupId
     const materialCounts = new Map<number, number>();
-
     for (let z = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
             const groupId = groupIdMap[z][x];
@@ -119,14 +143,31 @@ export function getMaterialList(
         }
     }
 
-    // Convert to array and sort by count
-    return Array.from(materialCounts.entries())
-        .map(([groupId, count]) => ({
-            groupId,
-            brightness: Brightness.NORMAL,
-            count,
-        }))
+    const sorted = Array.from(materialCounts.entries())
+        .map(([groupId, count]) => ({ groupId, brightness: Brightness.NORMAL, count }))
         .sort((a, b) => b.count - a.count);
+
+    let supportCount = mapWidth * 128;
+    if (supportMode != SupportBlockMode.NONE) {
+        for (let z = 0; z < height; z++) {
+            for (let x = 0; x < width; x++) {
+                const y = yMap[z][x];
+                if (supportMode === SupportBlockMode.THIN) {
+                    if (y - 1 >= 0) supportCount++;
+                } else if (supportMode === SupportBlockMode.HEAVY) {
+                    supportCount += y - Math.max(0, y - 2);
+                }
+            }
+        }
+    }
+
+    const supportEntry = {
+        groupId: -1,
+        brightness: Brightness.NORMAL,
+        count: supportCount,
+    };
+
+    return [supportEntry, ...sorted];
 }
 
 export { numberToRGB } from './colorMatching';

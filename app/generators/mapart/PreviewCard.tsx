@@ -275,7 +275,7 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                     </div>
                     {processingStats ? (
                         <div className="px-5 py-3">
-                            <div className="flex justify-between text-sm"><span>Dimensions:</span><span className="font-mono">{processingStats.width} × {processingStats.height}</span></div>
+                            <div className="flex justify-between text-sm"><span>Dimensions:</span><span className="font-mono">{processingStats.width} × {processingStats.height + 1}</span></div>
                             <div className="flex justify-between text-sm"><span>Total Blocks:</span><span className="font-mono">{processingStats.totalBlocks.toLocaleString()}</span></div>
                             <div className="flex justify-between text-sm"><span>Unique Colors:</span><span className="font-mono">{processingStats.uniqueBlocks}</span></div>
                         </div>
@@ -301,7 +301,7 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                         }
                     </div>
                     <div className="px-5 py-2 border-t text-xs text-muted-foreground flex gap-6 shrink-0">
-                        <span>{processingStats.width} × {processingStats.height} px</span>
+                        <span>{processingStats.width} × {processingStats.height + 1} px</span>
                         <span>{processingStats.totalBlocks.toLocaleString()} blocks</span>
                         <span>{processingStats.uniqueBlocks} unique colors</span>
                     </div>

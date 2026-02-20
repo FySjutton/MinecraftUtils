@@ -1,7 +1,7 @@
 'use client';
 
 import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {ChevronDown, ChevronUp, Dot, Download, Loader2, RotateCcw, Upload} from 'lucide-react';
+import {ChevronDown, ChevronUp, Dot, Download, Info, Loader2, Plus, RotateCcw, Upload} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Label} from '@/components/ui/label';
@@ -19,7 +19,7 @@ import {
     Presets,
     ProcessingStats,
     scaleRGB,
-    StaircasingMode,
+    StaircasingMode, StaircasingModes,
     SupportBlockMode
 } from './utils/utils';
 import {numberToHex} from './utils/colorMatching';
@@ -39,6 +39,10 @@ import presetsData from './inputs/presets.json';
 import type {WorkerRequest, WorkerResponse} from './utils/mapart.worker';
 import {PreviewCard} from "@/app/generators/mapart/PreviewCard";
 import {formatItemCount} from "@/lib/utils";
+import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
+import DyePicker from "@/components/inputs/DyePicker";
+import {FireworkColors} from "@/lib/Colors";
+import {PopoverClose} from "@radix-ui/react-popover";
 
 function useDebounce<T>(value: T, delay: number): T {
     const [debounced, setDebounced] = useState<T>(value);
@@ -56,12 +60,11 @@ export default function MapartGenerator() {
     const [isDragging, setIsDragging] = useState(false);
 
     const [ditheringMethod, setDitheringMethod] = useState<DitheringMethodName>(DitheringMethods.floyd_steinberg);
-    const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.STANDARD);
+    const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.VALLEY);
     const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.WEIGHTED_RGB);
 
     const [processingStats, setProcessingStats] = useState<ProcessingStats | null>(null);
     const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getEverythingBlockSelection());
-    const [materialList, setMaterialList] = useState<MaterialCount[]>([]);
 
     const [supportMode, setSupportMode] = useState<SupportBlockMode>(SupportBlockMode.NONE);
     const [supportBlockName, setSupportBlockName] = useState('netherrack');
@@ -83,6 +86,11 @@ export default function MapartGenerator() {
     const requestIdRef = useRef(0);
     const expandedRef = useRef<HTMLDivElement | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const materialList = useMemo(() => {
+        if (!brightnessMap || !groupIdMap || !yMap) return [];
+        return getMaterialList(brightnessMap, groupIdMap, yMap, supportMode, mapWidth);
+    }, [brightnessMap, groupIdMap, yMap, supportMode, mapWidth]);
 
     const preprocessedImageUrl = useMemo(
         () => preprocessedCanvas?.toDataURL() ?? null,
@@ -112,10 +120,11 @@ export default function MapartGenerator() {
 
             const { buffer, width, height, brightnessMap, groupIdMap, yMap } = data;
             const imageData = new ImageData(new Uint8ClampedArray(buffer), width, height);
-            const materials = getMaterialList(brightnessMap, groupIdMap);
 
-            setMaterialList(materials);
-            setProcessingStats({ width, height, totalBlocks: width * height, uniqueBlocks: materials.length });
+            const uniqueGroups = new Set<number>();
+            for (const row of groupIdMap) for (const id of row) uniqueGroups.add(id);
+
+            setProcessingStats({ width, height, totalBlocks: width * height, uniqueBlocks: uniqueGroups.size });
             setProcessedImageData(imageData);
             setBrightnessMap(brightnessMap);
             setGroupIdMap(groupIdMap);
@@ -267,7 +276,6 @@ export default function MapartGenerator() {
             img.src = imgSrc;
 
             setProcessingStats(null);
-            setMaterialList([]);
             setProcessedImageData(null);
             setBrightnessMap(null);
             setGroupIdMap(null);
@@ -288,7 +296,6 @@ export default function MapartGenerator() {
         setSourceImageElement(null);
         setPreprocessedCanvas(null);
         setProcessingStats(null);
-        setMaterialList([]);
         setProcessedImageData(null);
         setBrightnessMap(null);
         setGroupIdMap(null);
@@ -392,10 +399,25 @@ export default function MapartGenerator() {
                                             items={Object.values(StaircasingMode)}
                                             value={staircasingMode}
                                             onChange={(e) => setStaircasingMode(e as StaircasingMode)}
-                                            getDisplayName={(v) =>
-                                                v === StaircasingMode.NONE ? "Flat Map (2d)"
-                                                : v === StaircasingMode.STANDARD ? "Classic" : v == StaircasingMode.STANDARD_CUSTOM ? `Classic Limited Height (${maxHeight})`
-                                                : v === StaircasingMode.VALLEY ? "Valley" : `Valley Limited Height (${maxHeight})`
+                                            getDisplayName={(v) => StaircasingModes[v as StaircasingMode].title.replace("%s", maxHeight.toString())}
+                                            getTooltip={(v) => StaircasingModes[v as StaircasingMode].description}
+                                            className="w-full"
+                                            infoButton={
+                                                <Popover>
+                                                    <PopoverTrigger asChild><Button variant="ghost" size="icon-sm" className="mr-2"><Info/></Button></PopoverTrigger>
+                                                    <PopoverContent className="max-h-80 overflow-y-auto ring-2 ring-border">
+                                                        <PopoverClose asChild>
+                                                            <div>
+                                                                <p className="font-bold">Classic Staircasing</p>
+                                                                <p className="text-sm">Classic staircasing is a form of staircasing that goes in a single segment, each column being connected.</p>
+                                                                <p className="font-bold mt-2">Valley Staircasing</p>
+                                                                <p className="text-sm">Valley staircasing has the same quality result as the classical staircasing, but is optimized to be as close to the baseline as possible, making it easier to build in survival.</p>
+                                                                <p className="font-bold mt-2">Limited Height</p>
+                                                                <p className="text-sm">Limited height makes the output schematic a limited height, which can make it much easier to build in survival, while it&#39;s not as good quality as the full modes, it is still far better than a 2d map.</p>
+                                                            </div>
+                                                        </PopoverClose>
+                                                    </PopoverContent>
+                                                </Popover>
                                             }
                                         />
                                     </div>
@@ -530,6 +552,22 @@ export default function MapartGenerator() {
                                         <Separator />
                                         <div className={`space-y-2 overflow-y-auto mt-1 ${supportMode == SupportBlockMode.NONE ? "max-h-90" : "max-h-105"}`}>
                                             {materialList.map((material, idx) => {
+                                                if (material.groupId == -1) {
+                                                    const imageName = "2d_" + (supportBlockName in ALIASES ? ALIASES[supportBlockName] : supportBlockName);
+                                                    return (
+                                                        <div key="support">
+                                                            <div className="flex items-center justify-between p-2 border rounded-md mr-2">
+                                                                <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
+                                                                    <ImageObj src={findImageAsset(imageName, "block")} alt={supportBlockName} width={16} height={16} className="h-full w-auto image-pixelated" />
+                                                                    <span className="truncate text-xs">{toTitleCase(supportBlockName, true)} (support)</span>
+                                                                </div>
+                                                                <span className="font-mono text-xs shrink-0">{formatItemCount(material.count)}</span>
+                                                            </div>
+                                                            <Separator className="mt-2" />
+                                                        </div>
+                                                    );
+                                                }
+
                                                 const selectedBlock = blockSelection[material.groupId] as string;
                                                 if (!selectedBlock) return null;
                                                 const imageName = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
@@ -538,8 +576,7 @@ export default function MapartGenerator() {
                                                 return (
                                                     <div key={idx}>
                                                         {!isExpanded ? (
-                                                            <div className="flex items-center justify-between p-2 border rounded-md mr-2 cursor-pointer"
-                                                                 onClick={(e) => { e.stopPropagation(); setExpandedGroup(material.groupId); }}>
+                                                            <div className="flex items-center justify-between p-2 border rounded-md mr-2 cursor-pointer" onClick={(e) => { e.stopPropagation(); setExpandedGroup(material.groupId); }}>
                                                                 <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
                                                                     <ImageObj src={findImageAsset(imageName, "block")} alt={selectedBlock} width={16} height={16} className="h-full w-auto image-pixelated aspect-ratio" />
                                                                     <span className="truncate text-xs">{toTitleCase(selectedBlock, true)}</span>
@@ -595,7 +632,7 @@ const PaletteGroup = memo(function PaletteGroup({ group, groupId, selectedBlock,
 
     return (
         <div className="border rounded p-2">
-            <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2 mb-2 text-xs text-muted-foreground">
                 <div className="flex">
                     {groupId !== 11 && (
                         <>
@@ -605,13 +642,16 @@ const PaletteGroup = memo(function PaletteGroup({ group, groupId, selectedBlock,
                     )}
                     <div className="w-4 h-4 rounded border" style={{ backgroundColor: highHex }} />
                 </div>
-                <span>Group {groupId + 1}</span><Dot />
-                <span>{group.length > 5 && `${open ? group.length : (5 + (selectedIndex > 4 ? 1 : 0))} /`} {group.length} blocks</span>
-                {group.length > 5 && (
-                    <Button onClick={() => setOpen(o => !o)} variant="secondary" className="h-6 mr-4 px-2 text-xs">
-                        {open ? <p className="flex gap-2">Hide<ChevronUp /></p> : <p className="flex gap-2">Show<ChevronDown /></p>}
-                    </Button>
-                )}
+                <span>Group {groupId + 1}</span>
+                <div className="flex gap-2 items-center">
+                    <Dot />
+                    <span>{group.length > 5 && `${open ? group.length : (5 + (selectedIndex > 4 ? 1 : 0))} /`} {group.length} blocks</span>
+                    {group.length > 5 && (
+                        <Button onClick={() => setOpen(o => !o)} variant="secondary" className="h-6 mr-4 px-2 text-xs">
+                            {open ? <p className="flex gap-2">Hide<ChevronUp /></p> : <p className="flex gap-2">Show<ChevronDown /></p>}
+                        </Button>
+                    )}
+                </div>
             </div>
             <InlineGroupSwitch
                 group={group}
