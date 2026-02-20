@@ -60,6 +60,7 @@ export enum Brightness {
     LOW = 180,
     NORMAL = 220,
     HIGH = 255,
+    LOWEST = 135, // not available in survival, only for .dat mode
 }
 
 export interface MaterialCount {

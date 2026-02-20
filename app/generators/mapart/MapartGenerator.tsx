@@ -35,14 +35,16 @@ import {toTitleCase} from "@/lib/StringUtils";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import "./mapart.css"
 import {export3d, exportPNG} from "@/app/generators/mapart/utils/exporting";
+import {exportMapDat} from "@/app/generators/mapart/utils/datExport";
 import presetsData from './inputs/presets.json';
 import type {WorkerRequest, WorkerResponse} from './utils/mapart.worker';
 import {PreviewCard} from "@/app/generators/mapart/PreviewCard";
 import {formatItemCount} from "@/lib/utils";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import DyePicker from "@/components/inputs/DyePicker";
-import {FireworkColors} from "@/lib/Colors";
 import {PopoverClose} from "@radix-ui/react-popover";
+import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {useQueryState} from "nuqs";
+import {enumParser} from "@/lib/urlParsers";
 
 function useDebounce<T>(value: T, delay: number): T {
     const [debounced, setDebounced] = useState<T>(value);
@@ -53,11 +55,15 @@ function useDebounce<T>(value: T, delay: number): T {
     return debounced;
 }
 
+const mode = enumParser(["buildable", "dat"]).withDefault("buildable");
+
 export default function MapartGenerator() {
     const [image, setImage] = useState<string | null>(null);
     const [mapWidth, setMapWidth] = useState(1);
     const [mapHeight, setMapHeight] = useState(1);
     const [isDragging, setIsDragging] = useState(false);
+
+    const [outputMode, setOutputMode] = useQueryState("mode", mode);
 
     const [ditheringMethod, setDitheringMethod] = useState<DitheringMethodName>(DitheringMethods.floyd_steinberg);
     const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.VALLEY);
@@ -74,6 +80,7 @@ export default function MapartGenerator() {
     const [brightnessMap, setBrightnessMap] = useState<Brightness[][] | null>(null);
     const [groupIdMap, setGroupIdMap] = useState<number[][] | null>(null);
     const [yMap, setYMap] = useState<number[][] | null>(null);
+    const [colorBytes, setColorBytes] = useState<Uint8Array | null>(null);
 
     const [preprocessedCanvas, setPreprocessedCanvas] = useState<HTMLCanvasElement | null>(null);
     const [sourceImageElement, setSourceImageElement] = useState<HTMLImageElement | null>(null);
@@ -88,9 +95,9 @@ export default function MapartGenerator() {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const materialList = useMemo(() => {
-        if (!brightnessMap || !groupIdMap || !yMap) return [];
+        if (!brightnessMap || !groupIdMap || !yMap || outputMode == "dat") return [];
         return getMaterialList(brightnessMap, groupIdMap, yMap, supportMode, mapWidth);
-    }, [brightnessMap, groupIdMap, yMap, supportMode, mapWidth]);
+    }, [brightnessMap, groupIdMap, yMap, supportMode, mapWidth]); // do NOT add outputMode
 
     const preprocessedImageUrl = useMemo(
         () => preprocessedCanvas?.toDataURL() ?? null,
@@ -118,7 +125,7 @@ export default function MapartGenerator() {
                 return;
             }
 
-            const { buffer, width, height, brightnessMap, groupIdMap, yMap } = data;
+            const { buffer, width, height, brightnessMap, groupIdMap, yMap, colorBytesBuffer } = data;
             const imageData = new ImageData(new Uint8ClampedArray(buffer), width, height);
 
             const uniqueGroups = new Set<number>();
@@ -129,6 +136,13 @@ export default function MapartGenerator() {
             setBrightnessMap(brightnessMap);
             setGroupIdMap(groupIdMap);
             setYMap(yMap);
+
+            if (colorBytesBuffer) {
+                setColorBytes(new Uint8Array(colorBytesBuffer));
+            } else {
+                setColorBytes(null);
+            }
+
             setIsProcessing(false);
         };
 
@@ -221,12 +235,14 @@ export default function MapartGenerator() {
         const message: WorkerRequest = {
             requestId, buffer, width, height,
             enabledGroups,
-            ditheringMethod, staircasingMode,
+            ditheringMethod,
+            staircasingMode,
             colorMethod: colorDistanceMethod,
-            maxHeight: maxHeight
+            maxHeight,
+            datMode: outputMode === 'dat',
         };
         workerRef.current.postMessage(message, [buffer]);
-    }, [ditheringMethod, staircasingMode, colorDistanceMethod, maxHeight]);
+    }, [ditheringMethod, staircasingMode, colorDistanceMethod, maxHeight, outputMode]);
 
     useEffect(() => {
         if (!preprocessedCanvas) return;
@@ -280,6 +296,7 @@ export default function MapartGenerator() {
             setBrightnessMap(null);
             setGroupIdMap(null);
             setYMap(null);
+            setColorBytes(null);
         };
 
         reader.readAsDataURL(file);
@@ -300,6 +317,7 @@ export default function MapartGenerator() {
         setBrightnessMap(null);
         setGroupIdMap(null);
         setYMap(null);
+        setColorBytes(null);
         setIsProcessing(false);
         requestIdRef.current++;
     };
@@ -316,9 +334,17 @@ export default function MapartGenerator() {
         });
     }, []);
 
+    const gridClass = !image ? 'grid-start' : outputMode === 'dat' ? 'grid-dat' : 'grid-full';
     return (
         <div className="grid-parent">
-            <div className={`grid-handler ${image ? "grid-full" : "grid-start"}`}>
+            <Tabs value={outputMode} onValueChange={v => setOutputMode(v == 'dat' ? v : 'buildable')} className="w-full mb-4 max-w-150 mx-auto">
+                <TabsList className="w-full">
+                    <TabsTrigger value="buildable">Buildable</TabsTrigger>
+                    <TabsTrigger value="dat">Map (.dat) file</TabsTrigger>
+                </TabsList>
+            </Tabs>
+
+            <div className={`grid-handler ${gridClass}`}>
                 <Card id="upload-image">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -392,68 +418,75 @@ export default function MapartGenerator() {
                                     }}
                                 />
 
-                                <Label className="mt-4 mb-2">Staircasing Method</Label>
-                                <div className="flex gap-2 w-full relative box-border">
-                                    <div className="flex-1 min-w-0">
-                                        <ComboBox
-                                            items={Object.values(StaircasingMode)}
-                                            value={staircasingMode}
-                                            onChange={(e) => setStaircasingMode(e as StaircasingMode)}
-                                            getDisplayName={(v) => StaircasingModes[v as StaircasingMode].title.replace("%s", maxHeight.toString())}
-                                            getTooltip={(v) => StaircasingModes[v as StaircasingMode].description}
-                                            className="w-full"
-                                            infoButton={
-                                                <Popover>
-                                                    <PopoverTrigger asChild><Button variant="ghost" size="icon-sm" className="mr-2"><Info/></Button></PopoverTrigger>
-                                                    <PopoverContent className="max-h-80 overflow-y-auto ring-2 ring-border">
-                                                        <PopoverClose asChild>
-                                                            <div>
-                                                                <p className="font-bold">Classic Staircasing</p>
-                                                                <p className="text-sm">Classic staircasing is a form of staircasing that goes in a single segment, each column being connected.</p>
-                                                                <p className="font-bold mt-2">Valley Staircasing</p>
-                                                                <p className="text-sm">Valley staircasing has the same quality result as the classical staircasing, but is optimized to be as close to the baseline as possible, making it easier to build in survival.</p>
-                                                                <p className="font-bold mt-2">Limited Height</p>
-                                                                <p className="text-sm">Limited height makes the output schematic a limited height, which can make it much easier to build in survival, while it&#39;s not as good quality as the full modes, it is still far better than a 2d map.</p>
-                                                            </div>
-                                                        </PopoverClose>
-                                                    </PopoverContent>
-                                                </Popover>
-                                            }
-                                        />
-                                    </div>
+                                {/* Staircasing — buildable mode only */}
+                                {outputMode === 'buildable' && (
+                                    <>
+                                        <Label className="mt-4 mb-2">Staircasing Method</Label>
+                                        <div className="flex gap-2 w-full relative box-border">
+                                            <div className="flex-1 min-w-0">
+                                                <ComboBox
+                                                    items={Object.values(StaircasingMode)}
+                                                    value={staircasingMode}
+                                                    onChange={(e) => setStaircasingMode(e as StaircasingMode)}
+                                                    getDisplayName={(v) => StaircasingModes[v as StaircasingMode].title.replace("%s", maxHeight.toString())}
+                                                    getTooltip={(v) => StaircasingModes[v as StaircasingMode].description}
+                                                    className="w-full"
+                                                    infoButton={
+                                                        <Popover>
+                                                            <PopoverTrigger asChild><Button variant="ghost" size="icon-sm" className="mr-2"><Info/></Button></PopoverTrigger>
+                                                            <PopoverContent className="max-h-80 overflow-y-auto ring-2 ring-border">
+                                                                <PopoverClose asChild>
+                                                                    <div>
+                                                                        <p className="font-bold">Classic Staircasing</p>
+                                                                        <p className="text-sm">Classic staircasing is a form of staircasing that goes in a single segment, each column being connected.</p>
+                                                                        <p className="font-bold mt-2">Valley Staircasing</p>
+                                                                        <p className="text-sm">Valley staircasing has the same quality result as the classical staircasing, but is optimized to be as close to the baseline as possible, making it easier to build in survival.</p>
+                                                                        <p className="font-bold mt-2">Limited Height</p>
+                                                                        <p className="text-sm">Limited height makes the output schematic a limited height, which can make it much easier to build in survival, while it&#39;s not as good quality as the full modes, it is still far better than a 2d map.</p>
+                                                                    </div>
+                                                                </PopoverClose>
+                                                            </PopoverContent>
+                                                        </Popover>
+                                                    }
+                                                />
+                                            </div>
 
-                                    {(staircasingMode === StaircasingMode.VALLEY_CUSTOM || staircasingMode === StaircasingMode.STANDARD_CUSTOM) && (
-                                        <div className="flex-none w-15">
-                                            <InputField
-                                                value={maxHeight}
-                                                onChange={(e) => setMaxHeight(parseInt(e))}
-                                                variant="number"
-                                                min={3}
-                                            />
+                                            {(staircasingMode === StaircasingMode.VALLEY_CUSTOM || staircasingMode === StaircasingMode.STANDARD_CUSTOM) && (
+                                                <div className="flex-none w-15">
+                                                    <InputField
+                                                        value={maxHeight}
+                                                        onChange={(e) => setMaxHeight(parseInt(e))}
+                                                        variant="number"
+                                                        min={3}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
-                                </div>
 
-                                <Separator className="my-4" />
+                                        <Separator className="my-4" />
 
-                                <Label className="mt-4 mb-2">Support Blocks</Label>
-                                <ComboBox
-                                    items={Object.values(SupportBlockMode)}
-                                    value={supportMode}
-                                    onChange={(e) => setSupportMode(e as SupportBlockMode)}
-                                    getDisplayName={(v) => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
-                                />
-
-                                {supportMode !== SupportBlockMode.NONE && (
-                                    <div className="mt-3">
-                                        <InputField
-                                            label="Support Block"
-                                            value={supportBlockName}
-                                            onChange={setSupportBlockName}
-                                            variant="text"
-                                            placeholder="e.g. netherrack"
+                                        <Label className="mt-4 mb-2">Support Blocks</Label>
+                                        <ComboBox
+                                            items={Object.values(SupportBlockMode)}
+                                            value={supportMode}
+                                            onChange={(e) => setSupportMode(e as SupportBlockMode)}
+                                            getDisplayName={(v) => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
                                         />
-                                    </div>
+
+                                        {supportMode !== SupportBlockMode.NONE && (
+                                            <div className="mt-3">
+                                                <InputField
+                                                    label="Support Block"
+                                                    value={supportBlockName}
+                                                    onChange={setSupportBlockName}
+                                                    variant="text"
+                                                    placeholder="e.g. netherrack"
+                                                />
+                                            </div>
+                                        )}
+
+                                        <Separator className="my-4" />
+                                    </>
                                 )}
 
                                 <Label className="mt-4 mb-2">Color Matching</Label>
@@ -474,29 +507,54 @@ export default function MapartGenerator() {
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="flex flex-col gap-2">
-                                <div className="flex gap-2 w-full">
-                                    <Button onClick={async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, false)} className="flex-1" disabled={!processingStats || isProcessing}>
-                                        <Download className="mr-2" size={16} />Export NBT
-                                    </Button>
-                                    {(mapHeight > 1 || mapWidth > 1) && (
-                                        <Button className="flex-1" disabled={!processingStats || isProcessing} onClick={
-                                            async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, true)
-                                        }>
-                                            <Download className="mr-2" size={16} />Export NBT (Split in 1x1 .zip)
+                                {outputMode === 'buildable' ? (
+                                    <>
+                                        <div className="flex gap-2 w-full">
+                                            <Button onClick={async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, false)} className="flex-1" disabled={!processingStats || isProcessing}>
+                                                <Download className="mr-2" size={16} />Export NBT
+                                            </Button>
+                                            {(mapHeight > 1 || mapWidth > 1) && (
+                                                <Button className="flex-1" disabled={!processingStats || isProcessing} onClick={
+                                                    async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, true)
+                                                }>
+                                                    <Download className="mr-2" size={16} />Export NBT (Split in 1x1 .zip)
+                                                </Button>
+                                            )}
+                                        </div>
+                                        <p className="text-xs text-gray-300 mb-3">You can use NBT files to preview them in 3d inside minecraft using Litematica, or paste them directly using Worldedit or Structure Blocks.</p>
+                                        <div className="flex gap-2 w-full">
+                                            <Button className="flex-1" variant="secondary" onClick={async () => await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)} disabled={!processingStats || isProcessing}>
+                                                <Download className="mr-2" size={16} />Export PNG
+                                            </Button>
+                                            <Button onClick={handleReset} variant="destructive" className="flex-1">
+                                                <RotateCcw className="mr-2" size={16} />Reset
+                                            </Button>
+                                        </div>
+                                        <p className="text-xs text-gray-300">If you want an image, you can export it as a PNG file. You can also press reset to clear everything inputted, or refresh the page.</p>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Button
+                                            className="w-full"
+                                            disabled={!processingStats || isProcessing || !colorBytes}
+                                            onClick={async () => {
+                                                if (!colorBytes || !processingStats) return;
+                                                await exportMapDat(colorBytes, processingStats.width, mapWidth, mapHeight);
+                                            }}
+                                        >
+                                            <Download className="mr-2" size={16} />
+                                            {mapWidth === 1 && mapHeight === 1 ? 'Export map_0.dat' : `Export ${mapWidth * mapHeight} .dat files (.zip)`}
                                         </Button>
-                                    )}
-                                </div>
-                                <p className="text-xs text-gray-300 mb-3">You can use NBT files to preview them in 3d inside minecraft using Litematica, or paste them directly using Worldedit or Structure Blocks.</p>
-                                <div className="flex gap-2 w-full">
-                                    <Button className="flex-1" variant="secondary" onClick={async () => await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)} disabled={!processingStats || isProcessing}>
-                                        <Download className="mr-2" size={16} />Export PNG
-                                    </Button>
-
-                                    <Button onClick={handleReset} variant="destructive" className="flex-1">
-                                        <RotateCcw className="mr-2" size={16} />Reset
-                                    </Button>
-                                </div>
-                                <p className="text-xs text-gray-300">If you want an image, you can export it as a PNG file. You can also press reset to clear everything inputted, or refresh the page.</p>
+                                        <p className="text-xs text-gray-300 mb-2">
+                                            Place the exported <code>.dat</code> file(s) in your world&apos;s <code>data/</code> folder
+                                            and give it to yourself by doing something like <code>/give @p minecraft:filled_map[map_id=0]</code>.
+                                            Multiple maps are numbered left -{">"} right, top -{">"} bottom.
+                                        </p>
+                                        <Button onClick={handleReset} variant="destructive" className="w-full">
+                                            <RotateCcw className="mr-2" size={16} />Reset
+                                        </Button>
+                                    </>
+                                )}
                             </CardContent>
                         </Card>
 
@@ -537,9 +595,10 @@ export default function MapartGenerator() {
                             groupIdMap={groupIdMap}
                             blockSelection={blockSelection}
                             sourceImage={preprocessedImageUrl}
+                            outputMode={outputMode}
                         />
 
-                        {materialList.length > 0 && (
+                        {outputMode === 'buildable' && materialList.length > 0 && (
                             <Card className="gap-2" id="material-list">
                                 <CardHeader>
                                     <CardTitle>Material List</CardTitle>

@@ -22,6 +22,14 @@
             "preprocessing exporting";
     }
 
+    .grid-dat {
+        grid-template-areas:
+            "upload-image upload-image"
+            "palette preview"
+            "settings exporting"
+            "preprocessing preprocessing";
+    }
+
     @container (max-width: 800px) {
         .grid-full {
             grid-template-columns: 100%;
@@ -32,6 +40,17 @@
                 "settings"
                 "preview"
                 "materials-list"
+                "exporting";
+        }
+
+        .grid-dat {
+            grid-template-columns: 100%;
+            grid-template-areas:
+                "upload-image"
+                "palette"
+                "preprocessing"
+                "settings"
+                "preview"
                 "exporting";
         }
     }
