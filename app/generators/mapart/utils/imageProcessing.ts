@@ -1,20 +1,17 @@
-import { findNearestMapColor, getColorWithBrightness, numberToRGB, calculateDistance } from './colorMatching';
-import { Brightness, ColorDistanceMethod, getAllowedBrightnesses, StaircasingMode } from './utils';
-import { applyDithering, DitheringMethodName } from './dithering';
+import {calculateDistance, findNearestMapColor, getColorWithBrightness, numberToRGB} from './colorMatching';
+import {Brightness, ColorDistanceMethod, getAllowedBrightnesses, StaircasingMode} from './utils';
+import {applyDithering, DitheringMethodName} from './dithering';
 
 const MAX_WORLD_HEIGHT = 384;
 
-export function getBaseY(_mode: StaircasingMode, _maxHeight: number = 0): number {
-    // Y always starts at 0. Column normalisation guarantees all values remain non-negative.
-    return 0;
-}
-
 export function getYRange(
     mode: StaircasingMode,
-    maxHeight: number
+    maxHeight?: number
 ): { min: number; max: number } {
     if (mode === StaircasingMode.NONE) return { min: 0, max: 0 };
-    if (mode === StaircasingMode.VALLEY_CUSTOM) return { min: 0, max: Math.min(maxHeight, MAX_WORLD_HEIGHT - 1) };
+    if (mode === StaircasingMode.VALLEY_CUSTOM || mode === StaircasingMode.STANDARD_CUSTOM) {
+        return { min: 0, max: maxHeight != null && maxHeight > 0 ? maxHeight : MAX_WORLD_HEIGHT };
+    }
     return { min: 0, max: MAX_WORLD_HEIGHT - 1 };
 }
 
@@ -25,24 +22,43 @@ export interface ProcessedImageResult {
     yMap: number[][];
 }
 
-// ---------------------------------------------------------------------------
-// Core Y computation
-// ---------------------------------------------------------------------------
+function solveMinimalHeights(signs: number[]): number[] {
+    const n = signs.length + 1;
+    type Edge = [number, number, number];
+    const edges: Edge[] = [];
 
-/**
- * Compute the Y positions for one image column from its brightness / groupId
- * sequences.
- *
- * STANDARD / VALLEY_CUSTOM:
- *   Accumulate raw Y (HIGH → +1, LOW → -1, NORMAL → 0).
- *   Group 11 (water) never changes Y.
- *   Shift the whole column so its global minimum is 0 (no negatives ever).
- *
- * VALLEY:
- *   HIGH → y++, NORMAL → y unchanged, LOW → y = 0 (snap back to floor).
- *   Group 11 never changes Y.
- *   This produces clean sawtooth ramps with no floating intermediate blocks.
- */
+    for (let i = 0; i < signs.length; i++) {
+        const s = signs[i];
+        if (s === 1) {
+            edges.push([i, i + 1, 1]);
+        } else if (s === 0) {
+            edges.push([i, i + 1, 0]);
+            edges.push([i + 1, i, 0]);
+        } else {
+            edges.push([i + 1, i, 1]);
+        }
+    }
+
+    for (let i = 0; i < n; i++) edges.push([n, i, 0]);
+
+    const dist = new Array(n + 1).fill(0);
+
+    for (let iter = 0; iter < n; iter++) {
+        let updated = false;
+        for (const [u, v, w] of edges) {
+            if (dist[u] + w > dist[v]) {
+                dist[v] = dist[u] + w;
+                updated = true;
+            }
+        }
+        if (!updated) break;
+    }
+
+    const result = dist.slice(0, n);
+    const minVal = Math.min(...result);
+    return result.map(v => v - minVal);
+}
+
 export function computeColumnY(
     brightnesses: Brightness[],
     groupIds: number[],
@@ -52,40 +68,36 @@ export function computeColumnY(
     if (n === 0) return [];
     if (mode === StaircasingMode.NONE) return new Array(n).fill(0);
 
-    // ── VALLEY: direct snap-to-zero on LOW ──────────────────────────────────
-    if (mode === StaircasingMode.VALLEY) {
-        let y = 0;
-        const result: number[] = [];
-        for (let i = 0; i < n; i++) {
-            if (groupIds[i] !== 11) {
-                if (brightnesses[i] === Brightness.HIGH)       y++;
-                else if (brightnesses[i] === Brightness.LOW)   y = 0;
-                // NORMAL → y unchanged
+    if (
+        mode === StaircasingMode.VALLEY ||
+        mode === StaircasingMode.VALLEY_CUSTOM ||
+        mode === StaircasingMode.STANDARD_CUSTOM
+    ) {
+        const signs: number[] = [];
+        for (let i = 0; i < n - 1; i++) {
+            if (groupIds[i + 1] === 11) {
+                signs.push(0);
+            } else {
+                const b = brightnesses[i + 1];
+                signs.push(b === Brightness.HIGH ? 1 : b === Brightness.LOW ? -1 : 0);
             }
-            result.push(y);
         }
-        return result;
+        return solveMinimalHeights(signs);
     }
 
-    // ── STANDARD / VALLEY_CUSTOM: accumulate then shift to non-negative ──────
     let y = 0;
     const rawY: number[] = [];
     for (let i = 0; i < n; i++) {
         if (groupIds[i] !== 11) {
-            if (brightnesses[i] === Brightness.HIGH)     y++;
+            if (brightnesses[i] === Brightness.HIGH) y++;
             else if (brightnesses[i] === Brightness.LOW) y--;
         }
         rawY.push(y);
     }
 
-    // Shift so the global minimum lands at 0
     const globalMin = Math.min(0, ...rawY);
     return rawY.map(v => v - globalMin);
 }
-
-// ---------------------------------------------------------------------------
-// Entry point
-// ---------------------------------------------------------------------------
 
 const NO_DITHERING_KEY: DitheringMethodName = 'none';
 
@@ -118,10 +130,6 @@ export function processImageDataDirect(
     );
 }
 
-// ---------------------------------------------------------------------------
-// Non-dithered processing
-// ---------------------------------------------------------------------------
-
 function processWithoutDithering(
     sourceImageData: ImageData,
     width: number,
@@ -135,16 +143,19 @@ function processWithoutDithering(
     const resultData = new Uint8ClampedArray(sourceData.length);
 
     const brightnessMap: Brightness[][] = Array.from({ length: height }, () => new Array(width));
-    const groupIdMap:    number[][]      = Array.from({ length: height }, () => new Array(width));
-    const yMap:          number[][]      = Array.from({ length: height }, () => new Array(width));
+    const groupIdMap: number[][] = Array.from({ length: height }, () => new Array(width));
+    const yMap: number[][] = Array.from({ length: height }, () => new Array(width));
 
     const yRange = getYRange(staircasingMode, maxHeight);
+    const isLimited = staircasingMode !== StaircasingMode.NONE;
+
+    const isValley = staircasingMode === StaircasingMode.VALLEY || staircasingMode === StaircasingMode.VALLEY_CUSTOM;
 
     for (let x = 0; x < width; x++) {
         const colBrightness: Brightness[] = [];
-        const colGroupId:    number[]     = [];
+        const colGroupId: number[] = [];
+        const colYDirect: number[] = [];
 
-        // currentY is only used to enforce the hard Y limit in VALLEY_CUSTOM.
         let currentY = 0;
 
         for (let z = 0; z < height; z++) {
@@ -154,71 +165,71 @@ function processWithoutDithering(
             const b = sourceData[idx + 2];
             const a = sourceData[idx + 3];
 
-            // ── NONE: flat map ─────────────────────────────────────────────
             if (staircasingMode === StaircasingMode.NONE) {
                 const result = findNearestMapColor(r, g, b, enabledGroups, false, colorMethod);
                 const rgb = numberToRGB(result.color);
-                resultData[idx]     = rgb.r;
+                resultData[idx] = rgb.r;
                 resultData[idx + 1] = rgb.g;
                 resultData[idx + 2] = rgb.b;
                 resultData[idx + 3] = a;
                 colBrightness.push(Brightness.NORMAL);
                 colGroupId.push(result.groupId);
+                colYDirect.push(0);
                 continue;
             }
 
-            // ── Staircasing: pick best (groupId, brightness) by colour ─────
-            let bestDistance   = Infinity;
+            let bestDistance = Infinity;
             let bestBrightness = Brightness.NORMAL;
-            let bestGroupId    = 0;
+            let bestGroupId = 0;
 
             for (const groupId of enabledGroups) {
                 for (const brightness of getAllowedBrightnesses(groupId)) {
 
-                    // VALLEY_CUSTOM only: reject steps that leave [0, maxHeight]
-                    if (staircasingMode === StaircasingMode.VALLEY_CUSTOM && groupId !== 11) {
-                        const delta = brightness === Brightness.HIGH ?  1
-                            : brightness === Brightness.LOW  ? -1 : 0;
+                    if (isLimited && groupId !== 11) {
+                        const delta = brightness === Brightness.HIGH ? 1
+                            : brightness === Brightness.LOW ? -1 : 0;
                         const nextY = currentY + delta;
                         if (nextY < yRange.min || nextY > yRange.max) continue;
                     }
 
                     const colorNum = getColorWithBrightness(groupId, brightness);
-                    const rgb      = numberToRGB(colorNum);
-                    const dist     = calculateDistance(r, g, b, rgb.r, rgb.g, rgb.b, colorMethod);
+                    const rgb = numberToRGB(colorNum);
+                    const dist = calculateDistance(r, g, b, rgb.r, rgb.g, rgb.b, colorMethod);
 
                     if (dist < bestDistance) {
-                        bestDistance   = dist;
+                        bestDistance = dist;
                         bestBrightness = brightness;
-                        bestGroupId    = groupId;
+                        bestGroupId = groupId;
                     }
                 }
             }
 
-            // Advance VALLEY_CUSTOM Y tracker
-            if (staircasingMode === StaircasingMode.VALLEY_CUSTOM && bestGroupId !== 11) {
-                if (bestBrightness === Brightness.HIGH)     currentY++;
+            if (isLimited && bestGroupId !== 11) {
+                if (bestBrightness === Brightness.HIGH) currentY++;
                 else if (bestBrightness === Brightness.LOW) currentY--;
             }
 
             colBrightness.push(bestBrightness);
             colGroupId.push(bestGroupId);
+            colYDirect.push(currentY);
 
             const colorNum = getColorWithBrightness(bestGroupId, bestBrightness);
-            const rgb      = numberToRGB(colorNum);
-            resultData[idx]     = rgb.r;
+            const rgb = numberToRGB(colorNum);
+            resultData[idx] = rgb.r;
             resultData[idx + 1] = rgb.g;
             resultData[idx + 2] = rgb.b;
             resultData[idx + 3] = a;
         }
 
-        // ── Post-column: compute normalised Y positions ────────────────────
-        const colY = computeColumnY(colBrightness, colGroupId, staircasingMode);
+        const colY = isValley
+            ? computeColumnY(colBrightness, colGroupId, staircasingMode)
+            : colYDirect;
 
+        const minY = Math.min(...colY);
         for (let z = 0; z < height; z++) {
             brightnessMap[z][x] = colBrightness[z];
-            groupIdMap[z][x]    = colGroupId[z];
-            yMap[z][x]          = colY[z];
+            groupIdMap[z][x] = colGroupId[z];
+            yMap[z][x] = colY[z] - minY;
         }
     }
 

@@ -77,8 +77,9 @@ export enum ColorDistanceMethod {
 export enum StaircasingMode {
     NONE = 'none',
     STANDARD = 'standard',
+    STANDARD_CUSTOM = 'standard_custom',
     VALLEY = 'valley',
-    VALLEY_CUSTOM = 'valley_custom',
+    VALLEY_CUSTOM = 'valley_custom'
 }
 
 export enum SupportBlockMode {

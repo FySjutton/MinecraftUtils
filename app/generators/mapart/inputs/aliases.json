@@ -1,7 +1,7 @@
 {
   "grass_block": "grass_block_side",
   "suspicious_sand": "suspicious_sand_0",
-  "bone_block": "bone_block_side",
+  "bone_block": "bone_block_top",
   "scaffolding": "scaffolding_side",
   "ochre_froglight": "ochre_froglight_side",
   "tnt": "tnt_side",
@@ -26,7 +26,7 @@
   "flowering_azalea": "flowering_azalea_side",
   "big_dripleaf": "big_dripleaf_top",
   "small_dripleaf": "small_dripleaf_side",
-  "jukebox": "jukebox_side",
+  "jukebox": "jukebox_top",
   "dirt_path": "dirt_path_side",
   "suspicious_gravel": "suspicious_gravel_0",
   "piston": "piston_top",

@@ -24,27 +24,20 @@ export function calculate3DStructure(
     const supportBlockName = supportBlock.includes(':') ? supportBlock : `minecraft:${supportBlock}`;
 
     const useReferenceRow = mode !== StaircasingMode.NONE;
-    const addSupport = supportMode !== SupportBlockMode.NONE;
 
     let minY = Infinity;
-    let maxY = -Infinity;
 
     for (let z = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
             const y = yMap[z][x];
             if (y < minY) minY = y;
-            if (y > maxY) maxY = y;
         }
     }
 
     if (useReferenceRow) {
         for (let x = 0; x < width; x++) {
-            const brightness = brightnessMap[0][x];
-            const rawY = yMap[0][x];
-            if (!addSupport && brightness === Brightness.HIGH) {
-                const refRawY = rawY - 1;
-                if (refRawY < minY) minY = refRawY;
-            }
+            const refY = referenceRowY(brightnessMap[0][x], yMap[0][x]);
+            if (refY < minY) minY = refY;
         }
     }
 
@@ -61,13 +54,11 @@ export function calculate3DStructure(
 
             if (supportMode === SupportBlockMode.NONE) {
                 blocks.push({ x, y, z: zPos, blockName: fullBlockName });
-
             } else if (supportMode === SupportBlockMode.THIN) {
                 if (y - 1 >= 0) {
                     blocks.push({ x, y: y - 1, z: zPos, blockName: supportBlockName });
                 }
                 blocks.push({ x, y, z: zPos, blockName: fullBlockName });
-
             } else if (supportMode === SupportBlockMode.HEAVY) {
                 for (let sy = Math.max(0, y - 2); sy < y; sy++) {
                     blocks.push({ x, y: sy, z: zPos, blockName: supportBlockName });
@@ -79,32 +70,28 @@ export function calculate3DStructure(
 
     if (useReferenceRow) {
         for (let x = 0; x < width; x++) {
-            const brightness = brightnessMap[0][x];
-            const surfaceY = yMap[0][x] + yOffset;
-
-            let refBlockY: number;
-            if (brightness === Brightness.HIGH) {
-                refBlockY = surfaceY - 1;
-            } else if (brightness === Brightness.NORMAL) {
-                refBlockY = surfaceY;
-            } else {
-                refBlockY = surfaceY + 1;
-            }
+            const refY = referenceRowY(brightnessMap[0][x], yMap[0][x]) + yOffset;
 
             if (supportMode === SupportBlockMode.HEAVY) {
-                for (let sy = Math.max(0, refBlockY - 1); sy <= refBlockY; sy++) {
+                for (let sy = Math.max(0, refY - 1); sy <= refY; sy++) {
                     blocks.push({ x, y: sy, z: 0, blockName: supportBlockName });
                 }
             } else {
-                blocks.push({ x, y: refBlockY, z: 0, blockName: supportBlockName });
+                blocks.push({ x, y: refY, z: 0, blockName: supportBlockName });
             }
         }
     }
 
-    const finalMinY = Math.min(...blocks.map(b => b.y));
-    const finalMaxY = Math.max(...blocks.map(b => b.y));
+    const finalMinY = blocks.reduce((m, b) => Math.min(m, b.y), Infinity);
+    const finalMaxY = blocks.reduce((m, b) => Math.max(m, b.y), -Infinity);
     const depth = finalMaxY - finalMinY + 1;
     const structureHeight = useReferenceRow ? height + 1 : height;
 
     return { width, height: structureHeight, depth, blocks };
+}
+
+function referenceRowY(brightness: Brightness, imageY: number): number {
+    if (brightness === Brightness.HIGH) return imageY - 1;
+    if (brightness === Brightness.LOW) return imageY + 1;
+    return imageY;
 }

@@ -214,7 +214,7 @@ export default function MapartGenerator() {
             enabledGroups,
             ditheringMethod, staircasingMode,
             colorMethod: colorDistanceMethod,
-            maxHeight: staircasingMode === StaircasingMode.VALLEY_CUSTOM ? maxHeight - 1 : 191,
+            maxHeight: maxHeight
         };
         workerRef.current.postMessage(message, [buffer]);
     }, [ditheringMethod, staircasingMode, colorDistanceMethod, maxHeight]);
@@ -393,18 +393,14 @@ export default function MapartGenerator() {
                                             value={staircasingMode}
                                             onChange={(e) => setStaircasingMode(e as StaircasingMode)}
                                             getDisplayName={(v) =>
-                                                v === StaircasingMode.NONE
-                                                    ? "Flat Map (2d)"
-                                                    : v === StaircasingMode.STANDARD
-                                                        ? "Staircasing 3d"
-                                                        : v === StaircasingMode.VALLEY
-                                                            ? "Valley"
-                                                            : `3d Limited Height (${maxHeight})`
+                                                v === StaircasingMode.NONE ? "Flat Map (2d)"
+                                                : v === StaircasingMode.STANDARD ? "Classic" : v == StaircasingMode.STANDARD_CUSTOM ? `Classic Limited Height (${maxHeight})`
+                                                : v === StaircasingMode.VALLEY ? "Valley" : `Valley Limited Height (${maxHeight})`
                                             }
                                         />
                                     </div>
 
-                                    {staircasingMode === StaircasingMode.VALLEY_CUSTOM && (
+                                    {(staircasingMode === StaircasingMode.VALLEY_CUSTOM || staircasingMode === StaircasingMode.STANDARD_CUSTOM) && (
                                         <div className="flex-none w-15">
                                             <InputField
                                                 value={maxHeight}
