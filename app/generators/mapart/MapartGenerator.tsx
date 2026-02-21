@@ -1,48 +1,34 @@
 'use client';
 
-import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {ChevronDown, ChevronUp, Dot, Download, Info, Loader2, RotateCcw, Upload} from 'lucide-react';
-import {Button} from '@/components/ui/button';
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
-import {Label} from '@/components/ui/label';
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, ChevronUp, Dot, Download, Loader2, RotateCcw, Upload } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import ImageObj from 'next/image';
+import { useQueryState } from 'nuqs';
+import { enumParser } from '@/lib/urlParsers';
+import { findImageAsset, getImageAsset } from '@/lib/images/getImageAsset';
+import { toTitleCase } from '@/lib/StringUtils';
+import { formatItemCount } from '@/lib/utils';
 
-import ImageObj from "next/image";
-import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
-
-import ImagePreprocessing from './ImagePreprocessing';
-import {InputField} from "@/components/inputs/InputField";
-import {ComboBox} from "@/components/inputs/dropdowns/ComboBox";
-import {Separator} from "@/components/ui/separator";
-import {toTitleCase} from "@/lib/StringUtils";
-import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
-import "./mapart.css"
+import { export3d, exportPNG } from '@/app/generators/mapart/exporting';
+import { exportMapDat } from '@/app/generators/mapart/utils/datExport';
+import { ALIASES, BASE_COLORS, BLOCK_GROUPS, getEverythingBlockSelection, getMaterialList, Preset, Presets, scaleRGB } from '@/app/generators/mapart/utils/constants';
+import { BlockSelection, Brightness, ProcessingStats, SupportBlockMode } from '@/app/generators/mapart/utils/types';
+import { numberToHex } from '@/app/generators/mapart/color/matching';
+import type { WorkerRequest, WorkerResponse } from '@/app/generators/mapart/mapart.worker';
+import { PreviewCard } from '@/app/generators/mapart/PreviewCard';
+import { ComboBox } from '@/components/inputs/dropdowns/ComboBox';
+import { useSettings } from './useSettings';
+import { useImagePreprocessing } from './useImagePreprocessing';
+import SettingsCard from './SettingsCard';
 import presetsData from './inputs/presets.json';
-import {PreviewCard} from "@/app/generators/mapart/PreviewCard";
-import {formatItemCount} from "@/lib/utils";
-import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
-import {PopoverClose} from "@radix-ui/react-popover";
-import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
-import {useQueryState} from "nuqs";
-import {enumParser} from "@/lib/urlParsers";
-import {DitheringMethodName, ditheringMethods, DitheringMethods} from "@/app/generators/mapart/dithering/types";
-import {WorkerRequest, WorkerResponse} from "@/app/generators/mapart/mapart.worker";
-import {export3d, exportPNG} from "@/app/generators/mapart/exporting";
-import {exportMapDat} from "@/app/generators/mapart/utils/datExport";
-import {
-    ALIASES, BASE_COLORS,
-    BLOCK_GROUPS,
-    getEverythingBlockSelection,
-    getMaterialList,
-    Preset, Presets, scaleRGB
-} from "@/app/generators/mapart/utils/constants";
-import {
-    BlockSelection,
-    Brightness, ColorDistanceMethod,
-    ProcessingStats,
-    StaircasingMode, StaircasingModes,
-    SupportBlockMode
-} from "@/app/generators/mapart/utils/types";
-import {numberToHex} from "@/app/generators/mapart/color/matching";
+
+import './mapart.css';
 
 function useDebounce<T>(value: T, delay: number): T {
     const [debounced, setDebounced] = useState<T>(value);
@@ -53,170 +39,72 @@ function useDebounce<T>(value: T, delay: number): T {
     return debounced;
 }
 
-const mode = enumParser(["buildable", "dat"]).withDefault("buildable");
+const modeParser = enumParser(['buildable', 'dat']).withDefault('buildable');
 
 export default function MapartGenerator() {
+    const [outputMode, setOutputMode] = useQueryState('mode', modeParser);
+
+    const { settings, setters } = useSettings();
+
     const [image, setImage] = useState<string | null>(null);
-    const [mapWidth, setMapWidth] = useState(1);
-    const [mapHeight, setMapHeight] = useState(1);
+    const [sourceImageElement, setSourceImageElement] = useState<HTMLImageElement | null>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
+    const [isProcessing, setIsProcessing] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [outputMode, setOutputMode] = useQueryState("mode", mode);
-
-    const [ditheringMethod, setDitheringMethod] = useState<DitheringMethodName>(DitheringMethods.floyd_steinberg);
-    const [staircasingMode, setStaircasingMode] = useState<StaircasingMode>(StaircasingMode.VALLEY);
-    const [colorDistanceMethod, setColorDistanceMethod] = useState<ColorDistanceMethod>(ColorDistanceMethod.WEIGHTED_RGB);
-
+    const [preprocessedCanvas, setPreprocessedCanvas] = useState<HTMLCanvasElement | null>(null);
     const [processingStats, setProcessingStats] = useState<ProcessingStats | null>(null);
-    const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getEverythingBlockSelection());
-
-    const [supportMode, setSupportMode] = useState<SupportBlockMode>(SupportBlockMode.NONE);
-    const [supportBlockName, setSupportBlockName] = useState('netherrack');
-    const [maxHeight, setMaxHeight] = useState(3);
-
     const [processedImageData, setProcessedImageData] = useState<ImageData | null>(null);
     const [brightnessMap, setBrightnessMap] = useState<Brightness[][] | null>(null);
     const [groupIdMap, setGroupIdMap] = useState<number[][] | null>(null);
     const [yMap, setYMap] = useState<number[][] | null>(null);
     const [colorBytes, setColorBytes] = useState<Uint8Array | null>(null);
 
-    const [preprocessedCanvas, setPreprocessedCanvas] = useState<HTMLCanvasElement | null>(null);
-    const [sourceImageElement, setSourceImageElement] = useState<HTMLImageElement | null>(null);
+    const { needsXOffset, needsYOffset } = useImagePreprocessing({
+        sourceImage: sourceImageElement,
+        settings,
+        onProcessed: setPreprocessedCanvas,
+    });
+
+    const preprocessedImageUrl = useMemo(() => preprocessedCanvas?.toDataURL() ?? null, [preprocessedCanvas]);
+
+    const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getEverythingBlockSelection());
+    const [currentPreset, setCurrentPreset] = useState('Everything');
     const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
-
-    const [isProcessing, setIsProcessing] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-
-    const workerRef= useRef<Worker | null>(null);
-    const requestIdRef = useRef(0);
+    const presetInputRef = useRef<HTMLInputElement>(null);
     const expandedRef = useRef<HTMLDivElement | null>(null);
-    const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const materialList = useMemo(() => {
-        if (!brightnessMap || !groupIdMap || !yMap || outputMode == "dat") return [];
-        return getMaterialList(brightnessMap, groupIdMap, yMap, supportMode, mapWidth);
-    }, [brightnessMap, groupIdMap, yMap, supportMode, mapWidth]); // do NOT add outputMode
-
-    const preprocessedImageUrl = useMemo(
-        () => preprocessedCanvas?.toDataURL() ?? null,
-        [preprocessedCanvas]
-    );
-
-    const enabledGroupsKey = Object.entries(blockSelection)
-        .filter(([, v]) => v !== null)
-        .map(([k]) => k)
-        .sort()
-        .join(',');
-
-    const debouncedEnabledGroupsKey = useDebounce(enabledGroupsKey, 400);
+    const workerRef = useRef<Worker | null>(null);
+    const requestIdRef = useRef(0);
 
     useEffect(() => {
         const worker = new Worker(new URL('./mapart.worker.ts', import.meta.url));
-
         worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
             const data = event.data;
             if (data.requestId !== requestIdRef.current) return;
-
-            if (data.type === 'error') {
-                console.error('Worker error:', data.message);
-                setIsProcessing(false);
-                return;
-            }
+            if (data.type === 'error') { console.error('Worker error:', data.message); setIsProcessing(false); return; }
 
             const { buffer, width, height, brightnessMap, groupIdMap, yMap, colorBytesBuffer } = data;
-            const imageData = new ImageData(new Uint8ClampedArray(buffer), width, height);
-
             const uniqueGroups = new Set<number>();
             for (const row of groupIdMap) for (const id of row) uniqueGroups.add(id);
 
             setProcessingStats({ width, height, totalBlocks: width * height, uniqueBlocks: uniqueGroups.size });
-            setProcessedImageData(imageData);
+            setProcessedImageData(new ImageData(new Uint8ClampedArray(buffer), width, height));
             setBrightnessMap(brightnessMap);
             setGroupIdMap(groupIdMap);
             setYMap(yMap);
-
-            if (colorBytesBuffer) {
-                setColorBytes(new Uint8Array(colorBytesBuffer));
-            } else {
-                setColorBytes(null);
-            }
-
+            setColorBytes(colorBytesBuffer ? new Uint8Array(colorBytesBuffer) : null);
             setIsProcessing(false);
         };
-
-        worker.onerror = (err) => {
-            console.error('Worker threw:', err);
-            setIsProcessing(false);
-        };
-
+        worker.onerror = err => { console.error('Worker threw:', err); setIsProcessing(false); };
         workerRef.current = worker;
         return () => { worker.terminate(); workerRef.current = null; };
     }, []);
 
-    const [currentPreset, setCurrentPreset] = useState<string>("Everything");
-    const presetInputRef = useRef<HTMLInputElement>(null);
-
-    const applyPreset = (presetName: string) => {
-        if (presetName === "Custom") return;
-        if (presetName === "Everything") {
-            setBlockSelection(getEverythingBlockSelection())
-            setCurrentPreset(presetName)
-            return;
-        }
-        const preset = presetsData[presetName as Preset];
-        if (!preset) return;
-        const newSelection: BlockSelection = {};
-        Object.entries(preset).forEach(([groupId, blockName]) => {
-            newSelection[parseInt(groupId) - 1] = blockName as string;
-        });
-        setBlockSelection(newSelection);
-        setCurrentPreset(presetName);
-    };
-
-    const handleExportPreset = () => {
-        const presetName = currentPreset === "Custom" ? "My_Preset" : currentPreset;
-        const blob = new Blob([JSON.stringify({ [presetName]: blockSelection }, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${presetName.toLowerCase()}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    const handleImportPreset = (file: File) => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                const imported = JSON.parse(e.target?.result as string);
-                const presetName = Object.keys(imported)[0];
-                const newSelection: BlockSelection = {};
-                Object.entries(imported[presetName]).forEach(([groupId, blockName]) => {
-                    newSelection[parseInt(groupId)] = blockName as string;
-                });
-                setBlockSelection(newSelection);
-                setCurrentPreset(presetName);
-            } catch {
-                alert('Invalid preset file');
-            }
-        };
-        reader.readAsText(file);
-    };
-
-    useEffect(() => {
-        if (expandedGroup === null) return;
-        const handleClickOutside = (e: MouseEvent) => {
-            if (expandedRef.current && !expandedRef.current.contains(e.target as Node))
-                setExpandedGroup(null);
-        };
-        const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setExpandedGroup(null); };
-        document.addEventListener("mousedown", handleClickOutside);
-        document.addEventListener("keydown", handleKeyDown);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-            document.removeEventListener("keydown", handleKeyDown);
-        };
-    }, [expandedGroup]);
+    const enabledGroupsKey = Object.entries(blockSelection)
+        .filter(([, v]) => v !== null).map(([k]) => k).sort().join(',');
+    const debouncedEnabledGroupsKey = useDebounce(enabledGroupsKey, 400);
 
     const postToWorker = useCallback((canvas: HTMLCanvasElement, enabledGroups: number[]) => {
         if (!workerRef.current) return;
@@ -226,116 +114,124 @@ export default function MapartGenerator() {
         const { width, height } = canvas;
         const imageData = ctx.getImageData(0, 0, width, height);
         const requestId = ++requestIdRef.current;
-
         setIsProcessing(true);
 
-        const buffer = imageData.data.buffer.slice(0);
+        const buffer: ArrayBuffer = imageData.data.buffer.slice(0);
         const message: WorkerRequest = {
-            requestId, buffer, width, height,
-            enabledGroups,
-            ditheringMethod,
-            staircasingMode,
-            colorMethod: colorDistanceMethod,
-            maxHeight,
+            requestId, buffer, width, height, enabledGroups,
+            ditheringMethod: settings.ditheringMethod,
+            staircasingMode: settings.staircasingMode,
+            colorMethod: settings.colorDistanceMethod,
+            maxHeight: settings.maxHeight,
             datMode: outputMode === 'dat',
         };
         workerRef.current.postMessage(message, [buffer]);
-    }, [ditheringMethod, staircasingMode, colorDistanceMethod, maxHeight, outputMode]);
+    }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, outputMode]);
 
     useEffect(() => {
         if (!preprocessedCanvas) return;
-
         const enabledGroups = debouncedEnabledGroupsKey
             ? debouncedEnabledGroupsKey.split(',').map(Number)
             : Array.from({ length: BLOCK_GROUPS.length }, (_, i) => i);
-        if (Object.keys(blockSelection).length == 0) return;
-
+        if (Object.keys(blockSelection).length === 0) return;
         // eslint-disable-next-line react-hooks/set-state-in-effect
         postToWorker(preprocessedCanvas, enabledGroups);
-    }, [preprocessedCanvas, debouncedEnabledGroupsKey, postToWorker]); // do NOT add blockSelection
-
+    }, [preprocessedCanvas, debouncedEnabledGroupsKey, postToWorker]);
 
     const handleFileUpload = (file: File | null) => {
         if (!file?.type.startsWith('image/')) return;
-
         setIsUploading(true);
-
         const reader = new FileReader();
-        reader.onload = (e) => {
-            const imgSrc = e.target?.result as string;
-            setImage(imgSrc);
-
+        reader.onload = e => {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = img.width;
-                canvas.height = img.height;
-
-                const ctx = canvas.getContext('2d');
-                if (!ctx) return;
-
+                canvas.width = img.width; canvas.height = img.height;
+                const ctx = canvas.getContext('2d')!;
                 ctx.fillStyle = '#000000';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(img, 0, 0);
-
-                const flattenedDataUrl = canvas.toDataURL('image/png');
-                const flattenedImg = new Image();
-                flattenedImg.onload = () => {
-                    setSourceImageElement(flattenedImg);
-                    setImage(flattenedDataUrl);
-                    setIsUploading(false);
-                };
-                flattenedImg.src = flattenedDataUrl;
+                const url = canvas.toDataURL('image/png');
+                const flat = new Image();
+                flat.onload = () => { setSourceImageElement(flat); setImage(url); setIsUploading(false); };
+                flat.src = url;
             };
-            img.src = imgSrc;
-
-            setProcessingStats(null);
-            setProcessedImageData(null);
-            setBrightnessMap(null);
-            setGroupIdMap(null);
-            setYMap(null);
-            setColorBytes(null);
+            img.src = e.target?.result as string;
+            setProcessingStats(null); setProcessedImageData(null);
+            setBrightnessMap(null); setGroupIdMap(null); setYMap(null); setColorBytes(null);
         };
-
         reader.readAsDataURL(file);
     };
 
-    const handleDrop = (e: React.DragEvent) => {
-        e.preventDefault();
-        setIsDragging(false);
-        handleFileUpload(e.dataTransfer.files[0]);
+    const handleReset = () => {
+        setImage(null); setSourceImageElement(null); setPreprocessedCanvas(null);
+        setProcessingStats(null); setProcessedImageData(null);
+        setBrightnessMap(null); setGroupIdMap(null); setYMap(null); setColorBytes(null);
+        setIsProcessing(false); requestIdRef.current++;
     };
 
-    const handleReset = () => {
-        setImage(null);
-        setSourceImageElement(null);
-        setPreprocessedCanvas(null);
-        setProcessingStats(null);
-        setProcessedImageData(null);
-        setBrightnessMap(null);
-        setGroupIdMap(null);
-        setYMap(null);
-        setColorBytes(null);
-        setIsProcessing(false);
-        requestIdRef.current++;
+    const applyPreset = (presetName: string) => {
+        if (presetName === 'Custom') return;
+        if (presetName === 'Everything') { setBlockSelection(getEverythingBlockSelection()); setCurrentPreset(presetName); return; }
+        const preset = presetsData[presetName as Preset];
+        if (!preset) return;
+        const newSelection: BlockSelection = {};
+        Object.entries(preset).forEach(([groupId, blockName]) => { newSelection[parseInt(groupId) - 1] = blockName as string; });
+        setBlockSelection(newSelection);
+        setCurrentPreset(presetName);
+    };
+
+    const handleExportPreset = () => {
+        const name = currentPreset === 'Custom' ? 'My_Preset' : currentPreset;
+        const blob = new Blob([JSON.stringify({ [name]: blockSelection }, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = `${name.toLowerCase()}.json`; a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleImportPreset = (file: File) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+            try {
+                const imported = JSON.parse(e.target?.result as string);
+                const presetName = Object.keys(imported)[0];
+                const newSelection: BlockSelection = {};
+                Object.entries(imported[presetName]).forEach(([groupId, blockName]) => { newSelection[parseInt(groupId)] = blockName as string; });
+                setBlockSelection(newSelection);
+                setCurrentPreset(presetName);
+            } catch { alert('Invalid preset file'); }
+        };
+        reader.readAsText(file);
     };
 
     const toggleBlockSelection = useCallback((groupId: number, blockName: string | null) => {
-        setCurrentPreset("Custom");
+        setCurrentPreset('Custom');
         setBlockSelection(prev => {
-            if (blockName === null || prev[groupId] === blockName) {
-                const next = { ...prev };
-                delete next[groupId];
-                return next;
-            }
+            if (blockName === null || prev[groupId] === blockName) { const next = { ...prev }; delete next[groupId]; return next; }
             return { ...prev, [groupId]: blockName };
         });
     }, []);
 
+    useEffect(() => {
+        if (expandedGroup === null) return;
+        const onClickOutside = (e: MouseEvent) => { if (expandedRef.current && !expandedRef.current.contains(e.target as Node)) setExpandedGroup(null); };
+        const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setExpandedGroup(null); };
+        document.addEventListener('mousedown', onClickOutside);
+        document.addEventListener('keydown', onKeyDown);
+        return () => { document.removeEventListener('mousedown', onClickOutside); document.removeEventListener('keydown', onKeyDown); };
+    }, [expandedGroup]);
+
+    const materialList = useMemo(() => {
+        if (!brightnessMap || !groupIdMap || !yMap || outputMode === 'dat') return [];
+        return getMaterialList(brightnessMap, groupIdMap, yMap, settings.supportMode, settings.mapWidth);
+    }, [brightnessMap, groupIdMap, yMap, settings.supportMode, settings.mapWidth]); // dont add outputMode
+
     const gridClass = !image ? 'grid-start' : outputMode === 'dat' ? 'grid-dat' : 'grid-full';
+
     return (
         <div className="grid-parent">
-            <Tabs value={outputMode} onValueChange={v => setOutputMode(v == 'dat' ? v : 'buildable')} className="w-full mb-4 max-w-150 mx-auto">
+            <Tabs value={outputMode} onValueChange={v => setOutputMode(v === 'dat' ? v : 'buildable')} className="w-full mb-4 max-w-150 mx-auto">
                 <TabsList className="w-full">
                     <TabsTrigger value="buildable">Buildable</TabsTrigger>
                     <TabsTrigger value="dat">Map (.dat) file</TabsTrigger>
@@ -343,6 +239,7 @@ export default function MapartGenerator() {
             </Tabs>
 
             <div className={`grid-handler ${gridClass}`}>
+
                 <Card id="upload-image">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2">
@@ -350,12 +247,11 @@ export default function MapartGenerator() {
                             {isUploading && <Loader2 className="animate-spin" size={16} />}
                         </CardTitle>
                     </CardHeader>
-
                     <CardContent>
                         <div
                             className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer ${isUploading ? 'opacity-60 pointer-events-none' : isDragging ? 'border-primary bg-primary/10' : 'border-muted-foreground/25'}`}
-                            onDrop={handleDrop}
-                            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                            onDrop={e => { e.preventDefault(); setIsDragging(false); handleFileUpload(e.dataTransfer.files[0]); }}
+                            onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
                             onDragLeave={() => setIsDragging(false)}
                             onClick={() => !isUploading && fileInputRef.current?.click()}
                         >
@@ -370,131 +266,21 @@ export default function MapartGenerator() {
                                     <p className="text-sm">Drop image or click to browse</p>
                                 </>
                             )}
-
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) => handleFileUpload(e.target.files?.[0] || null)}
-                                className="hidden"
-                            />
+                            <input ref={fileInputRef} type="file" accept="image/*"
+                                   onChange={e => handleFileUpload(e.target.files?.[0] || null)} className="hidden" />
                         </div>
                     </CardContent>
                 </Card>
 
                 {image && (
                     <>
-                        <ImagePreprocessing
-                            sourceImage={sourceImageElement}
-                            targetWidth={mapWidth * 128}
-                            targetHeight={mapHeight * 128}
-                            onProcessed={setPreprocessedCanvas}
-                            id="preprocessing"
+                        <SettingsCard
+                            outputMode={outputMode}
+                            settings={settings}
+                            setters={setters}
+                            needsXOffset={needsXOffset}
+                            needsYOffset={needsYOffset}
                         />
-
-                        <Card id="settings">
-                            <CardHeader><CardTitle>Settings</CardTitle></CardHeader>
-                            <CardContent>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <InputField value={mapWidth} onChange={(e) => setMapWidth(parseInt(e))} max={20} min={1} variant="number" label="Map Width (X)" />
-                                    <InputField value={mapHeight} onChange={(e) => setMapHeight(parseInt(e))} max={20} min={1} variant="number" label="Map Height (Y)" />
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1 ml-1">
-                                    Total size: {mapWidth * 128}x{mapHeight * 128} pixels ({mapWidth}x{mapHeight} maps)
-                                </p>
-
-                                <Label className="mt-4 mb-2">Dithering Method</Label>
-                                <ComboBox
-                                    items={Object.keys(ditheringMethods)}
-                                    value={ditheringMethod}
-                                    onChange={(e) => setDitheringMethod(e as DitheringMethodName)}
-                                    getDisplayName={(v) => {
-                                        return ditheringMethods[v as DitheringMethodName].name
-                                    }}
-                                    getTooltip={(v) => {
-                                        return ditheringMethods[v as DitheringMethodName].description
-                                    }}
-                                />
-
-                                {outputMode === 'buildable' && (
-                                    <>
-                                        <Label className="mt-4 mb-2">Staircasing Method</Label>
-                                        <div className="flex gap-2 w-full relative box-border">
-                                            <div className="flex-1 min-w-0">
-                                                <ComboBox
-                                                    items={Object.values(StaircasingMode)}
-                                                    value={staircasingMode}
-                                                    onChange={(e) => setStaircasingMode(e as StaircasingMode)}
-                                                    getDisplayName={(v) => StaircasingModes[v as StaircasingMode].title.replace("%s", maxHeight.toString())}
-                                                    getTooltip={(v) => StaircasingModes[v as StaircasingMode].description}
-                                                    className="w-full"
-                                                    infoButton={
-                                                        <Popover>
-                                                            <PopoverTrigger asChild><Button variant="ghost" size="icon-sm" className="mr-2"><Info/></Button></PopoverTrigger>
-                                                            <PopoverContent className="max-h-80 overflow-y-auto ring-2 ring-border">
-                                                                <PopoverClose asChild>
-                                                                    <div>
-                                                                        <p className="font-bold">Classic Staircasing</p>
-                                                                        <p className="text-sm">Classic staircasing is a form of staircasing that goes in a single segment, each column being connected.</p>
-                                                                        <p className="font-bold mt-2">Valley Staircasing</p>
-                                                                        <p className="text-sm">Valley staircasing has the same quality result as the classical staircasing, but is optimized to be as close to the baseline as possible, making it easier to build in survival.</p>
-                                                                        <p className="font-bold mt-2">Limited Height</p>
-                                                                        <p className="text-sm">Limited height makes the output schematic a limited height, which can make it much easier to build in survival, while it&#39;s not as good quality as the full modes, it is still far better than a 2d map.</p>
-                                                                    </div>
-                                                                </PopoverClose>
-                                                            </PopoverContent>
-                                                        </Popover>
-                                                    }
-                                                />
-                                            </div>
-
-                                            {(staircasingMode === StaircasingMode.VALLEY_CUSTOM || staircasingMode === StaircasingMode.STANDARD_CUSTOM) && (
-                                                <div className="flex-none w-15">
-                                                    <InputField
-                                                        value={maxHeight}
-                                                        onChange={(e) => setMaxHeight(parseInt(e))}
-                                                        variant="number"
-                                                        min={3}
-                                                    />
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <Separator className="my-4" />
-
-                                        <Label className="mt-4 mb-2">Support Blocks</Label>
-                                        <ComboBox
-                                            items={Object.values(SupportBlockMode)}
-                                            value={supportMode}
-                                            onChange={(e) => setSupportMode(e as SupportBlockMode)}
-                                            getDisplayName={(v) => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
-                                        />
-
-                                        {supportMode !== SupportBlockMode.NONE && (
-                                            <div className="mt-3">
-                                                <InputField
-                                                    label="Support Block"
-                                                    value={supportBlockName}
-                                                    onChange={setSupportBlockName}
-                                                    variant="text"
-                                                    placeholder="e.g. netherrack"
-                                                />
-                                            </div>
-                                        )}
-
-                                        <Separator className="my-4" />
-                                    </>
-                                )}
-
-                                <Label className="mt-4 mb-2">Color Matching</Label>
-                                <ComboBox
-                                    items={Object.values(ColorDistanceMethod)} value={colorDistanceMethod}
-                                    onChange={(e) => setColorDistanceMethod(e as ColorDistanceMethod)}
-                                    getDisplayName={(v) => v === ColorDistanceMethod.WEIGHTED_RGB ? "Weighted RGB" : v === ColorDistanceMethod.EUCLIDEAN ? "Euclidean" : "Delta E"}
-                                    renderItem={(v) => v === ColorDistanceMethod.WEIGHTED_RGB ? "Recommended" : v === ColorDistanceMethod.EUCLIDEAN ? "Fast" : "Perceptual"}
-                                />
-                            </CardContent>
-                        </Card>
 
                         <Card id="exporting">
                             <CardHeader>
@@ -507,47 +293,40 @@ export default function MapartGenerator() {
                                 {outputMode === 'buildable' ? (
                                     <>
                                         <div className="flex gap-2 w-full">
-                                            <Button onClick={async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, false)} className="flex-1" disabled={!processingStats || isProcessing}>
+                                            <Button className="flex-1" disabled={!processingStats || isProcessing}
+                                                    onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.staircasingMode, settings.supportMode, settings.supportBlockName, false)}>
                                                 <Download className="mr-2" size={16} />Export NBT
                                             </Button>
-                                            {(mapHeight > 1 || mapWidth > 1) && (
-                                                <Button className="flex-1" disabled={!processingStats || isProcessing} onClick={
-                                                    async () => await export3d(processedImageData, processingStats, mapWidth, mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlockName, true)
-                                                }>
-                                                    <Download className="mr-2" size={16} />Export NBT (Split in 1x1 .zip)
+                                            {(settings.mapHeight > 1 || settings.mapWidth > 1) && (
+                                                <Button className="flex-1" disabled={!processingStats || isProcessing}
+                                                        onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.staircasingMode, settings.supportMode, settings.supportBlockName, true)}>
+                                                    <Download className="mr-2" size={16} />Export NBT (Split 1x1 .zip)
                                                 </Button>
                                             )}
                                         </div>
-                                        <p className="text-xs text-gray-300 mb-3">You can use NBT files to preview them in 3d inside minecraft using Litematica, or paste them directly using Worldedit or Structure Blocks.</p>
+                                        <p className="text-xs text-gray-300 mb-3">NBT files can be previewed in 3D with Litematica, or pasted directly with Worldedit or Structure Blocks.</p>
                                         <div className="flex gap-2 w-full">
-                                            <Button className="flex-1" variant="secondary" onClick={async () => await exportPNG(processedImageData, processingStats, mapWidth, mapHeight)} disabled={!processingStats || isProcessing}>
+                                            <Button className="flex-1" variant="secondary" disabled={!processingStats || isProcessing} onClick={() => exportPNG(processedImageData, processingStats, settings.mapWidth, settings.mapHeight)}>
                                                 <Download className="mr-2" size={16} />Export PNG
                                             </Button>
-                                            <Button onClick={handleReset} variant="destructive" className="flex-1">
+                                            <Button className="flex-1" variant="destructive" onClick={handleReset}>
                                                 <RotateCcw className="mr-2" size={16} />Reset
                                             </Button>
                                         </div>
-                                        <p className="text-xs text-gray-300">If you want an image, you can export it as a PNG file. You can also press reset to clear everything inputted, or refresh the page.</p>
+                                        <p className="text-xs text-gray-300">Export as PNG for a plain image, or Reset to start over.</p>
                                     </>
                                 ) : (
                                     <>
-                                        <Button
-                                            className="w-full"
-                                            disabled={!processingStats || isProcessing || !colorBytes}
-                                            onClick={async () => {
-                                                if (!colorBytes || !processingStats) return;
-                                                await exportMapDat(colorBytes, processingStats.width, mapWidth, mapHeight);
-                                            }}
-                                        >
+                                        <Button className="w-full" disabled={!processingStats || isProcessing || !colorBytes}
+                                                onClick={() => { if (colorBytes && processingStats) exportMapDat(colorBytes, processingStats.width, settings.mapWidth, settings.mapHeight); }}>
                                             <Download className="mr-2" size={16} />
-                                            {mapWidth === 1 && mapHeight === 1 ? 'Export map_0.dat' : `Export ${mapWidth * mapHeight} .dat files (.zip)`}
+                                            {settings.mapWidth === 1 && settings.mapHeight === 1 ? 'Export map_0.dat' : `Export ${settings.mapWidth * settings.mapHeight} .dat files (.zip)`}
                                         </Button>
                                         <p className="text-xs text-gray-300 mb-2">
-                                            Place the exported <code>.dat</code> file(s) in your world&apos;s <code>data/</code> folder
-                                            and give it to yourself by doing something like <code>/give @p minecraft:filled_map[map_id=0]</code>.
-                                            Multiple maps are numbered left -{">"} right, top -{">"} bottom.
+                                            Place the <code>.dat</code> file(s) in your world&apos;s <code>data/</code> folder and run
+                                            <code> /give @p minecraft:filled_map[map_id=0]</code>. Maps are numbered left → right, top → bottom.
                                         </p>
-                                        <Button onClick={handleReset} variant="destructive" className="w-full">
+                                        <Button className="w-full" variant="destructive" onClick={handleReset}>
                                             <RotateCcw className="mr-2" size={16} />Reset
                                         </Button>
                                     </>
@@ -558,21 +337,17 @@ export default function MapartGenerator() {
                         <Card id="palette">
                             <CardHeader>
                                 <CardTitle>Block Palette</CardTitle>
-                                <CardDescription className="space-y-2 text-sm">
-                                    {Object.keys(blockSelection).length} / 61 colors enabled
-                                </CardDescription>
+                                <CardDescription>{Object.keys(blockSelection).length} / 61 colors enabled</CardDescription>
                                 <div className="flex gap-2 mt-4">
                                     <div className="flex-1">
-                                        <ComboBox items={[...Presets]} value={currentPreset} onChange={(value) => applyPreset(value)} />
+                                        <ComboBox items={[...Presets]} value={currentPreset} onChange={applyPreset} />
                                     </div>
                                     <Button variant="outline" onClick={handleExportPreset}><Download size={14} /></Button>
                                     <Button variant="outline" onClick={() => presetInputRef.current?.click()}><Upload size={14} /></Button>
-                                    <input ref={presetInputRef} type="file" accept=".json"
-                                           onChange={(e) => { const f = e.target.files?.[0]; if (f) handleImportPreset(f); }}
-                                           className="hidden" />
+                                    <input ref={presetInputRef} type="file" accept=".json" onChange={e => { const f = e.target.files?.[0]; if (f) handleImportPreset(f); }} className="hidden" />
                                 </div>
                             </CardHeader>
-                            <CardContent className="aspect-square space-y-2 overflow-y-auto">
+                            <CardContent className="max-h-125 space-y-2 overflow-y-auto">
                                 {BLOCK_GROUPS.map((group, groupId) => (
                                     <PaletteGroup
                                         key={groupId}
@@ -604,18 +379,18 @@ export default function MapartGenerator() {
                                 <CardContent>
                                     <div className="text-sm">
                                         <Separator />
-                                        <p className="flex text-gray-400 mt-2 mb-1">Stats: {processingStats?.uniqueBlocks} materials<Dot />{processingStats?.totalBlocks} blocks</p>
+                                        <p className="flex text-gray-400 mt-2 mb-1">Stats: {processingStats?.uniqueBlocks} materials <Dot /> {processingStats?.totalBlocks} blocks</p>
                                         <Separator />
-                                        <div className={`space-y-2 overflow-y-auto mt-1 ${supportMode == SupportBlockMode.NONE ? "max-h-90" : "max-h-105"}`}>
+                                        <div className="space-y-2 overflow-y-auto mt-1 max-h-135">
                                             {materialList.map((material, idx) => {
-                                                if (material.groupId == -1) {
-                                                    const imageName = "2d_" + (supportBlockName in ALIASES ? ALIASES[supportBlockName] : supportBlockName);
+                                                if (material.groupId === -1) {
+                                                    const imageName = '2d_' + (settings.supportBlockName in ALIASES ? ALIASES[settings.supportBlockName] : settings.supportBlockName);
                                                     return (
                                                         <div key="support">
                                                             <div className="flex items-center justify-between p-2 border rounded-md mr-2">
                                                                 <div className="flex items-center gap-2 flex-1 min-w-0 h-8">
-                                                                    <ImageObj src={findImageAsset(imageName, "block")} alt={supportBlockName} width={16} height={16} className="h-full w-auto image-pixelated" />
-                                                                    <span className="truncate text-xs">{toTitleCase(supportBlockName, true)} (support)</span>
+                                                                    <ImageObj src={findImageAsset(imageName, 'block')} alt={settings.supportBlockName} width={16} height={16} className="h-full w-auto image-pixelated" />
+                                                                    <span className="truncate text-xs">{toTitleCase(settings.supportBlockName, true)} (support)</span>
                                                                 </div>
                                                                 <span className="font-mono text-xs shrink-0">{formatItemCount(material.count)}</span>
                                                             </div>

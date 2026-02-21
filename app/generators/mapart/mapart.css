@@ -17,8 +17,8 @@
     .grid-full {
         grid-template-areas:
             "upload-image upload-image"
-            "palette preview"
-            "settings materials-list"
+            "settings preview"
+            "palette materials-list"
             "preprocessing exporting";
     }
 
