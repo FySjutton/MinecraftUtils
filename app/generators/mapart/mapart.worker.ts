@@ -1,9 +1,9 @@
-import { processImageDataDirect } from './imageProcessing';
-import { processDatImage } from './datProcessing';
-import { ColorDistanceMethod, StaircasingMode, Brightness } from './utils';
-import { DitheringMethodName } from './dithering';
+import { ColorDistanceMethod, StaircasingMode, Brightness } from './utils/types';
+import { DitheringMethodName } from './dithering/types';
+import {applyDitheringDat} from "@/app/generators/mapart/dithering/dat";
+import {processImageData} from "@/app/generators/mapart/utils/buildable";
 
-export type WorkerRequest = {
+export interface WorkerRequest {
     requestId: number;
     buffer: ArrayBuffer;
     width: number;
@@ -14,7 +14,7 @@ export type WorkerRequest = {
     colorMethod: ColorDistanceMethod;
     maxHeight: number;
     datMode?: boolean;
-};
+}
 
 export type WorkerResponse =
     | {
@@ -35,53 +35,30 @@ export type WorkerResponse =
 };
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-    const {
-        requestId, buffer, width, height,
-        enabledGroups, ditheringMethod, staircasingMode,
-        colorMethod, maxHeight, datMode,
-    } = event.data;
+    const { requestId, buffer, width, height, enabledGroups, ditheringMethod, staircasingMode, colorMethod, maxHeight, datMode } = event.data;
 
     try {
         const pixels = new Uint8ClampedArray(buffer);
         const imageData = new ImageData(pixels, width, height);
+        const groups = new Set(enabledGroups);
 
         if (datMode) {
-            const result = processDatImage(
-                imageData, width, height,
-                new Set(enabledGroups),
-                ditheringMethod, colorMethod
-            );
-
+            const result = applyDitheringDat(imageData, width, height, groups, ditheringMethod, colorMethod)
             const outBuffer = result.imageData.data.buffer as ArrayBuffer;
             const colorBytesBuffer = result.colorBytes.buffer.slice(0) as ArrayBuffer;
 
             const response: WorkerResponse = {
-                type: 'result',
-                requestId,
-                buffer: outBuffer,
-                width,
-                height,
-                brightnessMap: [],
-                groupIdMap: [],
-                yMap: [],
+                type: 'result', requestId, buffer: outBuffer, width, height,
+                brightnessMap: [], groupIdMap: [], yMap: [],
                 colorBytesBuffer,
             };
             (self as unknown as Worker).postMessage(response, [outBuffer, colorBytesBuffer]);
         } else {
-            const result = processImageDataDirect(
-                imageData, width, height,
-                new Set(enabledGroups),
-                ditheringMethod, staircasingMode, colorMethod,
-                maxHeight
-            );
-
+            const result = processImageData(imageData, width, height, groups, ditheringMethod, staircasingMode, colorMethod, maxHeight);
             const outBuffer = result.imageData.data.buffer;
+
             const response: WorkerResponse = {
-                type: 'result',
-                requestId,
-                buffer: outBuffer,
-                width,
-                height,
+                type: 'result', requestId, buffer: outBuffer, width, height,
                 brightnessMap: result.brightnessMap,
                 groupIdMap: result.groupIdMap,
                 yMap: result.yMap,

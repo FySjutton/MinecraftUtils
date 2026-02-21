@@ -4,12 +4,13 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Maximize2, Loader2 } from "lucide-react";
 import { createPortal } from "react-dom";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
-import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
+import { Card, CardContent, CardTitle, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ProcessingStats, BlockSelection, ALIASES } from "./utils/utils";
 import { findImageAsset } from "@/lib/images/getImageAsset";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompareSlider, CompareSliderBefore, CompareSliderAfter, CompareSliderHandle } from "@/components/ui/compare-slider";
+import {BlockSelection, ProcessingStats} from "@/app/generators/mapart/utils/types";
+import {ALIASES} from "@/app/generators/mapart/utils/constants";
 
 const TILE = 16;
 type Mode = "preview" | "textures" | "compare";

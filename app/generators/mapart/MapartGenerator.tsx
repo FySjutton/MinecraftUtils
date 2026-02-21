@@ -1,29 +1,11 @@
 'use client';
 
 import React, {memo, useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {ChevronDown, ChevronUp, Dot, Download, Info, Loader2, Plus, RotateCcw, Upload} from 'lucide-react';
+import {ChevronDown, ChevronUp, Dot, Download, Info, Loader2, RotateCcw, Upload} from 'lucide-react';
 import {Button} from '@/components/ui/button';
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '@/components/ui/card';
 import {Label} from '@/components/ui/label';
-import {
-    ALIASES,
-    BASE_COLORS,
-    BLOCK_GROUPS,
-    BlockSelection,
-    Brightness,
-    ColorDistanceMethod,
-    getEverythingBlockSelection,
-    getMaterialList,
-    MaterialCount,
-    Preset,
-    Presets,
-    ProcessingStats,
-    scaleRGB,
-    StaircasingMode, StaircasingModes,
-    SupportBlockMode
-} from './utils/utils';
-import {numberToHex} from './utils/colorMatching';
-import {DitheringMethodName, ditheringMethods, DitheringMethods} from './utils/dithering';
+
 import ImageObj from "next/image";
 import {findImageAsset, getImageAsset} from "@/lib/images/getImageAsset";
 
@@ -34,10 +16,7 @@ import {Separator} from "@/components/ui/separator";
 import {toTitleCase} from "@/lib/StringUtils";
 import {Tooltip, TooltipContent, TooltipProvider, TooltipTrigger} from "@/components/ui/tooltip";
 import "./mapart.css"
-import {export3d, exportPNG} from "@/app/generators/mapart/utils/exporting";
-import {exportMapDat} from "@/app/generators/mapart/utils/datExport";
 import presetsData from './inputs/presets.json';
-import type {WorkerRequest, WorkerResponse} from './utils/mapart.worker';
 import {PreviewCard} from "@/app/generators/mapart/PreviewCard";
 import {formatItemCount} from "@/lib/utils";
 import {Popover, PopoverContent, PopoverTrigger} from "@/components/ui/popover";
@@ -45,6 +24,25 @@ import {PopoverClose} from "@radix-ui/react-popover";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {useQueryState} from "nuqs";
 import {enumParser} from "@/lib/urlParsers";
+import {DitheringMethodName, ditheringMethods, DitheringMethods} from "@/app/generators/mapart/dithering/types";
+import {WorkerRequest, WorkerResponse} from "@/app/generators/mapart/mapart.worker";
+import {export3d, exportPNG} from "@/app/generators/mapart/exporting";
+import {exportMapDat} from "@/app/generators/mapart/utils/datExport";
+import {
+    ALIASES, BASE_COLORS,
+    BLOCK_GROUPS,
+    getEverythingBlockSelection,
+    getMaterialList,
+    Preset, Presets, scaleRGB
+} from "@/app/generators/mapart/utils/constants";
+import {
+    BlockSelection,
+    Brightness, ColorDistanceMethod,
+    ProcessingStats,
+    StaircasingMode, StaircasingModes,
+    SupportBlockMode
+} from "@/app/generators/mapart/utils/types";
+import {numberToHex} from "@/app/generators/mapart/color/matching";
 
 function useDebounce<T>(value: T, delay: number): T {
     const [debounced, setDebounced] = useState<T>(value);
@@ -113,7 +111,7 @@ export default function MapartGenerator() {
     const debouncedEnabledGroupsKey = useDebounce(enabledGroupsKey, 400);
 
     useEffect(() => {
-        const worker = new Worker(new URL('./utils/mapart.worker.ts', import.meta.url));
+        const worker = new Worker(new URL('./mapart.worker.ts', import.meta.url));
 
         worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
             const data = event.data;
@@ -418,7 +416,6 @@ export default function MapartGenerator() {
                                     }}
                                 />
 
-                                {/* Staircasing — buildable mode only */}
                                 {outputMode === 'buildable' && (
                                     <>
                                         <Label className="mt-4 mb-2">Staircasing Method</Label>
