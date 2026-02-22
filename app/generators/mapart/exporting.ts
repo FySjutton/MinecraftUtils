@@ -51,15 +51,15 @@ export async function export3d(
     groupIdMap: number[][] | null,
     yMap: number[][] | null,
     blockSelection: BlockSelection,
-    staircasingMode: StaircasingMode,
     supportMode: SupportBlockMode,
     supportBlock: string,
     splitIntoChunks: boolean,
+    noobLine: boolean
 ) {
     if (!processedImageData || !processingStats || !brightnessMap || !groupIdMap || !yMap) return;
 
     if (!splitIntoChunks || (mapWidth === 1 && mapHeight === 1)) {
-        const structure = calculate3DStructure(brightnessMap, groupIdMap, yMap, blockSelection, staircasingMode, supportMode, supportBlock);
+        const structure = calculate3DStructure(brightnessMap, groupIdMap, yMap, blockSelection, supportMode, supportBlock, noobLine);
         exportStructureNBT(structure, 'minecraftutils_mapart.nbt');
         return;
     }
@@ -74,10 +74,7 @@ export async function export3d(
                     Array.from({ length: 128 }, (__, x) => map[row * 128 + z][col * 128 + x]),
                 );
 
-            const structure = calculate3DStructure(
-                slice(brightnessMap), slice(groupIdMap), slice(yMap),
-                blockSelection, staircasingMode, supportMode, supportBlock,
-            );
+            const structure = calculate3DStructure(slice(brightnessMap), slice(groupIdMap), slice(yMap), blockSelection, supportMode, supportBlock, noobLine);
             zip.file(`map_${col}_${row}.nbt`, exportStructureNBTToBlob(structure));
         }
     }

@@ -12,6 +12,9 @@ export const ALIASES: Record<string, string> = aliasesData as Record<string, str
 export type Preset = keyof typeof presetsData;
 export const Presets = Object.keys(presetsData) as string[];
 
+export const TRANSPARENT_GROUP_ID = -2;
+export const ALPHA_THRESHOLD = 128;
+
 export function rgbToHex(r: number, g: number, b: number): string {
     return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
 }
@@ -53,6 +56,7 @@ export function getMaterialList(
     for (let z = 0; z < height; z++)
         for (let x = 0; x < width; x++) {
             const g = groupIdMap[z][x];
+            if (g === TRANSPARENT_GROUP_ID) continue; // skip transparent pixels
             counts.set(g, (counts.get(g) ?? 0) + 1);
         }
 
@@ -64,6 +68,7 @@ export function getMaterialList(
     if (supportMode !== SupportBlockMode.NONE) {
         for (let z = 0; z < height; z++)
             for (let x = 0; x < width; x++) {
+                if (groupIdMap[z][x] === TRANSPARENT_GROUP_ID) continue;
                 const y = yMap[z][x];
                 if (supportMode === SupportBlockMode.THIN) {
                     if (y - 1 >= 0) supportCount++;

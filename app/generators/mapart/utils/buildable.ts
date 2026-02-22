@@ -1,5 +1,5 @@
-import { Brightness, ColorDistanceMethod, ProcessedImageResult, StaircasingMode } from '../utils/types';
-import { getAllowedBrightnesses } from '../utils/constants';
+import { Brightness, ColorDistanceMethod, ProcessedImageResult, StaircasingMode } from './types';
+import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from './constants';
 import { getColorWithBrightness, numberToRGB, findBestColorInSet, buildCandidates } from '../color/matching';
 import { calculateDistance } from '../color/distance';
 import { applyDithering } from '../dithering/buildable';
@@ -16,12 +16,9 @@ export function processImageData(
     colorMethod: ColorDistanceMethod,
     maxHeight: number,
 ): ProcessedImageResult {
-    const hasDithering = ditheringMethod != null && ditheringMethod !== 'none';
-
-    if (hasDithering) {
+    if (ditheringMethod != null && ditheringMethod !== 'none') {
         return applyDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, ditheringMethod, maxHeight);
     }
-
     return processWithoutDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, maxHeight);
 }
 
@@ -42,8 +39,13 @@ function processWithoutDithering(
     const yMap: number[][] = Array.from({ length: height }, () => new Array(width));
 
     const yRange = getYRange(staircasingMode, maxHeight);
-    const isLimited = staircasingMode !== StaircasingMode.NONE;
-    const isValley = staircasingMode === StaircasingMode.VALLEY || staircasingMode === StaircasingMode.VALLEY_CUSTOM;
+
+    const isStandard =
+        staircasingMode === StaircasingMode.STANDARD ||
+        staircasingMode === StaircasingMode.STANDARD_CUSTOM ||
+        staircasingMode === StaircasingMode.VALLEY_CUSTOM;
+
+    const isValley = staircasingMode === StaircasingMode.VALLEY;
 
     const flatCandidates = buildCandidates(enabledGroups, () => [Brightness.NORMAL]);
 
@@ -55,16 +57,23 @@ function processWithoutDithering(
 
         for (let z = 0; z < height; z++) {
             const idx = (z * width + x) * 4;
+
+            if (sourceData[idx + 3] < 128) {
+                colBrightness.push(Brightness.NORMAL);
+                colGroupId.push(TRANSPARENT_GROUP_ID);
+                colYDirect.push(currentY);
+                continue;
+            }
+
             const r = sourceData[idx];
             const g = sourceData[idx + 1];
             const b = sourceData[idx + 2];
-            const a = sourceData[idx + 3];
 
             if (staircasingMode === StaircasingMode.NONE) {
                 const best = findBestColorInSet(r, g, b, flatCandidates, colorMethod);
                 const rgb = numberToRGB(best.color);
                 resultData[idx] = rgb.r; resultData[idx + 1] = rgb.g;
-                resultData[idx + 2] = rgb.b; resultData[idx + 3] = a;
+                resultData[idx + 2] = rgb.b; resultData[idx + 3] = 255;
                 colBrightness.push(Brightness.NORMAL);
                 colGroupId.push(best.groupId);
                 colYDirect.push(0);
@@ -73,20 +82,18 @@ function processWithoutDithering(
 
             let bestDistance = Infinity;
             let bestBrightness = Brightness.NORMAL;
-            let bestGroupId = 0;
+            let bestGroupId = -1;
 
             for (const groupId of enabledGroups) {
                 for (const brightness of getAllowedBrightnesses(groupId)) {
-                    if (isLimited && groupId !== 11) {
+                    if (isStandard && groupId !== 11) {
                         const delta = brightness === Brightness.HIGH ? 1 : brightness === Brightness.LOW ? -1 : 0;
                         const nextY = currentY + delta;
                         if (nextY < yRange.min || nextY > yRange.max) continue;
                     }
-
                     const colorNum = getColorWithBrightness(groupId, brightness);
                     const rgb = numberToRGB(colorNum);
                     const dist = calculateDistance(r, g, b, rgb.r, rgb.g, rgb.b, colorMethod);
-
                     if (dist < bestDistance) {
                         bestDistance = dist;
                         bestBrightness = brightness;
@@ -95,23 +102,28 @@ function processWithoutDithering(
                 }
             }
 
-            if (isLimited && bestGroupId !== 11) {
-                if (bestBrightness === Brightness.HIGH) currentY++;
-                else if (bestBrightness === Brightness.LOW) currentY--;
+            if (bestGroupId === -1) {
+                bestGroupId = [...enabledGroups][0];
+                bestBrightness = Brightness.NORMAL;
             }
 
             colBrightness.push(bestBrightness);
             colGroupId.push(bestGroupId);
             colYDirect.push(currentY);
 
+            if (isStandard && bestGroupId !== 11) {
+                if (bestBrightness === Brightness.HIGH) currentY++;
+                else if (bestBrightness === Brightness.LOW) currentY--;
+            }
+
             const colorNum = getColorWithBrightness(bestGroupId, bestBrightness);
             const rgb = numberToRGB(colorNum);
             resultData[idx] = rgb.r; resultData[idx + 1] = rgb.g;
-            resultData[idx + 2] = rgb.b; resultData[idx + 3] = a;
+            resultData[idx + 2] = rgb.b; resultData[idx + 3] = 255;
         }
 
         const colY = isValley
-            ? computeColumnY(colBrightness, colGroupId, staircasingMode)
+            ? computeColumnY(colBrightness, colGroupId, staircasingMode, maxHeight)
             : colYDirect;
 
         const minY = Math.min(...colY);

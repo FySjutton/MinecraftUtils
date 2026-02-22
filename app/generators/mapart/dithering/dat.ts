@@ -21,6 +21,8 @@ export function getDatColorByte(groupId: number, brightness: Brightness): number
     return (groupId + 1) * 4 + (BRIGHTNESS_TO_DAT_INDEX.get(brightness) ?? 1);
 }
 
+const DAT_TRANSPARENT_BYTE = 0;
+
 export interface DatProcessingResult {
     imageData: ImageData;
     colorBytes: Uint8Array;
@@ -40,6 +42,13 @@ function applyBiasDitheringDat(
     for (let x = 0; x < width; x++) {
         for (let z = 0; z < height; z++) {
             const idx = (z * width + x) * 4;
+
+            if (data[idx + 3] < 128) {
+                data[idx] = 0; data[idx + 1] = 0; data[idx + 2] = 0; data[idx + 3] = 0;
+                colorBytes[x + z * width] = DAT_TRANSPARENT_BYTE;
+                continue;
+            }
+
             const bias = getBias(x, z);
             const r = clamp(data[idx] + bias);
             const g = clamp(data[idx + 1] + bias);
@@ -47,7 +56,7 @@ function applyBiasDitheringDat(
 
             const best = findBestColorInSet(r, g, b, candidates, colorMethod);
             const rgb = numberToRGB(best.color);
-            data[idx] = rgb.r; data[idx + 1] = rgb.g; data[idx + 2] = rgb.b;
+            data[idx] = rgb.r; data[idx + 1] = rgb.g; data[idx + 2] = rgb.b; data[idx + 3] = 255;
             colorBytes[x + z * width] = getDatColorByte(best.groupId, best.brightness);
         }
     }
@@ -67,9 +76,15 @@ function applyErrorDiffusionDat(
     const outputData = new Uint8ClampedArray(imageData.data.length);
     const colorBytes = new Uint8Array(width * height);
 
-    for (let x = 0; x < width; x++) {
-        for (let z = 0; z < height; z++) {
+    for (let z = 0; z < height; z++) {
+        for (let x = 0; x < width; x++) {
             const idx = (z * width + x) * 4;
+
+            if (imageData.data[idx + 3] < 128) {
+                colorBytes[x + z * width] = DAT_TRANSPARENT_BYTE;
+                continue;
+            }
+
             const oldR = clamp(Math.round(workingData[idx]));
             const oldG = clamp(Math.round(workingData[idx + 1]));
             const oldB = clamp(Math.round(workingData[idx + 2]));
@@ -78,7 +93,7 @@ function applyErrorDiffusionDat(
             const rgb = numberToRGB(best.color);
 
             outputData[idx] = rgb.r; outputData[idx + 1] = rgb.g;
-            outputData[idx + 2] = rgb.b; outputData[idx + 3] = imageData.data[idx + 3];
+            outputData[idx + 2] = rgb.b; outputData[idx + 3] = 255;
             colorBytes[x + z * width] = getDatColorByte(best.groupId, best.brightness);
 
             if (method.ditherMatrix) {

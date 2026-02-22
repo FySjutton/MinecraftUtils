@@ -1,12 +1,13 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { PopoverClose } from '@radix-ui/react-popover';
@@ -31,6 +32,7 @@ export default function SettingsCard({ outputMode, settings, setters, needsXOffs
         ditheringMethod, staircasingMode, colorDistanceMethod, maxHeight,
         supportMode, supportBlockName,
         brightness, contrast, saturation, cropMode, xOffset, yOffset,
+        fillColor, noobLine, pixelArt,
     } = settings;
 
     const {
@@ -38,7 +40,12 @@ export default function SettingsCard({ outputMode, settings, setters, needsXOffs
         setDitheringMethod, setStaircasingMode, setColorDistanceMethod, setMaxHeight,
         setSupportMode, setSupportBlockName,
         setBrightness, setContrast, setSaturation, setCropMode, setXOffset, setYOffset,
+        setFillColor, setNoobLine, setPixelArt,
     } = setters;
+
+    const isTransparentFill = fillColor === 'none';
+
+    const [localColor, setLocalColor] = useState(isTransparentFill ? '#ffffff' : fillColor);
 
     return (
         <Card id="settings">
@@ -137,6 +144,15 @@ export default function SettingsCard({ outputMode, settings, setters, needsXOffs
                                 <InputField label="Support Block" value={supportBlockName} onChange={setSupportBlockName} variant="text" placeholder="e.g. netherrack" />
                             </div>
                         )}
+                        <div className="flex items-center justify-between mt-4">
+                            <div>
+                                <Label>Noob Line</Label>
+                                <p className="text-sm text-gray-400">
+                                    Adds an extra row of blocks outside the north edge so the top row renders at the correct brightness.
+                                </p>
+                            </div>
+                            <Switch checked={noobLine} onCheckedChange={setNoobLine} />
+                        </div>
                         <Separator className="my-4" />
                     </>
                 )}
@@ -145,6 +161,50 @@ export default function SettingsCard({ outputMode, settings, setters, needsXOffs
                 <p className="text-sm text-gray-400 mb-4">Here you can preprocess the image, potentially making a better end result.</p>
 
                 <div className="space-y-4">
+
+                    {/* Pixel Art toggle */}
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <Label>Pixel Art Mode</Label>
+                            <p className="text-sm text-gray-400">
+                                Disables image smoothing so pixel art stays sharp instead of being blurred when scaled.
+                            </p>
+                        </div>
+                        <Switch checked={pixelArt} onCheckedChange={setPixelArt} />
+                    </div>
+
+                    <div>
+                        <Label className="mb-2 block">Background Fill</Label>
+                        <p className="text-sm text-gray-400 mb-2">
+                            Fill transparent areas with a color, or leave them as empty (no block placed).
+                            Using a dark fill with staircasing can cause visible artifacts at the edges.
+                        </p>
+                        <div className="flex items-center gap-3">
+                            <Tabs
+                                value={isTransparentFill ? 'none' : 'color'}
+                                onValueChange={v => {
+                                    if (v === 'none') setFillColor('none');
+                                    else setFillColor(localColor);
+                                }}
+                            >
+                                <TabsList>
+                                    <TabsTrigger value="color">Color</TabsTrigger>
+                                    <TabsTrigger value="none">None (transparent)</TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                            {!isTransparentFill && (
+                                <input
+                                    type="color"
+                                    value={localColor}
+                                    onChange={e => setLocalColor(e.target.value)}
+                                    onBlur={e => setFillColor(e.target.value)}
+                                    onMouseUp={e => setFillColor((e.target as HTMLInputElement).value)}
+                                    className="h-9 w-14 cursor-pointer rounded border border-input bg-transparent p-1"
+                                />
+                            )}
+                        </div>
+                    </div>
+
                     <div>
                         <Label>Brightness: <span className="text-muted-foreground">{brightness}%</span></Label>
                         <Slider value={[brightness]} onValueChange={v => setBrightness(v[0])} min={0} max={200} step={1} className="mt-2" />
@@ -180,7 +240,6 @@ export default function SettingsCard({ outputMode, settings, setters, needsXOffs
                         </div>
                     )}
                 </div>
-
             </CardContent>
         </Card>
     );

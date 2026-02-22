@@ -1,32 +1,28 @@
 'use client';
 
-import { useState } from 'react';
 import { ColorDistanceMethod, StaircasingMode, SupportBlockMode } from '@/app/generators/mapart/utils/types';
 import { DitheringMethodName, DitheringMethods } from '@/app/generators/mapart/dithering/types';
 import { CropMode } from './useImagePreprocessing';
+import { useState } from 'react';
 
 export interface Settings {
-    // Map size
     mapWidth: number;
     mapHeight: number;
-
-    // Processing
     ditheringMethod: DitheringMethodName;
     staircasingMode: StaircasingMode;
     colorDistanceMethod: ColorDistanceMethod;
     maxHeight: number;
-
-    // Support blocks
     supportMode: SupportBlockMode;
     supportBlockName: string;
-
-    // Image preprocessing
     brightness: number;
     contrast: number;
     saturation: number;
     cropMode: CropMode;
     xOffset: number;
     yOffset: number;
+    fillColor: string;
+    noobLine: boolean;
+    pixelArt: boolean;
 }
 
 export interface SettingsSetters {
@@ -44,6 +40,9 @@ export interface SettingsSetters {
     setCropMode: (v: CropMode) => void;
     setXOffset: (v: number) => void;
     setYOffset: (v: number) => void;
+    setFillColor: (v: string) => void;
+    setNoobLine: (v: boolean) => void;
+    setPixelArt: (v: boolean) => void;
 }
 
 export function useSettings(): { settings: Settings; setters: SettingsSetters } {
@@ -61,20 +60,48 @@ export function useSettings(): { settings: Settings; setters: SettingsSetters } 
     const [cropMode, setCropMode] = useState<CropMode>(CropMode.SCALE_CROP);
     const [xOffset, setXOffset] = useState(50);
     const [yOffset, setYOffset] = useState(50);
+    const [fillColor, setFillColor] = useState<string>('none');
+    const [noobLine, setNoobLine] = useState(true);
+    const [pixelArt, setPixelArt] = useState(false);
 
-    const settings: Settings = {
-        mapWidth, mapHeight,
-        ditheringMethod, staircasingMode, colorDistanceMethod, maxHeight,
-        supportMode, supportBlockName,
-        brightness, contrast, saturation, cropMode, xOffset, yOffset,
+    return {
+        settings: {
+            mapWidth,
+            mapHeight,
+            ditheringMethod: ditheringMethod as DitheringMethodName,
+            staircasingMode,
+            colorDistanceMethod,
+            maxHeight,
+            supportMode,
+            supportBlockName,
+            brightness,
+            contrast,
+            saturation,
+            cropMode,
+            xOffset,
+            yOffset,
+            fillColor,
+            noobLine,
+            pixelArt,
+        },
+        setters: {
+            setMapWidth,
+            setMapHeight,
+            setDitheringMethod: setDitheringMethod as (v: DitheringMethodName) => void,
+            setStaircasingMode: setStaircasingMode as (v: StaircasingMode) => void,
+            setColorDistanceMethod: setColorDistanceMethod as (v: ColorDistanceMethod) => void,
+            setMaxHeight,
+            setSupportMode: setSupportMode as (v: SupportBlockMode) => void,
+            setSupportBlockName,
+            setBrightness,
+            setContrast,
+            setSaturation,
+            setCropMode: setCropMode as (v: CropMode) => void,
+            setXOffset,
+            setYOffset,
+            setFillColor,
+            setNoobLine,
+            setPixelArt,
+        },
     };
-
-    const setters: SettingsSetters = {
-        setMapWidth, setMapHeight,
-        setDitheringMethod, setStaircasingMode, setColorDistanceMethod, setMaxHeight,
-        setSupportMode, setSupportBlockName,
-        setBrightness, setContrast, setSaturation, setCropMode, setXOffset, setYOffset,
-    };
-
-    return { settings, setters };
 }

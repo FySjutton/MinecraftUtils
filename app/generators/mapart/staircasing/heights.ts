@@ -8,11 +8,12 @@ export function getYRange(
 ): { min: number; max: number } {
     if (mode === StaircasingMode.NONE) return { min: 0, max: 0 };
 
-    if (mode === StaircasingMode.VALLEY_CUSTOM || mode === StaircasingMode.STANDARD_CUSTOM) {
-        return { min: 0, max: maxHeight != null && maxHeight > 0 ? maxHeight : MAX_WORLD_HEIGHT };
+    if (mode === StaircasingMode.STANDARD_CUSTOM || mode === StaircasingMode.VALLEY_CUSTOM) {
+        const h = maxHeight != null && maxHeight > 0 ? maxHeight : MAX_WORLD_HEIGHT;
+        return { min: 0, max: h };
     }
 
-    return { min: 0, max: MAX_WORLD_HEIGHT - 1 };
+    return { min: -MAX_WORLD_HEIGHT, max: MAX_WORLD_HEIGHT };
 }
 
 function solveMinimalHeights(signs: number[]): number[] {
@@ -47,16 +48,13 @@ export function computeColumnY(
     brightnesses: Brightness[],
     groupIds: number[],
     mode: StaircasingMode,
+    maxHeight?: number,
 ): number[] {
     const n = brightnesses.length;
     if (n === 0) return [];
     if (mode === StaircasingMode.NONE) return new Array(n).fill(0);
 
-    if (
-        mode === StaircasingMode.VALLEY ||
-        mode === StaircasingMode.VALLEY_CUSTOM ||
-        mode === StaircasingMode.STANDARD_CUSTOM
-    ) {
+    if (mode === StaircasingMode.VALLEY || mode === StaircasingMode.STANDARD_CUSTOM) {
         const signs = brightnesses.slice(1).map((b, i) => {
             if (groupIds[i + 1] === 11) return 0;
             return b === Brightness.HIGH ? 1 : b === Brightness.LOW ? -1 : 0;
@@ -88,14 +86,13 @@ export function finalizeColumn(
     groupIdMap: number[][],
     yMap: number[][],
     colYDirect?: number[],
+    maxHeight?: number,
 ): void {
-    const isValley =
-        staircasingMode === StaircasingMode.VALLEY ||
-        staircasingMode === StaircasingMode.VALLEY_CUSTOM;
+    const isValley = staircasingMode === StaircasingMode.VALLEY;
 
     const colY = isValley
-        ? computeColumnY(colBrightness, colGroupId, staircasingMode)
-        : (colYDirect ?? computeColumnY(colBrightness, colGroupId, staircasingMode));
+        ? computeColumnY(colBrightness, colGroupId, staircasingMode, maxHeight)
+        : (colYDirect ?? computeColumnY(colBrightness, colGroupId, staircasingMode, maxHeight));
 
     const minY = Math.min(...colY);
     for (let z = 0; z < height; z++) {

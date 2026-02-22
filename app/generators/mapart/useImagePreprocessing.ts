@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Settings } from './useSettings';
 
 export enum CropMode {
@@ -19,10 +19,8 @@ export interface ImagePreprocessingDerived {
     needsYOffset: boolean;
 }
 
-export function useImagePreprocessing({sourceImage, settings, onProcessed,}: UseImagePreprocessingOptions): ImagePreprocessingDerived {
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
-
-    const { mapWidth, mapHeight, brightness, contrast, saturation, cropMode, xOffset, yOffset } = settings;
+export function useImagePreprocessing({ sourceImage, settings, onProcessed }: UseImagePreprocessingOptions): ImagePreprocessingDerived {
+    const { mapWidth, mapHeight, brightness, contrast, saturation, cropMode, xOffset, yOffset, fillColor, pixelArt } = settings;
     const targetWidth = mapWidth * 128;
     const targetHeight = mapHeight * 128;
 
@@ -37,11 +35,17 @@ export function useImagePreprocessing({sourceImage, settings, onProcessed,}: Use
         const canvas = document.createElement('canvas');
         canvas.width = targetWidth;
         canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
 
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+        if (fillColor !== 'none') {
+            ctx.fillStyle = fillColor;
+            ctx.fillRect(0, 0, targetWidth, targetHeight);
+        }
+
+        ctx.imageSmoothingEnabled = !pixelArt;
+        if (!pixelArt) {
+            ctx.imageSmoothingQuality = 'high';
+        }
 
         if (cropMode === CropMode.STRETCH) {
             ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, targetWidth, targetHeight);
@@ -55,10 +59,13 @@ export function useImagePreprocessing({sourceImage, settings, onProcessed,}: Use
             }
         }
 
-        applyFilters(ctx, targetWidth, targetHeight, brightness, contrast, saturation);
-        canvasRef.current = canvas;
+        const filtersAreDefault = brightness === 100 && contrast === 100 && saturation === 100;
+        if (!filtersAreDefault) {
+            applyFilters(ctx, targetWidth, targetHeight, brightness, contrast, saturation);
+        }
+
         onProcessed(canvas);
-    }, [sourceImage, targetWidth, targetHeight, brightness, contrast, saturation, cropMode, xOffset, yOffset, onProcessed]);
+    }, [sourceImage, targetWidth, targetHeight, brightness, contrast, saturation, cropMode, xOffset, yOffset, fillColor, pixelArt, onProcessed]);
 
     return { needsXOffset, needsYOffset };
 }
@@ -78,6 +85,8 @@ function applyFilters(
     const sFac = saturation / 100;
 
     for (let i = 0; i < data.length; i += 4) {
+        if (data[i + 3] === 0) continue;
+
         let r = data[i] * bMul;
         let g = data[i + 1] * bMul;
         let b = data[i + 2] * bMul;

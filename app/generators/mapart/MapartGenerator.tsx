@@ -30,6 +30,8 @@ import presetsData from './inputs/presets.json';
 
 import './mapart.css';
 
+const TRANSPARENT_GROUP_ID = -2;
+
 function useDebounce<T>(value: T, delay: number): T {
     const [debounced, setDebounced] = useState<T>(value);
     useEffect(() => {
@@ -86,10 +88,19 @@ export default function MapartGenerator() {
             if (data.type === 'error') { console.error('Worker error:', data.message); setIsProcessing(false); return; }
 
             const { buffer, width, height, brightnessMap, groupIdMap, yMap, colorBytesBuffer } = data;
-            const uniqueGroups = new Set<number>();
-            for (const row of groupIdMap) for (const id of row) uniqueGroups.add(id);
 
-            setProcessingStats({ width, height, totalBlocks: width * height, uniqueBlocks: uniqueGroups.size });
+            const uniqueGroups = new Set<number>();
+            let totalBlocks = 0;
+            for (const row of groupIdMap) {
+                for (const id of row) {
+                    if (id !== TRANSPARENT_GROUP_ID) {
+                        uniqueGroups.add(id);
+                        totalBlocks++;
+                    }
+                }
+            }
+
+            setProcessingStats({ width, height, totalBlocks, uniqueBlocks: uniqueGroups.size });
             setProcessedImageData(new ImageData(new Uint8ClampedArray(buffer), width, height));
             setBrightnessMap(brightnessMap);
             setGroupIdMap(groupIdMap);
@@ -97,6 +108,7 @@ export default function MapartGenerator() {
             setColorBytes(colorBytesBuffer ? new Uint8Array(colorBytesBuffer) : null);
             setIsProcessing(false);
         };
+
         worker.onerror = err => { console.error('Worker threw:', err); setIsProcessing(false); };
         workerRef.current = worker;
         return () => { worker.terminate(); workerRef.current = null; };
@@ -145,16 +157,9 @@ export default function MapartGenerator() {
         reader.onload = e => {
             const img = new Image();
             img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = img.width; canvas.height = img.height;
-                const ctx = canvas.getContext('2d')!;
-                ctx.fillStyle = '#000000';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                ctx.drawImage(img, 0, 0);
-                const url = canvas.toDataURL('image/png');
-                const flat = new Image();
-                flat.onload = () => { setSourceImageElement(flat); setImage(url); setIsUploading(false); };
-                flat.src = url;
+                setSourceImageElement(img);
+                setImage(e.target?.result as string);
+                setIsUploading(false);
             };
             img.src = e.target?.result as string;
             setProcessingStats(null); setProcessedImageData(null);
@@ -294,12 +299,12 @@ export default function MapartGenerator() {
                                     <>
                                         <div className="flex gap-2 w-full">
                                             <Button className="flex-1" disabled={!processingStats || isProcessing}
-                                                    onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.staircasingMode, settings.supportMode, settings.supportBlockName, false)}>
+                                                    onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, false, settings.noobLine)}>
                                                 <Download className="mr-2" size={16} />Export NBT
                                             </Button>
                                             {(settings.mapHeight > 1 || settings.mapWidth > 1) && (
                                                 <Button className="flex-1" disabled={!processingStats || isProcessing}
-                                                        onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.staircasingMode, settings.supportMode, settings.supportBlockName, true)}>
+                                                        onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, true, settings.noobLine)}>
                                                     <Download className="mr-2" size={16} />Export NBT (Split 1x1 .zip)
                                                 </Button>
                                             )}
