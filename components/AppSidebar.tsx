@@ -14,7 +14,7 @@ import {
     SidebarRail,
 } from "@/components/ui/sidebar"
 
-import { tools, externals } from "@/app/AppStructure"
+import { tools, externals } from "@/app/_structure/AppStructure"
 import Image from "next/image";
 import {InputGroup, InputGroupAddon, InputGroupInput} from "@/components/ui/input-group";
 import {Search} from "lucide-react";

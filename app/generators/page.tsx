@@ -3,8 +3,8 @@ import DiscordIcon from "@/components/icons/DiscordIcon";
 import GithubIcon from "@/components/icons/GithubIcon";
 import FeaturedUtils from "@/components/FeaturedUtils";
 import React from "react";
-import {featuredGenerators} from "@/app/AppStructure";
 import {Metadata} from "next";
+import {featuredGenerators} from "@/app/_structure/AppStructure";
 
 export default function Page() {
     return (

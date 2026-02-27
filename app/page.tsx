@@ -3,7 +3,7 @@ import {Button} from "@/components/ui/button"
 import GithubIcon from "@/components/icons/GithubIcon";
 import DiscordIcon from "@/components/icons/DiscordIcon";
 import FeaturedUtils from "@/components/FeaturedUtils";
-import {featuredHomePage} from "@/app/AppStructure";
+import {featuredHomePage} from "@/app/_structure/AppStructure";
 import {HandHelping} from "lucide-react";
 
 export default function HomePage() {

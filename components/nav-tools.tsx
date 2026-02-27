@@ -18,7 +18,7 @@ import {
 import React, {useState} from "react";
 import Link from "next/link";
 import {Badge} from "@/components/ui/badge";
-import {renderIcon, ToolCategory} from "@/app/AppStructure";
+import {renderIcon, ToolCategory} from "@/app/_structure/StructureUtils";
 import {IconChevronRight, IconExternalLink} from "@tabler/icons-react";
 
 export function NavTools({tools, search, activeCategory, activePage, title, filterAlpha}: {
@@ -59,6 +59,7 @@ export function NavTools({tools, search, activeCategory, activePage, title, filt
                         if (filterAlpha) {
                             pages = pages.filter(page => page.type != "alpha");
                         }
+                        pages = pages.filter(page => !page.unlisted);
                         return (
                             <SidebarMenuItem key={tool.name}>
                                 <Collapsible open={isOpen} onOpenChange={() => toggleCategory(tool.name)}>

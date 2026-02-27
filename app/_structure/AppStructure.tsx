@@ -1,4 +1,4 @@
-import React, { JSX } from "react"
+import React from "react"
 import {
     IconBackpack,
     IconBellRingingFilled,
@@ -19,63 +19,8 @@ import {
     IconUser, IconWand
 } from "@tabler/icons-react";
 import {SlidersVertical} from "lucide-react";
-import {IconImage} from "@/components/IconImage";
+import {getPage, PageItem, ToolCategory} from "@/app/_structure/StructureUtils";
 
-export interface PageItem {
-    name: string
-    url: string
-    icon?: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string
-    description?: string
-    external?: boolean
-    type?: "beta" | "alpha"
-}
-
-export interface ToolCategory {
-    name: string
-    icon: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string
-    url: string
-    defaultOpen?: boolean
-    external?: boolean
-    pages: PageItem[]
-}
-
-export const renderIcon = (icon: React.ReactNode | ((props: React.SVGProps<SVGSVGElement>) => JSX.Element) | string, size: number = 28) => {
-    if (!icon) return null
-    if (typeof icon === "string") return <IconImage name={icon} size={size} />
-    if (React.isValidElement(icon)) return icon
-    if (typeof icon === "function") return React.createElement(icon, { className: "size-4" })
-    return null
-}
-
-function getPage(categories: ToolCategory[], pageName: string): PageItem {
-    for (const category of categories) {
-        const page = category.pages.find(p => p.name === pageName)
-        if (page) {
-            return {
-                ...page,
-                url: `${category.url}/${page.url}`
-            }
-        }
-    }
-    throw new Error(`Page "${pageName}" not found in any category`)
-}
-
-interface PageWithCategory extends PageItem {
-    categoryUrl: string
-}
-
-export function getCurrentPage(pathname: string) {
-    const allPages: PageWithCategory[] = [
-        ...tools.flatMap(t => t.pages.map(p => ({ ...p, categoryUrl: t.url }))),
-        ...externals.flatMap(t => t.pages.map(p => ({ ...p, categoryUrl: t.url }))),
-    ];
-
-    const cleanPath = pathname.startsWith("/") ? pathname.slice(1) : pathname;
-
-    return allPages.find(
-        p => `${p.categoryUrl.replace(/^\/+/, "")}/${p.url.replace(/^\/+/, "")}` === cleanPath
-    );
-}
 
 export const tools: ToolCategory[] = [
     {
@@ -102,7 +47,7 @@ export const tools: ToolCategory[] = [
             { name: "Firework Generator", url: "fireworks", icon: "firework", description: "Generate advanced fireworks with preview, instructions, and output command.", type: "beta" },
             { name: "Shape Generator", url: "shape-generator", icon: "shape-generator", description: "Generate pixel perfect shapes for minecraft.", type: "beta" },
             { name: "Banner Generator", url: "banners", icon: "banner", description: "Create banners through an interactive editor with command and crafting instructions output.", type: "beta" },
-            { name: "Sign Generator", url: "sign-generator", icon: "3d_sign", description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha" },
+            { name: "Sign Generator", url: "sign-generator", icon: "3d_sign", description: "Generate minecraft signs through an editor with live 3D preview.", type: "alpha", unlisted: true },
             { name: "Motd Creator", url: "motd-creator", icon: "motd", description: "Generate server motds through an interactive editor." },
         ],
     },

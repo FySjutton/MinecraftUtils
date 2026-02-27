@@ -1,11 +1,11 @@
 "use client"
 
 import React from "react"
-import {PageItem, renderIcon} from "@/app/AppStructure";
 import Link from "next/link";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Separator} from "@/components/ui/separator";
+import {PageItem, renderIcon} from "@/app/_structure/StructureUtils";
 
 export default function FeaturedUtils({title, description, utilities}: {
     title: string
@@ -21,6 +21,7 @@ export default function FeaturedUtils({title, description, utilities}: {
             <div className="flex flex-wrap gap-6 justify-center">
                 {utilities.map((tool, index) => {
                     if (tool.type === "alpha") return null
+                    if (tool.unlisted) return null;
                     return (
                         <Link key={index} href={tool.url} className="flex-1 min-w-[250px] max-w-sm">
                             <Card className="h-full hover:shadow-lg transition-shadow cursor-pointer gap-2">

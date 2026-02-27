@@ -16,11 +16,13 @@ import {
 } from "@/components/ui/breadcrumb";
 import {usePathname} from "next/navigation";
 import RandomBanner from "@/components/banners/RandomBanner";
-import {getCurrentPage} from "@/app/AppStructure";
+import {getCurrentPage} from "@/app/_structure/StructureUtils";
 import {Banner, BannerAction, BannerIcon, BannerTitle} from "./ui/banner";
 import {IconAlertOctagon} from "@tabler/icons-react";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 import {toTitleCase} from "@/lib/StringUtils";
+import {Button} from "@/components/ui/button";
+import Link from "next/link";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
@@ -76,7 +78,14 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                         style={{ backgroundColor: "#ba2727", color: "#FFFFFF" }}
                                     >
                                         <BannerIcon icon={IconAlertOctagon} className={"bg-white/20 text-white"} />
-                                        <BannerTitle>WARNING! | This utility is in the alpha phase! Avoid using it, it is only here in order for testers/developers to test it publicly!</BannerTitle>
+                                        <BannerTitle>
+                                            <span>Warning! This utility is in the alpha phase, and is not meant for public usage! It is only here in order for developers/testers to test it publicly!</span>
+                                            <div>For more information about the development of this tool, consider checking the roadmap, link can be found on the right or in the footer.</div>
+                                        </BannerTitle>
+                                        <BannerAction variant="default" onClick={(e: React.MouseEvent) => {
+                                            e.stopPropagation();
+                                            window.open("https://minecraftutils.com/roadmap");
+                                        }} className="cursor-pointer ml-auto max-[610px]:ml-0">Roadmap</BannerAction>
                                     </Banner>
                                 )}
                                 {currentPage?.type == "beta" && (

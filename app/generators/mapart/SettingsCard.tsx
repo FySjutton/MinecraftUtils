@@ -147,9 +147,7 @@ export default function SettingsCard({ outputMode, settings, setters, needsXOffs
                         <div className="flex items-center justify-between mt-4">
                             <div>
                                 <Label>Noob Line</Label>
-                                <p className="text-sm text-gray-400">
-                                    Adds an extra row of blocks outside the north edge so the top row renders at the correct brightness.
-                                </p>
+                                <p className="text-sm text-gray-400 mt-2">Adds an extra row of blocks outside the north edge so the top row renders at the correct brightness.</p>
                             </div>
                             <Switch checked={noobLine} onCheckedChange={setNoobLine} />
                         </div>
