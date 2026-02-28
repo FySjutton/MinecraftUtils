@@ -78,9 +78,9 @@ export default function AppLayout({ children }: { children: ReactNode }) {
                                         style={{ backgroundColor: "#ba2727", color: "#FFFFFF" }}
                                     >
                                         <BannerIcon icon={IconAlertOctagon} className={"bg-white/20 text-white"} />
-                                        <BannerTitle>
+                                        <BannerTitle className="flex flex-col">
                                             <span>Warning! This utility is in the alpha phase, and is not meant for public usage! It is only here in order for developers/testers to test it publicly!</span>
-                                            <div>For more information about the development of this tool, consider checking the roadmap, link can be found on the right or in the footer.</div>
+                                            <span>For more information about the development of this tool, consider checking the roadmap, link can be found on the right or in the footer.</span>
                                         </BannerTitle>
                                         <BannerAction variant="default" onClick={(e: React.MouseEvent) => {
                                             e.stopPropagation();

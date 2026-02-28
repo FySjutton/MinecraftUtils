@@ -22,10 +22,13 @@ interface Props {
     groupIdMap: number[][] | null;
     blockSelection: BlockSelection;
     sourceImage: string | null;
-    outputMode: string
+    originalImage: string | null;
+    outputMode: string;
+    noobLine: boolean;
+    totalBlocks: number;
 }
 
-export function PreviewCard({ isProcessing, processedImageData, processingStats, groupIdMap, blockSelection, sourceImage, outputMode }: Props) {
+export function PreviewCard({ isProcessing, processedImageData, processingStats, groupIdMap, blockSelection, sourceImage, originalImage, outputMode, noobLine, totalBlocks }: Props) {
     const [mode, setMode] = useState<Mode>("preview");
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -41,8 +44,13 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
     const fsCompareCanvasRef = useRef<HTMLCanvasElement>(null);
     const imgCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
 
+    const previewCanvasRef = useRef<HTMLCanvasElement>(null);
+    const fsPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
+
     const isTextures = mode === "textures";
     const isCompare = mode === "compare";
+
+    const displayHeight = processingStats ? processingStats.height + (outputMode === "buildable" && noobLine ? 1 : 0) : 0;
 
     useLayoutEffect(() => {
         if (!cardViewportRef.current) return;
@@ -73,6 +81,16 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
         window.addEventListener("keydown", handler);
         return () => window.removeEventListener("keydown", handler);
     }, [isFullscreen]);
+
+    useEffect(() => {
+        if (!processedImageData || isTextures || isCompare) return;
+        if (previewCanvasRef.current) {
+            previewCanvasRef.current.getContext("2d")?.putImageData(processedImageData, 0, 0);
+        }
+        if (isFullscreen && fsPreviewCanvasRef.current) {
+            fsPreviewCanvasRef.current.getContext("2d")?.putImageData(processedImageData, 0, 0);
+        }
+    }, [processedImageData, isTextures, isCompare, isFullscreen]);
 
     const drawTextures = (canvas: HTMLCanvasElement) => {
         if (!groupIdMap || !processingStats) return;
@@ -173,7 +191,7 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                 <CompareSliderBefore>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                        src={sourceImage ?? ""}
+                        src={originalImage ?? ""}
                         alt="Original"
                         className="size-full"
                         style={{ imageRendering: "pixelated" }}
@@ -193,7 +211,11 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
         </div>
     );
 
-    const renderZoomable = (texRef: (el: HTMLCanvasElement | null) => void, scale: number) => (
+    const renderZoomable = (
+        texRef: (el: HTMLCanvasElement | null) => void,
+        scale: number,
+        previewRef: React.RefObject<HTMLCanvasElement | null>,
+    ) => (
         <TransformWrapper
             key={`${mode}-${activeW}x${activeH}-${scale}`}
             initialScale={scale}
@@ -219,7 +241,10 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                         width={flatW}
                         height={flatH}
                         style={{ imageRendering: "pixelated", display: "block" }}
-                        ref={(el) => { if (el && processedImageData) el.getContext("2d")?.putImageData(processedImageData, 0, 0); }}
+                        ref={(el) => {
+                            (previewRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
+                            if (el && processedImageData) el.getContext("2d")?.putImageData(processedImageData, 0, 0);
+                        }}
                     />
                 )}
             </TransformComponent>
@@ -231,7 +256,7 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
             <TabsList className="h-auto flex-wrap">
                 <TabsTrigger value="preview">Preview</TabsTrigger>
                 <TabsTrigger value="textures">Textures</TabsTrigger>
-                {sourceImage && <TabsTrigger value="compare">Compare</TabsTrigger>}
+                {originalImage && <TabsTrigger value="compare">Compare</TabsTrigger>}
             </TabsList>
         </Tabs>
     );
@@ -271,14 +296,15 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                                         if (el && isTextures) drawTextures(el);
                                     },
                                     cardScale,
+                                    previewCanvasRef,
                                 )
                             )}
                         </div>
                     </div>
                     {processingStats ? (
                         <div className="px-5 py-3">
-                            <div className="flex justify-between text-sm"><span>Dimensions:</span><span className="font-mono">{processingStats.width} × {processingStats.height + 1}</span></div>
-                            <div className="flex justify-between text-sm"><span>Total Blocks:</span><span className="font-mono">{processingStats.totalBlocks.toLocaleString()}</span></div>
+                            <div className="flex justify-between text-sm"><span>Dimensions:</span><span className="font-mono">{processingStats.width} × {displayHeight}</span></div>
+                            <div className="flex justify-between text-sm"><span>Total Blocks:</span><span className="font-mono">{totalBlocks.toLocaleString()}</span></div>
                             {outputMode == "buildable" && <div className="flex justify-between text-sm"><span>Unique Colors:</span><span className="font-mono">{processingStats.uniqueBlocks}</span></div>}
                         </div>
                     ) : (
@@ -297,14 +323,11 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                         </div>
                     </div>
                     <div ref={fsViewportRef} className="flex-1 overflow-hidden p-4">
-                        {isCompare
-                            ? renderCompare(fsCompareMountRef)
-                            : fsScale !== null && renderZoomable(fsMountRef, fsScale)
-                        }
+                        {isCompare ? renderCompare(fsCompareMountRef) : fsScale !== null && renderZoomable(fsMountRef, fsScale, fsPreviewCanvasRef)}
                     </div>
                     <div className="px-5 py-2 border-t text-xs text-muted-foreground flex gap-6 shrink-0">
-                        <span>{processingStats.width} × {processingStats.height + 1} px</span>
-                        <span>{processingStats.totalBlocks.toLocaleString()} blocks</span>
+                        <span>{processingStats.width} × {displayHeight} px</span>
+                        <span>{totalBlocks.toLocaleString()} blocks</span>
                         {outputMode == "buildable" && <span>{processingStats.uniqueBlocks} unique colors</span>}
                     </div>
                 </div>,

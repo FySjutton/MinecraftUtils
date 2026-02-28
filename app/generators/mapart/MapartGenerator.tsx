@@ -18,7 +18,7 @@ import { formatItemCount } from '@/lib/utils';
 import { export3d, exportPNG } from '@/app/generators/mapart/exporting';
 import { exportMapDat } from '@/app/generators/mapart/utils/datExport';
 import { ALIASES, BASE_COLORS, BLOCK_GROUPS, getEverythingBlockSelection, getMaterialList, Preset, Presets, scaleRGB } from '@/app/generators/mapart/utils/constants';
-import { BlockSelection, Brightness, ProcessingStats, SupportBlockMode } from '@/app/generators/mapart/utils/types';
+import { BlockSelection, Brightness, ProcessingStats } from '@/app/generators/mapart/utils/types';
 import { numberToHex } from '@/app/generators/mapart/color/matching';
 import type { WorkerRequest, WorkerResponse } from '@/app/generators/mapart/mapart.worker';
 import { PreviewCard } from '@/app/generators/mapart/PreviewCard';
@@ -55,7 +55,6 @@ export default function MapartGenerator() {
     const [isProcessing, setIsProcessing] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [preprocessedCanvas, setPreprocessedCanvas] = useState<HTMLCanvasElement | null>(null);
     const [processingStats, setProcessingStats] = useState<ProcessingStats | null>(null);
     const [processedImageData, setProcessedImageData] = useState<ImageData | null>(null);
     const [brightnessMap, setBrightnessMap] = useState<Brightness[][] | null>(null);
@@ -63,13 +62,9 @@ export default function MapartGenerator() {
     const [yMap, setYMap] = useState<number[][] | null>(null);
     const [colorBytes, setColorBytes] = useState<Uint8Array | null>(null);
 
-    const { needsXOffset, needsYOffset } = useImagePreprocessing({
-        sourceImage: sourceImageElement,
-        settings,
-        onProcessed: setPreprocessedCanvas,
-    });
-
-    const preprocessedImageUrl = useMemo(() => preprocessedCanvas?.toDataURL() ?? null, [preprocessedCanvas]);
+    const preprocessedCanvasRef = useRef<HTMLCanvasElement | null>(null);
+    const [preprocessedImageUrl, setPreprocessedImageUrl] = useState<string | null>(null);
+    const [cropOnlyImageUrl, setCropOnlyImageUrl] = useState<string | null>(null);
 
     const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getEverythingBlockSelection());
     const [currentPreset, setCurrentPreset] = useState('Everything');
@@ -140,15 +135,31 @@ export default function MapartGenerator() {
         workerRef.current.postMessage(message, [buffer]);
     }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, outputMode]);
 
+    const handlePreprocessed = useCallback((canvas: HTMLCanvasElement) => {
+        preprocessedCanvasRef.current = canvas;
+        setPreprocessedImageUrl(canvas.toDataURL());
+
+        const enabledGroups = Object.entries(blockSelection)
+            .filter(([, v]) => v !== null)
+            .map(([k]) => Number(k));
+        postToWorker(canvas, enabledGroups);
+    }, [blockSelection, postToWorker]);
+
+    const { needsXOffset, needsYOffset } = useImagePreprocessing({
+        sourceImage: sourceImageElement,
+        settings,
+        onProcessed: handlePreprocessed,
+        onCropOnly: setCropOnlyImageUrl,
+    });
+
     useEffect(() => {
-        if (!preprocessedCanvas) return;
+        if (!preprocessedCanvasRef.current) return;
         const enabledGroups = debouncedEnabledGroupsKey
             ? debouncedEnabledGroupsKey.split(',').map(Number)
             : Array.from({ length: BLOCK_GROUPS.length }, (_, i) => i);
         if (Object.keys(blockSelection).length === 0) return;
-        // eslint-disable-next-line react-hooks/set-state-in-effect
-        postToWorker(preprocessedCanvas, enabledGroups);
-    }, [preprocessedCanvas, debouncedEnabledGroupsKey, postToWorker]);
+        postToWorker(preprocessedCanvasRef.current, enabledGroups);
+    }, [debouncedEnabledGroupsKey, postToWorker]);
 
     const handleFileUpload = (file: File | null) => {
         if (!file?.type.startsWith('image/')) return;
@@ -169,7 +180,8 @@ export default function MapartGenerator() {
     };
 
     const handleReset = () => {
-        setImage(null); setSourceImageElement(null); setPreprocessedCanvas(null);
+        setImage(null); setSourceImageElement(null); preprocessedCanvasRef.current = null;
+        setPreprocessedImageUrl(null); setCropOnlyImageUrl(null);
         setProcessingStats(null); setProcessedImageData(null);
         setBrightnessMap(null); setGroupIdMap(null); setYMap(null); setColorBytes(null);
         setIsProcessing(false); requestIdRef.current++;
@@ -227,10 +239,14 @@ export default function MapartGenerator() {
         return () => { document.removeEventListener('mousedown', onClickOutside); document.removeEventListener('keydown', onKeyDown); };
     }, [expandedGroup]);
 
-    const materialList = useMemo(() => {
-        if (!brightnessMap || !groupIdMap || !yMap || outputMode === 'dat') return [];
-        return getMaterialList(brightnessMap, groupIdMap, yMap, settings.supportMode, settings.mapWidth);
-    }, [brightnessMap, groupIdMap, yMap, settings.supportMode, settings.mapWidth]); // dont add outputMode
+    const { materialList, totalBlocksWithSupport } = useMemo(() => {
+        if (!brightnessMap || !groupIdMap || !yMap || outputMode === 'dat') {
+            return { materialList: [], totalBlocksWithSupport: processingStats?.totalBlocks ?? 0 };
+        }
+        const list = getMaterialList(brightnessMap, groupIdMap, yMap, settings.supportMode, settings.noobLine);
+        const total = list.reduce((sum, m) => sum + m.count, 0);
+        return { materialList: list, totalBlocksWithSupport: total };
+    }, [brightnessMap, groupIdMap, yMap, settings.supportMode, settings.noobLine, outputMode, processingStats?.totalBlocks]);
 
     const gridClass = !image ? 'grid-start' : outputMode === 'dat' ? 'grid-dat' : 'grid-full';
 
@@ -372,7 +388,10 @@ export default function MapartGenerator() {
                             groupIdMap={groupIdMap}
                             blockSelection={blockSelection}
                             sourceImage={preprocessedImageUrl}
+                            originalImage={cropOnlyImageUrl}
                             outputMode={outputMode}
+                            noobLine={settings.noobLine}
+                            totalBlocks={totalBlocksWithSupport}
                         />
 
                         {outputMode === 'buildable' && materialList.length > 0 && (
@@ -384,7 +403,7 @@ export default function MapartGenerator() {
                                 <CardContent>
                                     <div className="text-sm">
                                         <Separator />
-                                        <p className="flex text-gray-400 mt-2 mb-1">Stats: {processingStats?.uniqueBlocks} materials <Dot /> {processingStats?.totalBlocks} blocks</p>
+                                        <p className="flex text-gray-400 mt-2 mb-1">Stats: {processingStats?.uniqueBlocks} materials <Dot /> {totalBlocksWithSupport.toLocaleString()} blocks</p>
                                         <Separator />
                                         <div className="space-y-2 overflow-y-auto mt-1 max-h-135">
                                             {materialList.map((material, idx) => {

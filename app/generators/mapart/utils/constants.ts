@@ -13,7 +13,6 @@ export type Preset = keyof typeof presetsData;
 export const Presets = Object.keys(presetsData) as string[];
 
 export const TRANSPARENT_GROUP_ID = -2;
-export const ALPHA_THRESHOLD = 128;
 
 export function rgbToHex(r: number, g: number, b: number): string {
     return '#' + ((1 << 24) | (r << 16) | (g << 8) | b).toString(16).slice(1);
@@ -47,7 +46,7 @@ export function getMaterialList(
     groupIdMap: number[][],
     yMap: number[][],
     supportMode: SupportBlockMode,
-    mapWidth: number,
+    noobLine: boolean,
 ): MaterialCount[] {
     const height = brightnessMap.length;
     const width = brightnessMap[0].length;
@@ -56,7 +55,7 @@ export function getMaterialList(
     for (let z = 0; z < height; z++)
         for (let x = 0; x < width; x++) {
             const g = groupIdMap[z][x];
-            if (g === TRANSPARENT_GROUP_ID) continue; // skip transparent pixels
+            if (g === TRANSPARENT_GROUP_ID) continue;
             counts.set(g, (counts.get(g) ?? 0) + 1);
         }
 
@@ -64,7 +63,14 @@ export function getMaterialList(
         .map(([groupId, count]) => ({ groupId, brightness: Brightness.NORMAL, count }))
         .sort((a, b) => b.count - a.count);
 
-    let supportCount = mapWidth * 128;
+    let noobLineCount = 0;
+    if (noobLine) {
+        for (let x = 0; x < width; x++) {
+            if (groupIdMap[0][x] !== TRANSPARENT_GROUP_ID) noobLineCount++;
+        }
+    }
+
+    let supportCount = noobLineCount;
     if (supportMode !== SupportBlockMode.NONE) {
         for (let z = 0; z < height; z++)
             for (let x = 0; x < width; x++) {
@@ -78,5 +84,6 @@ export function getMaterialList(
             }
     }
 
+    if (supportCount === 0) return sorted;
     return [{ groupId: -1, brightness: Brightness.NORMAL, count: supportCount }, ...sorted];
 }

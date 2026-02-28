@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Settings } from './useSettings';
 
 export enum CropMode {
@@ -12,6 +12,7 @@ interface UseImagePreprocessingOptions {
     sourceImage: HTMLImageElement | null;
     settings: Settings;
     onProcessed: (canvas: HTMLCanvasElement) => void;
+    onCropOnly: (dataUrl: string) => void;
 }
 
 export interface ImagePreprocessingDerived {
@@ -19,7 +20,7 @@ export interface ImagePreprocessingDerived {
     needsYOffset: boolean;
 }
 
-export function useImagePreprocessing({ sourceImage, settings, onProcessed }: UseImagePreprocessingOptions): ImagePreprocessingDerived {
+export function useImagePreprocessing({ sourceImage, settings, onProcessed, onCropOnly }: UseImagePreprocessingOptions): ImagePreprocessingDerived {
     const { mapWidth, mapHeight, brightness, contrast, saturation, cropMode, xOffset, yOffset, fillColor, pixelArt } = settings;
     const targetWidth = mapWidth * 128;
     const targetHeight = mapHeight * 128;
@@ -29,6 +30,12 @@ export function useImagePreprocessing({ sourceImage, settings, onProcessed }: Us
     const needsXOffset = cropMode === CropMode.SCALE_CROP && !!sourceImage && sourceAspect > targetAspect;
     const needsYOffset = cropMode === CropMode.SCALE_CROP && !!sourceImage && sourceAspect < targetAspect;
 
+    const onProcessedRef = useRef(onProcessed);
+    const onCropOnlyRef = useRef(onCropOnly);
+
+    useEffect(() => { onProcessedRef.current = onProcessed; }, [onProcessed]);
+    useEffect(() => { onCropOnlyRef.current = onCropOnly; }, [onCropOnly]);
+
     useEffect(() => {
         if (!sourceImage || targetWidth === 0 || targetHeight === 0) return;
 
@@ -37,37 +44,70 @@ export function useImagePreprocessing({ sourceImage, settings, onProcessed }: Us
         canvas.height = targetHeight;
         const ctx = canvas.getContext('2d', { willReadFrequently: true })!;
 
+        const srcAspect = sourceImage.width / sourceImage.height;
+        const tgtAspect = targetWidth / targetHeight;
+
+        ctx.imageSmoothingEnabled = !pixelArt;
+        if (!pixelArt) ctx.imageSmoothingQuality = 'high';
+
         if (fillColor !== 'none') {
             ctx.fillStyle = fillColor;
             ctx.fillRect(0, 0, targetWidth, targetHeight);
         }
 
-        ctx.imageSmoothingEnabled = !pixelArt;
-        if (!pixelArt) {
-            ctx.imageSmoothingQuality = 'high';
-        }
-
-        if (cropMode === CropMode.STRETCH) {
-            ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, targetWidth, targetHeight);
-        } else {
-            if (sourceAspect > targetAspect) {
-                const scaledWidth = sourceImage.width * (targetHeight / sourceImage.height);
-                ctx.drawImage(sourceImage, -((scaledWidth - targetWidth) * (xOffset / 100)), 0, scaledWidth, targetHeight);
-            } else {
-                const scaledHeight = sourceImage.height * (targetWidth / sourceImage.width);
-                ctx.drawImage(sourceImage, 0, -((scaledHeight - targetHeight) * (yOffset / 100)), targetWidth, scaledHeight);
-            }
-        }
+        drawCropped(ctx, sourceImage, targetWidth, targetHeight, cropMode, xOffset, yOffset, srcAspect, tgtAspect);
 
         const filtersAreDefault = brightness === 100 && contrast === 100 && saturation === 100;
         if (!filtersAreDefault) {
             applyFilters(ctx, targetWidth, targetHeight, brightness, contrast, saturation);
         }
 
-        onProcessed(canvas);
-    }, [sourceImage, targetWidth, targetHeight, brightness, contrast, saturation, cropMode, xOffset, yOffset, fillColor, pixelArt, onProcessed]);
+        onProcessedRef.current(canvas);
+    }, [sourceImage, targetWidth, targetHeight, brightness, contrast, saturation, cropMode, xOffset, yOffset, fillColor, pixelArt]);
+
+    useEffect(() => {
+        if (!sourceImage || targetWidth === 0 || targetHeight === 0) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d')!;
+
+        const srcAspect = sourceImage.width / sourceImage.height;
+        const tgtAspect = targetWidth / targetHeight;
+
+        ctx.imageSmoothingEnabled = false;
+
+        drawCropped(ctx, sourceImage, targetWidth, targetHeight, cropMode, xOffset, yOffset, srcAspect, tgtAspect);
+
+        onCropOnlyRef.current(canvas.toDataURL());
+    }, [sourceImage, targetWidth, targetHeight, cropMode, xOffset, yOffset]);
 
     return { needsXOffset, needsYOffset };
+}
+
+function drawCropped(
+    ctx: CanvasRenderingContext2D,
+    sourceImage: HTMLImageElement,
+    targetWidth: number,
+    targetHeight: number,
+    cropMode: CropMode,
+    xOffset: number,
+    yOffset: number,
+    srcAspect: number,
+    tgtAspect: number,
+): void {
+    if (cropMode === CropMode.STRETCH) {
+        ctx.drawImage(sourceImage, 0, 0, sourceImage.width, sourceImage.height, 0, 0, targetWidth, targetHeight);
+    } else {
+        if (srcAspect > tgtAspect) {
+            const scaledWidth = sourceImage.width * (targetHeight / sourceImage.height);
+            ctx.drawImage(sourceImage, -((scaledWidth - targetWidth) * (xOffset / 100)), 0, scaledWidth, targetHeight);
+        } else {
+            const scaledHeight = sourceImage.height * (targetWidth / sourceImage.width);
+            ctx.drawImage(sourceImage, 0, -((scaledHeight - targetHeight) * (yOffset / 100)), targetWidth, scaledHeight);
+        }
+    }
 }
 
 function applyFilters(
