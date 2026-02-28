@@ -13,7 +13,7 @@ type TodoItem = {
 
 type Feature = {
     name: string;
-    status: "In Development" | "Planned" | "Done";
+    status: "In Development" | "Planned" | "Finished";
     desc?: string;
     todos?: TodoItem[];
 };
@@ -36,10 +36,10 @@ function statusColor(status: Feature["status"]): string {
     switch (status) {
         case "In Development":
             return "bg-amber-500/20 text-amber-400 border-amber-500/30";
-        case "Done":
+        case "Finished":
             return "bg-green-500/20 text-green-400 border-green-500/30";
         default:
-            return "bg-zinc-700/40 text-zinc-400 border-zinc-600/40";
+            return "bg-blue-700/40 text-blue-400 border-blue-600/40";
     }
 }
 
@@ -125,7 +125,7 @@ function VersionSection({ version }: { version: Version }) {
 function ToolCard({ tool }: { tool: RoadmapTool }) {
     const allFeatures = tool.versions.flatMap((v) => v.features);
     const inDev = allFeatures.filter((f) => f.status === "In Development").length;
-    const done = allFeatures.filter((f) => f.status === "Done").length;
+    const done = allFeatures.filter((f) => f.status === "Finished").length;
 
     return (
         <Card className="border-zinc-800 bg-zinc-950 flex-1 max-w-130 self-start">

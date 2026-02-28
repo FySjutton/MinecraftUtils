@@ -1,10 +1,28 @@
-import { Brightness, ColorDistanceMethod, StaircasingMode } from '../utils/types';
+import { Brightness, ColorDistanceMethod, StaircasingMode, AreaSettingsResolved } from '../utils/types';
 import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
 import { numberToRGB, findBestColorInSet, ColorCandidate, BestColorResult } from '../color/matching';
 import { createBiasFunction, distributeError, clamp, BiasFunction } from './shared';
 import { DitheringMethodName, DitheringMethodErrorDiffusion, ditheringMethods } from './types';
-import { getYRange, finalizeColumn } from '../staircasing/heights';
+import { getYRange, finalizeColumn, finalizeColumnMixed } from '../staircasing/heights';
 import type { ProcessedImageResult } from '../utils/types';
+
+function resolveEffective(
+    x: number,
+    z: number,
+    areas: AreaSettingsResolved[],
+    globalGroups: Set<number>,
+    globalMode: StaircasingMode,
+    globalColorMethod: ColorDistanceMethod,
+    globalMaxHeight: number,
+    globalYRange: { min: number; max: number },
+) {
+    for (const a of areas) {
+        if (x >= a.px && x < a.px + a.pw && z >= a.py && z < a.py + a.ph) {
+            return { enabledGroups: a.enabledGroups, mode: a.staircasingMode, colorMethod: a.colorMethod, maxHeight: a.maxHeight, yRange: a.yRange };
+        }
+    }
+    return { enabledGroups: globalGroups, mode: globalMode, colorMethod: globalColorMethod, maxHeight: globalMaxHeight, yRange: globalYRange };
+}
 
 function isStandardMode(mode: StaircasingMode): boolean {
     return (

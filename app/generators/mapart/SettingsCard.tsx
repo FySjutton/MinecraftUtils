@@ -15,228 +15,283 @@ import { ComboBox } from '@/components/inputs/dropdowns/ComboBox';
 import { InputField } from '@/components/inputs/InputField';
 import { ColorDistanceMethod, ColorDistanceMethods, StaircasingMode, StaircasingModes, SupportBlockMode } from '@/app/generators/mapart/utils/types';
 import { DitheringMethodName, ditheringMethods } from '@/app/generators/mapart/dithering/types';
-import { CropMode } from './useImagePreprocessing';
 import { Settings, SettingsSetters } from './useSettings';
+import { AreaOverrides, MapArea } from './utils/areaTypes';
 
 interface SettingsCardProps {
     outputMode: string;
     settings: Settings;
     setters: SettingsSetters;
-    needsXOffset: boolean;
-    needsYOffset: boolean;
+    selectedArea?: MapArea | null;
+    onAreaChange?: (area: MapArea) => void;
 }
 
-export default function SettingsCard({ outputMode, settings, setters, needsXOffset, needsYOffset }: SettingsCardProps) {
+export default function SettingsCard({ outputMode, settings, setters, selectedArea, onAreaChange }: SettingsCardProps) {
     const {
-        mapWidth, mapHeight,
         ditheringMethod, staircasingMode, colorDistanceMethod, maxHeight,
         supportMode, supportBlockName,
-        brightness, contrast, saturation, cropMode, xOffset, yOffset,
-        fillColor, noobLine, pixelArt,
+        brightness, contrast, saturation,
+        fillColor, pixelArt,
     } = settings;
 
     const {
-        setMapWidth, setMapHeight,
         setDitheringMethod, setStaircasingMode, setColorDistanceMethod, setMaxHeight,
         setSupportMode, setSupportBlockName,
-        setBrightness, setContrast, setSaturation, setCropMode, setXOffset, setYOffset,
-        setFillColor, setNoobLine, setPixelArt,
+        setBrightness, setContrast, setSaturation,
+        setFillColor, setPixelArt,
     } = setters;
 
-    const isTransparentFill = fillColor === 'none';
+    const isAreaMode = !!selectedArea;
 
-    const [localColor, setLocalColor] = useState(isTransparentFill ? '#ffffff' : fillColor);
+    const aOv = <K extends keyof AreaOverrides>(key: K): AreaOverrides[K] | undefined =>
+        selectedArea?.overrides[key];
+
+    const setAOv = <K extends keyof AreaOverrides>(key: K, value: AreaOverrides[K]) => {
+        if (!selectedArea || !onAreaChange) return;
+        onAreaChange({ ...selectedArea, overrides: { ...selectedArea.overrides, [key]: value } });
+    };
+
+    const clearAOv = (key: keyof AreaOverrides) => {
+        if (!selectedArea || !onAreaChange) return;
+        const next = { ...selectedArea.overrides };
+        delete next[key];
+        onAreaChange({ ...selectedArea, overrides: next });
+    };
+
+    const isOverriding = (key: keyof AreaOverrides) => isAreaMode && aOv(key) !== undefined;
+
+    const toggleOverride = (key: keyof AreaOverrides, defaultVal: AreaOverrides[typeof key]) => {
+        if (isOverriding(key)) clearAOv(key);
+        else setAOv(key, defaultVal);
+    };
+
+    const eff = {
+        ditheringMethod: (aOv('ditheringMethod') ?? ditheringMethod) as DitheringMethodName,
+        staircasingMode: (aOv('staircasingMode') ?? staircasingMode) as StaircasingMode,
+        colorDistanceMethod: (aOv('colorDistanceMethod') ?? colorDistanceMethod) as ColorDistanceMethod,
+        maxHeight: (aOv('maxHeight') ?? maxHeight) as number,
+        supportMode: (aOv('supportMode') ?? supportMode) as SupportBlockMode,
+        supportBlockName: (aOv('supportBlockName') ?? supportBlockName) as string,
+        brightness: (aOv('brightness') ?? brightness) as number,
+        contrast: (aOv('contrast') ?? contrast) as number,
+        saturation: (aOv('saturation') ?? saturation) as number,
+        fillColor: (aOv('fillColor') ?? fillColor) as string,
+        pixelArt: (aOv('pixelArt') ?? pixelArt) as boolean,
+    };
+
+    const setEff = {
+        ditheringMethod: (v: DitheringMethodName) => isAreaMode ? setAOv('ditheringMethod', v) : setDitheringMethod(v),
+        staircasingMode: (v: StaircasingMode) => isAreaMode ? setAOv('staircasingMode', v) : setStaircasingMode(v),
+        colorDistanceMethod: (v: ColorDistanceMethod) => isAreaMode ? setAOv('colorDistanceMethod', v) : setColorDistanceMethod(v),
+        maxHeight: (v: number) => isAreaMode ? setAOv('maxHeight', v) : setMaxHeight(v),
+        supportMode: (v: SupportBlockMode) => isAreaMode ? setAOv('supportMode', v) : setSupportMode(v),
+        supportBlockName: (v: string) => isAreaMode ? setAOv('supportBlockName', v) : setSupportBlockName(v),
+        brightness: (v: number) => isAreaMode ? setAOv('brightness', v) : setBrightness(v),
+        contrast: (v: number) => isAreaMode ? setAOv('contrast', v) : setContrast(v),
+        saturation: (v: number) => isAreaMode ? setAOv('saturation', v) : setSaturation(v),
+        fillColor: (v: string) => isAreaMode ? setAOv('fillColor', v) : setFillColor(v),
+        pixelArt: (v: boolean) => isAreaMode ? setAOv('pixelArt', v) : setPixelArt(v),
+    };
+
+    const isTransparentFill = eff.fillColor === 'none';
+    const [localColor, setLocalColor] = useState(isTransparentFill ? '#ffffff' : eff.fillColor);
+
+    const OverridableRow = ({ overrideKey, children }: { overrideKey: keyof AreaOverrides; children: React.ReactNode }) => {
+        if (!isAreaMode) return <>{children}</>;
+        const on = isOverriding(overrideKey);
+        return (
+            <div className="flex items-start gap-2">
+                <div className={`flex-1 min-w-0 ${!on ? 'opacity-40 pointer-events-none' : ''}`}>
+                    {children}
+                </div>
+                <Switch
+                    checked={on}
+                    onCheckedChange={() => toggleOverride(overrideKey, settings[overrideKey as keyof Settings] as AreaOverrides[typeof overrideKey])}
+                    className="mt-1 shrink-0"
+                />
+            </div>
+        );
+    };
 
     return (
         <Card id="settings">
-            <CardHeader><CardTitle>Settings</CardTitle></CardHeader>
+            <CardHeader>
+                <CardTitle>
+                    {isAreaMode ? `Settings — ${selectedArea.name}` : 'Settings'}
+                </CardTitle>
+                {isAreaMode && (
+                    <p className="text-xs text-muted-foreground">Toggle a switch to override a setting for this area.</p>
+                )}
+            </CardHeader>
             <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                    <InputField value={mapWidth} onChange={e => setMapWidth(parseInt(e))} max={20} min={1} variant="number" label="Map Width (X)" />
-                    <InputField value={mapHeight} onChange={e => setMapHeight(parseInt(e))} max={20} min={1} variant="number" label="Map Height (Y)" />
-                </div>
-                <p className="text-xs text-muted-foreground mt-1 ml-1">
-                    Total size: {mapWidth * 128}x{mapHeight * 128} blocks ({mapWidth}x{mapHeight} maps)
-                </p>
-
-                <Separator className="my-4" />
 
                 {outputMode === 'buildable' && (
                     <>
-                        <Label className="mt-4 mb-2">Staircasing Method</Label>
-                        <p className="text-sm text-gray-400 mb-2">Select which staircasing method you want to use. These are very different in both the result, and how easy they are to build in survival. Make sure to read about them.</p>
-                        <div className="flex gap-2 w-full relative box-border">
-                            <div className="flex-1 min-w-0">
-                                <ComboBox
-                                    items={Object.values(StaircasingMode)}
-                                    value={staircasingMode}
-                                    onChange={e => setStaircasingMode(e as StaircasingMode)}
-                                    getDisplayName={v => StaircasingModes[v as StaircasingMode].title.replace('%s', maxHeight.toString())}
-                                    getTooltip={v => StaircasingModes[v as StaircasingMode].description}
-                                    className="w-full"
-                                    infoButton={
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button variant="ghost" size="icon-sm" className="mr-2"><Info /></Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="max-h-80 overflow-y-auto ring-2 ring-border">
-                                                <PopoverClose asChild>
-                                                    <div>
-                                                        <p className="font-bold">Classic Staircasing</p>
-                                                        <p className="text-sm">Goes in a single segment, each column connected.</p>
-                                                        <p className="font-bold mt-2">Valley Staircasing</p>
-                                                        <p className="text-sm">Same quality as classic but stays as close to the baseline as possible, making it easier to build in survival.</p>
-                                                        <p className="font-bold mt-2">Limited Height</p>
-                                                        <p className="text-sm">Caps the schematic height, much easier to build in survival while still far better than a flat 2D map.</p>
-                                                    </div>
-                                                </PopoverClose>
-                                            </PopoverContent>
-                                        </Popover>
-                                    }
-                                />
-                            </div>
-                            {(staircasingMode === StaircasingMode.VALLEY_CUSTOM || staircasingMode === StaircasingMode.STANDARD_CUSTOM) && (
-                                <div className="flex-none w-15">
-                                    <InputField value={maxHeight} onChange={e => setMaxHeight(parseInt(e))} variant="number" min={3} />
+                        <OverridableRow overrideKey="staircasingMode">
+                            <Label className="mt-4 mb-2">Staircasing Method</Label>
+                            <p className="text-sm text-gray-400 mb-2">Select which staircasing method you want to use.</p>
+                            <div className="flex gap-2 w-full relative box-border">
+                                <div className="flex-1 min-w-0">
+                                    <ComboBox
+                                        items={Object.values(StaircasingMode)}
+                                        value={eff.staircasingMode}
+                                        onChange={e => setEff.staircasingMode(e as StaircasingMode)}
+                                        getDisplayName={v => StaircasingModes[v as StaircasingMode].title.replace('%s', eff.maxHeight.toString())}
+                                        getTooltip={v => StaircasingModes[v as StaircasingMode].description}
+                                        className="w-full"
+                                        infoButton={
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="ghost" size="icon-sm" className="mr-2"><Info /></Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="max-h-80 overflow-y-auto ring-2 ring-border">
+                                                    <PopoverClose asChild>
+                                                        <div>
+                                                            <p className="font-bold">Classic Staircasing</p>
+                                                            <p className="text-sm">Goes in a single segment, each column connected.</p>
+                                                            <p className="font-bold mt-2">Valley Staircasing</p>
+                                                            <p className="text-sm">Same quality as classic but stays as close to the baseline as possible, making it easier to build in survival.</p>
+                                                            <p className="font-bold mt-2">Limited Height</p>
+                                                            <p className="text-sm">Caps the schematic height, much easier to build in survival while still far better than a flat 2D map.</p>
+                                                        </div>
+                                                    </PopoverClose>
+                                                </PopoverContent>
+                                            </Popover>
+                                        }
+                                    />
                                 </div>
-                            )}
-                        </div>
+                                {(eff.staircasingMode === StaircasingMode.VALLEY_CUSTOM || eff.staircasingMode === StaircasingMode.STANDARD_CUSTOM) && (
+                                    <div className="flex-none w-15">
+                                        <InputField value={eff.maxHeight} onChange={e => setEff.maxHeight(parseInt(e))} variant="number" min={3} />
+                                    </div>
+                                )}
+                            </div>
+                        </OverridableRow>
 
                         <Separator className="my-4" />
                     </>
                 )}
 
-                <Label className="mt-4 mb-2">Color Matching</Label>
-                <p className="text-sm text-gray-400 mb-2">Select which color matching algorithm you want to use, this settings is mostly for advanced users, allowing a more accurate end result.</p>
-                <ComboBox
-                    items={Object.values(ColorDistanceMethod)}
-                    value={colorDistanceMethod}
-                    onChange={e => setColorDistanceMethod(e as ColorDistanceMethod)}
-                    getDisplayName={v => ColorDistanceMethods[v as ColorDistanceMethod].title}
-                    renderItem={v => ColorDistanceMethods[v as ColorDistanceMethod].badge}
-                    getTooltip={v => ColorDistanceMethods[v as ColorDistanceMethod].description}
-                />
+                <OverridableRow overrideKey="colorDistanceMethod">
+                    <Label className="mt-4 mb-2">Color Matching</Label>
+                    <p className="text-sm text-gray-400 mb-2">Select which color matching algorithm you want to use.</p>
+                    <ComboBox
+                        items={Object.values(ColorDistanceMethod)}
+                        value={eff.colorDistanceMethod}
+                        onChange={e => setEff.colorDistanceMethod(e as ColorDistanceMethod)}
+                        getDisplayName={v => ColorDistanceMethods[v as ColorDistanceMethod].title}
+                        renderItem={v => ColorDistanceMethods[v as ColorDistanceMethod].badge}
+                        getTooltip={v => ColorDistanceMethods[v as ColorDistanceMethod].description}
+                    />
+                </OverridableRow>
 
-                <Label className="mt-4 mb-2">Dithering Method</Label>
-                <p className="text-sm text-gray-400 mb-2">Select which dithering method you want to use, making the image look a lot smoother. Test your way to something you like!</p>
-                <ComboBox
-                    items={Object.keys(ditheringMethods)}
-                    value={ditheringMethod}
-                    onChange={e => setDitheringMethod(e as DitheringMethodName)}
-                    getDisplayName={v => ditheringMethods[v as DitheringMethodName].name}
-                    getTooltip={v => ditheringMethods[v as DitheringMethodName].description}
-                />
+                <OverridableRow overrideKey="ditheringMethod">
+                    <Label className="mt-4 mb-2">Dithering Method</Label>
+                    <p className="text-sm text-gray-400 mb-2">Select which dithering method you want to use.</p>
+                    <ComboBox
+                        items={Object.keys(ditheringMethods)}
+                        value={eff.ditheringMethod}
+                        onChange={e => setEff.ditheringMethod(e as DitheringMethodName)}
+                        getDisplayName={v => ditheringMethods[v as DitheringMethodName].name}
+                        getTooltip={v => ditheringMethods[v as DitheringMethodName].description}
+                    />
+                </OverridableRow>
 
                 <Separator className="my-4" />
 
                 {outputMode === 'buildable' && (
                     <>
-                        <Label className="mt-4 mb-2">Support Blocks</Label>
-                        <p className="text-sm text-gray-400 mb-2">Select how you&#39;d like support blocks in the schematic output, this can make it easier to build it in survival.</p>
-                        <ComboBox
-                            items={Object.values(SupportBlockMode)}
-                            value={supportMode}
-                            onChange={e => setSupportMode(e as SupportBlockMode)}
-                            getDisplayName={v => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
-                        />
-                        {supportMode !== SupportBlockMode.NONE && (
-                            <div className="mt-3">
-                                <InputField label="Support Block" value={supportBlockName} onChange={setSupportBlockName} variant="text" placeholder="e.g. netherrack" />
-                            </div>
-                        )}
-                        <div className="flex items-center justify-between mt-4">
-                            <div>
-                                <Label>Noob Line</Label>
-                                <p className="text-sm text-gray-400 mt-2">Adds an extra row of blocks outside the north edge so the top row renders at the correct brightness.</p>
-                            </div>
-                            <Switch checked={noobLine} onCheckedChange={setNoobLine} />
-                        </div>
+                        <OverridableRow overrideKey="supportMode">
+                            <Label className="mt-4 mb-2">Support Blocks</Label>
+                            <p className="text-sm text-gray-400 mb-2">Select how you&#39;d like support blocks in the schematic output.</p>
+                            <ComboBox
+                                items={Object.values(SupportBlockMode)}
+                                value={eff.supportMode}
+                                onChange={e => setEff.supportMode(e as SupportBlockMode)}
+                                getDisplayName={v => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
+                            />
+                            {eff.supportMode !== SupportBlockMode.NONE && (
+                                <div className="mt-3">
+                                    <InputField label="Support Block" value={eff.supportBlockName} onChange={setEff.supportBlockName} variant="text" placeholder="e.g. netherrack" />
+                                </div>
+                            )}
+                        </OverridableRow>
+
                         <Separator className="my-4" />
                     </>
                 )}
 
                 <p className="font-semibold mb-1">Image Preprocessing</p>
-                <p className="text-sm text-gray-400 mb-4">Here you can preprocess the image, potentially making a better end result.</p>
+                {!isAreaMode && <p className="text-sm text-gray-400 mb-4">Here you can preprocess the image, potentially making a better end result.</p>}
 
                 <div className="space-y-4">
 
-                    {/* Pixel Art toggle */}
-                    <div className="flex items-center justify-between">
+                    <OverridableRow overrideKey="pixelArt">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <Label>Pixel Art Mode</Label>
+                                <p className="text-sm text-gray-400">
+                                    Disables image smoothing so pixel art stays sharp instead of being blurred when scaled.
+                                </p>
+                            </div>
+                            <Switch checked={eff.pixelArt} onCheckedChange={setEff.pixelArt} />
+                        </div>
+                    </OverridableRow>
+
+                    <OverridableRow overrideKey="fillColor">
                         <div>
-                            <Label>Pixel Art Mode</Label>
-                            <p className="text-sm text-gray-400">
-                                Disables image smoothing so pixel art stays sharp instead of being blurred when scaled.
+                            <Label className="mb-2 block">Background Fill</Label>
+                            <p className="text-sm text-gray-400 mb-2">
+                                Fill transparent areas with a color, or leave them as empty (no block placed).
                             </p>
+                            <div className="flex items-center gap-3">
+                                <Tabs
+                                    value={isTransparentFill ? 'none' : 'color'}
+                                    onValueChange={v => {
+                                        if (v === 'none') setEff.fillColor('none');
+                                        else setEff.fillColor(localColor);
+                                    }}
+                                >
+                                    <TabsList>
+                                        <TabsTrigger value="color">Color</TabsTrigger>
+                                        <TabsTrigger value="none">None (transparent)</TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
+                                {!isTransparentFill && (
+                                    <input
+                                        type="color"
+                                        value={localColor}
+                                        onChange={e => setLocalColor(e.target.value)}
+                                        onBlur={e => setEff.fillColor(e.target.value)}
+                                        onMouseUp={e => setEff.fillColor((e.target as HTMLInputElement).value)}
+                                        className="h-9 w-14 cursor-pointer rounded border border-input bg-transparent p-1"
+                                    />
+                                )}
+                            </div>
                         </div>
-                        <Switch checked={pixelArt} onCheckedChange={setPixelArt} />
-                    </div>
+                    </OverridableRow>
 
-                    <div>
-                        <Label className="mb-2 block">Background Fill</Label>
-                        <p className="text-sm text-gray-400 mb-2">
-                            Fill transparent areas with a color, or leave them as empty (no block placed).
-                            Using a dark fill with staircasing can cause visible artifacts at the edges.
-                        </p>
-                        <div className="flex items-center gap-3">
-                            <Tabs
-                                value={isTransparentFill ? 'none' : 'color'}
-                                onValueChange={v => {
-                                    if (v === 'none') setFillColor('none');
-                                    else setFillColor(localColor);
-                                }}
-                            >
-                                <TabsList>
-                                    <TabsTrigger value="color">Color</TabsTrigger>
-                                    <TabsTrigger value="none">None (transparent)</TabsTrigger>
-                                </TabsList>
-                            </Tabs>
-                            {!isTransparentFill && (
-                                <input
-                                    type="color"
-                                    value={localColor}
-                                    onChange={e => setLocalColor(e.target.value)}
-                                    onBlur={e => setFillColor(e.target.value)}
-                                    onMouseUp={e => setFillColor((e.target as HTMLInputElement).value)}
-                                    className="h-9 w-14 cursor-pointer rounded border border-input bg-transparent p-1"
-                                />
-                            )}
-                        </div>
-                    </div>
-
-                    <div>
-                        <Label>Brightness: <span className="text-muted-foreground">{brightness}%</span></Label>
-                        <Slider value={[brightness]} onValueChange={v => setBrightness(v[0])} min={0} max={200} step={1} className="mt-2" />
-                    </div>
-                    <div>
-                        <Label>Contrast: <span className="text-muted-foreground">{contrast}%</span></Label>
-                        <Slider value={[contrast]} onValueChange={v => setContrast(v[0])} min={0} max={200} step={1} className="mt-2" />
-                    </div>
-                    <div>
-                        <Label>Saturation: <span className="text-muted-foreground">{saturation}%</span></Label>
-                        <Slider value={[saturation]} onValueChange={v => setSaturation(v[0])} min={0} max={200} step={1} className="mt-2" />
-                    </div>
-
-                    <Label className="m-0 mb-1 mt-2">Crop Mode:</Label>
-                    <p className="text-sm text-gray-400 mb-2">Here you can choose which crop mode you want, either Scale & Crop, which will maintain aspect ratio, or stretch.</p>
-                    <Tabs value={cropMode} onValueChange={v => setCropMode(v as CropMode)}>
-                        <TabsList>
-                            <TabsTrigger value={CropMode.SCALE_CROP}>Scale &amp; Crop</TabsTrigger>
-                            <TabsTrigger value={CropMode.STRETCH}>Stretch</TabsTrigger>
-                        </TabsList>
-                    </Tabs>
-
-                    {needsXOffset && (
+                    <OverridableRow overrideKey="brightness">
                         <div>
-                            <Label>Horizontal Position: <span className="text-muted-foreground">{xOffset}%</span></Label>
-                            <Slider value={[xOffset]} onValueChange={v => setXOffset(v[0])} min={0} max={100} step={1} className="mt-2" />
+                            <Label>Brightness: <span className="text-muted-foreground">{eff.brightness}%</span></Label>
+                            <Slider value={[eff.brightness]} onValueChange={v => setEff.brightness(v[0])} min={0} max={200} step={1} className="mt-2" />
                         </div>
-                    )}
-                    {needsYOffset && (
+                    </OverridableRow>
+
+                    <OverridableRow overrideKey="contrast">
                         <div>
-                            <Label>Vertical Position: <span className="text-muted-foreground">{yOffset}%</span></Label>
-                            <Slider value={[yOffset]} onValueChange={v => setYOffset(v[0])} min={0} max={100} step={1} className="mt-2" />
+                            <Label>Contrast: <span className="text-muted-foreground">{eff.contrast}%</span></Label>
+                            <Slider value={[eff.contrast]} onValueChange={v => setEff.contrast(v[0])} min={0} max={200} step={1} className="mt-2" />
                         </div>
-                    )}
+                    </OverridableRow>
+
+                    <OverridableRow overrideKey="saturation">
+                        <div>
+                            <Label>Saturation: <span className="text-muted-foreground">{eff.saturation}%</span></Label>
+                            <Slider value={[eff.saturation]} onValueChange={v => setEff.saturation(v[0])} min={0} max={200} step={1} className="mt-2" />
+                        </div>
+                    </OverridableRow>
+
                 </div>
             </CardContent>
         </Card>

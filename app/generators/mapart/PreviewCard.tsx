@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { Maximize2, Loader2 } from "lucide-react";
+import { Maximize2, Loader2, Pencil } from "lucide-react";
 import { createPortal } from "react-dom";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { Card, CardContent, CardTitle, CardAction } from "@/components/ui/card";
@@ -9,8 +9,9 @@ import { Button } from "@/components/ui/button";
 import { findImageAsset } from "@/lib/images/getImageAsset";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CompareSlider, CompareSliderBefore, CompareSliderAfter, CompareSliderHandle } from "@/components/ui/compare-slider";
-import {BlockSelection, ProcessingStats} from "@/app/generators/mapart/utils/types";
-import {ALIASES} from "@/app/generators/mapart/utils/constants";
+import { BlockSelection, ProcessingStats } from "@/app/generators/mapart/utils/types";
+import { ALIASES } from "@/app/generators/mapart/utils/constants";
+import { MapArea, AREA_COLORS } from "@/app/generators/mapart/utils/areaTypes";
 
 const TILE = 16;
 type Mode = "preview" | "textures" | "compare";
@@ -26,11 +27,16 @@ interface Props {
     outputMode: string;
     noobLine: boolean;
     totalBlocks: number;
+    areas: MapArea[];
+    onDraw: (area: MapArea) => void;
+    mapWidth: number;
+    mapHeight: number;
 }
 
-export function PreviewCard({ isProcessing, processedImageData, processingStats, groupIdMap, blockSelection, sourceImage, originalImage, outputMode, noobLine, totalBlocks }: Props) {
+export function PreviewCard({ isProcessing, processedImageData, processingStats, groupIdMap, blockSelection, sourceImage, originalImage, outputMode, noobLine, totalBlocks, areas, onDraw, mapWidth, mapHeight }: Props) {
     const [mode, setMode] = useState<Mode>("preview");
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [drawMode, setDrawMode] = useState(false);
 
     const cardViewportRef = useRef<HTMLDivElement>(null);
     const [cardSize, setCardSize] = useState<{ w: number; h: number } | null>(null);
@@ -47,10 +53,16 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
     const previewCanvasRef = useRef<HTMLCanvasElement>(null);
     const fsPreviewCanvasRef = useRef<HTMLCanvasElement>(null);
 
+    // Draw mode state
+    const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
+    const drawStateRef = useRef<{ startChunkX: number; startChunkY: number } | null>(null);
+
     const isTextures = mode === "textures";
     const isCompare = mode === "compare";
 
     const displayHeight = processingStats ? processingStats.height + (outputMode === "buildable" && noobLine ? 1 : 0) : 0;
+    const flatW = processingStats ? processingStats.width : 1;
+    const flatH = processingStats ? processingStats.height : 1;
 
     useLayoutEffect(() => {
         if (!cardViewportRef.current) return;
@@ -165,10 +177,84 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
         if (el && isCompare) drawCompareAfter(el);
     };
 
+    const CHUNK_PX = 16;
+    const totalChunkCols = mapWidth * (128 / CHUNK_PX);
+    const totalChunkRows = mapHeight * (128 / CHUNK_PX);
+
+    const svgUnit = flatW / 128;
+    const svgFontSize = svgUnit * 7;
+
+    const previewSvgRef = useRef<SVGRectElement>(null);
+
+    const getChunkFromEvent = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        const canvas = overlayCanvasRef.current!;
+        const rect = canvas.getBoundingClientRect();
+        const px = (e.clientX - rect.left) / rect.width * flatW;
+        const py = (e.clientY - rect.top) / rect.height * flatH;
+        return {
+            chunkX: Math.floor(px / CHUNK_PX),
+            chunkY: Math.floor(py / CHUNK_PX),
+        };
+    };
+
+    const handleOverlayMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!drawMode || !processingStats) return;
+        const { chunkX, chunkY } = getChunkFromEvent(e);
+        drawStateRef.current = { startChunkX: chunkX, startChunkY: chunkY };
+    };
+
+    const handleOverlayMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!drawMode || !drawStateRef.current || !processingStats) return;
+        const { chunkX, chunkY } = getChunkFromEvent(e);
+        const { startChunkX, startChunkY } = drawStateRef.current;
+        const minX = Math.max(0, Math.min(startChunkX, chunkX));
+        const minY = Math.max(0, Math.min(startChunkY, chunkY));
+        const maxX = Math.min(totalChunkCols - 1, Math.max(startChunkX, chunkX));
+        const maxY = Math.min(totalChunkRows - 1, Math.max(startChunkY, chunkY));
+        const r = previewSvgRef.current;
+        if (r) {
+            r.setAttribute("x", String(minX * CHUNK_PX));
+            r.setAttribute("y", String(minY * CHUNK_PX));
+            r.setAttribute("width", String((maxX - minX + 1) * CHUNK_PX));
+            r.setAttribute("height", String((maxY - minY + 1) * CHUNK_PX));
+            r.style.display = "block";
+        }
+    };
+
+    const handleOverlayMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
+        if (!drawMode || !drawStateRef.current || !processingStats) return;
+        const { chunkX, chunkY } = getChunkFromEvent(e);
+        const { startChunkX, startChunkY } = drawStateRef.current;
+        drawStateRef.current = null;
+        if (previewSvgRef.current) previewSvgRef.current.style.display = "none";
+
+        const minX = Math.max(0, Math.min(startChunkX, chunkX));
+        const minY = Math.max(0, Math.min(startChunkY, chunkY));
+        const maxX = Math.min(totalChunkCols - 1, Math.max(startChunkX, chunkX));
+        const maxY = Math.min(totalChunkRows - 1, Math.max(startChunkY, chunkY));
+
+        const colorIdx = areas.length % AREA_COLORS.length;
+        const newArea: MapArea = {
+            id: crypto.randomUUID(),
+            name: `Area ${areas.length + 1}`,
+            color: AREA_COLORS[colorIdx],
+            chunkX: minX,
+            chunkY: minY,
+            chunkWidth: maxX - minX + 1,
+            chunkHeight: maxY - minY + 1,
+            overrides: {},
+        };
+        onDraw(newArea);
+    };
+
+    const handleOverlayMouseLeave = () => {
+        if (!drawStateRef.current) return;
+        drawStateRef.current = null;
+        if (previewSvgRef.current) previewSvgRef.current.style.display = "none";
+    };
+
     const canvasW = processingStats ? processingStats.width * TILE : 1;
     const canvasH = processingStats ? processingStats.height * TILE : 1;
-    const flatW = processingStats ? processingStats.width : 1;
-    const flatH = processingStats ? processingStats.height : 1;
 
     const activeW = isTextures ? canvasW : flatW;
     const activeH = isTextures ? canvasH : flatH;
@@ -225,28 +311,82 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
             limitToBounds
             wheel={{ step: scale * 0.8 }}
             smooth={false}
-            panning={{ velocityDisabled: true }}
+            panning={{ velocityDisabled: true, disabled: drawMode }}
             zoomAnimation={{ disabled: true }}
         >
             <TransformComponent wrapperStyle={{ width: "100%", height: "100%" }}>
-                {isTextures ? (
-                    <canvas
-                        ref={texRef}
-                        width={canvasW}
-                        height={canvasH}
-                        style={{ imageRendering: "pixelated", display: "block" }}
-                    />
-                ) : (
-                    <canvas
-                        width={flatW}
-                        height={flatH}
-                        style={{ imageRendering: "pixelated", display: "block" }}
-                        ref={(el) => {
-                            (previewRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
-                            if (el && processedImageData) el.getContext("2d")?.putImageData(processedImageData, 0, 0);
-                        }}
-                    />
-                )}
+                <div style={{ position: "relative", display: "inline-block" }}>
+                    {isTextures ? (
+                        <canvas
+                            ref={texRef}
+                            width={canvasW}
+                            height={canvasH}
+                            style={{ imageRendering: "pixelated", display: "block" }}
+                        />
+                    ) : (
+                        <canvas
+                            width={flatW}
+                            height={flatH}
+                            style={{ imageRendering: "pixelated", display: "block" }}
+                            ref={(el) => {
+                                (previewRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
+                                if (el && processedImageData) el.getContext("2d")?.putImageData(processedImageData, 0, 0);
+                            }}
+                        />
+                    )}
+                    {drawMode && !isTextures && (
+                        <>
+                            <svg
+                                viewBox={`0 0 ${flatW} ${flatH}`}
+                                style={{ position: "absolute", inset: 0, width: "100%", height: "100%", pointerEvents: "none", overflow: "visible" }}
+                            >
+                                {/* Chunk grid lines */}
+                                {Array.from({ length: totalChunkCols + 1 }, (_, cx) => (
+                                    <line key={`v${cx}`} x1={cx * CHUNK_PX} y1={0} x2={cx * CHUNK_PX} y2={flatH}
+                                        stroke="white" strokeOpacity={cx % 8 === 0 ? 0.6 : 0.2}
+                                        strokeWidth={svgUnit * (cx % 8 === 0 ? 0.6 : 0.25)} />
+                                ))}
+                                {Array.from({ length: totalChunkRows + 1 }, (_, cy) => (
+                                    <line key={`h${cy}`} x1={0} y1={cy * CHUNK_PX} x2={flatW} y2={cy * CHUNK_PX}
+                                        stroke="white" strokeOpacity={cy % 8 === 0 ? 0.6 : 0.2}
+                                        strokeWidth={svgUnit * (cy % 8 === 0 ? 0.6 : 0.25)} />
+                                ))}
+                                {areas.map(area => {
+                                    const x = area.chunkX * CHUNK_PX;
+                                    const y = area.chunkY * CHUNK_PX;
+                                    const w = area.chunkWidth * CHUNK_PX;
+                                    const h = area.chunkHeight * CHUNK_PX;
+                                    return (
+                                        <g key={area.id}>
+                                            <rect x={x} y={y} width={w} height={h}
+                                                fill={area.color} fillOpacity={0.3}
+                                                stroke={area.color} strokeWidth={svgUnit * 0.7} strokeOpacity={1} />
+                                            <text x={x + svgUnit * 2} y={y + svgFontSize}
+                                                fontSize={svgFontSize} fill="white" fontWeight="bold"
+                                                fontFamily="system-ui, sans-serif" style={{ userSelect: "none" }}>
+                                                {area.name}
+                                            </text>
+                                        </g>
+                                    );
+                                })}
+                                <rect ref={previewSvgRef} style={{ display: "none" }}
+                                    fill="white" fillOpacity={0.3}
+                                    stroke="white" strokeWidth={svgUnit * 0.7}
+                                    strokeDasharray={`${svgUnit * 3} ${svgUnit * 2}`} />
+                            </svg>
+                            <canvas
+                                ref={overlayCanvasRef}
+                                width={flatW}
+                                height={flatH}
+                                style={{ display: "block", position: "absolute", inset: 0, width: "100%", height: "100%", cursor: "crosshair" }}
+                                onMouseDown={handleOverlayMouseDown}
+                                onMouseMove={handleOverlayMouseMove}
+                                onMouseUp={handleOverlayMouseUp}
+                                onMouseLeave={handleOverlayMouseLeave}
+                            />
+                        </>
+                    )}
+                </div>
             </TransformComponent>
         </TransformWrapper>
     );
@@ -273,6 +413,14 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                         {processingStats && !isProcessing && (
                             <CardAction className="flex items-center gap-2">
                                 {modeToggle}
+                                <Button
+                                    variant={drawMode ? "default" : "outline"}
+                                    size="icon"
+                                    onClick={() => setDrawMode(d => !d)}
+                                    title="Toggle draw mode"
+                                >
+                                    <Pencil size={15} />
+                                </Button>
                                 <Button variant="outline" onClick={() => setIsFullscreen(true)}><Maximize2 size={15} /></Button>
                             </CardAction>
                         )}

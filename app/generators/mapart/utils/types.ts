@@ -69,6 +69,16 @@ export interface ProcessedImageResult {
     yMap: number[][];
 }
 
+/** Per-area settings passed from worker message into the processing pipeline (Sets pre-built, yRange pre-computed). */
+export interface AreaSettingsResolved {
+    px: number; py: number; pw: number; ph: number; // pixel bounds in the full image
+    enabledGroups: Set<number>;
+    staircasingMode: StaircasingMode;
+    colorMethod: ColorDistanceMethod;
+    maxHeight: number;
+    yRange: { min: number; max: number };
+}
+
 export const StaircasingModes: Record<StaircasingMode, { title: string; description: string }> = {
     [StaircasingMode.NONE]: {
         title: 'Flat Map (2d)',

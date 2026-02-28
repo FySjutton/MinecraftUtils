@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Settings } from './useSettings';
 
 export enum CropMode {
@@ -18,6 +18,8 @@ interface UseImagePreprocessingOptions {
 export interface ImagePreprocessingDerived {
     needsXOffset: boolean;
     needsYOffset: boolean;
+    cropOnlyCanvasRef: React.RefObject<HTMLCanvasElement | null>;
+    cropOnlyPixelCanvasRef: React.RefObject<HTMLCanvasElement | null>;
 }
 
 export function useImagePreprocessing({ sourceImage, settings, onProcessed, onCropOnly }: UseImagePreprocessingOptions): ImagePreprocessingDerived {
@@ -32,6 +34,8 @@ export function useImagePreprocessing({ sourceImage, settings, onProcessed, onCr
 
     const onProcessedRef = useRef(onProcessed);
     const onCropOnlyRef = useRef(onCropOnly);
+    const cropOnlyCanvasRef = useRef<HTMLCanvasElement | null>(null);       // smooth (high quality)
+    const cropOnlyPixelCanvasRef = useRef<HTMLCanvasElement | null>(null);  // pixelated (nearest-neighbor)
 
     useEffect(() => { onProcessedRef.current = onProcessed; }, [onProcessed]);
     useEffect(() => { onCropOnlyRef.current = onCropOnly; }, [onCropOnly]);
@@ -76,14 +80,34 @@ export function useImagePreprocessing({ sourceImage, settings, onProcessed, onCr
         const srcAspect = sourceImage.width / sourceImage.height;
         const tgtAspect = targetWidth / targetHeight;
 
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
+        drawCropped(ctx, sourceImage, targetWidth, targetHeight, cropMode, xOffset, yOffset, srcAspect, tgtAspect);
+
+        cropOnlyCanvasRef.current = canvas;
+        onCropOnlyRef.current(canvas.toDataURL());
+    }, [sourceImage, targetWidth, targetHeight, cropMode, xOffset, yOffset]);
+
+    useEffect(() => {
+        if (!sourceImage || targetWidth === 0 || targetHeight === 0) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d')!;
+
+        const srcAspect = sourceImage.width / sourceImage.height;
+        const tgtAspect = targetWidth / targetHeight;
+
         ctx.imageSmoothingEnabled = false;
 
         drawCropped(ctx, sourceImage, targetWidth, targetHeight, cropMode, xOffset, yOffset, srcAspect, tgtAspect);
 
-        onCropOnlyRef.current(canvas.toDataURL());
+        cropOnlyPixelCanvasRef.current = canvas;
     }, [sourceImage, targetWidth, targetHeight, cropMode, xOffset, yOffset]);
 
-    return { needsXOffset, needsYOffset };
+    return { needsXOffset, needsYOffset, cropOnlyCanvasRef, cropOnlyPixelCanvasRef };
 }
 
 function drawCropped(
