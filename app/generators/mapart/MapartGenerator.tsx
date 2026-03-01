@@ -26,7 +26,8 @@ import { useImagePreprocessing, CropMode } from './useImagePreprocessing';
 import SettingsCard from './SettingsCard';
 import presetsData from './inputs/presets.json';
 import { MapArea, AREA_COLORS, areasOverlap } from './utils/areaTypes';
-import { RawGlobalResult, buildAreaCanvas, mergeAreaResult, processWithAreaWorker, recomputeGlobalBrightness } from './utils/areaProcessing';
+import { buildAreaCanvas } from './utils/areaProcessing';
+import type { AreaSettingsDef } from './mapart.worker';
 import { PaletteGroup, InlineGroupSwitch } from './PaletteComponents';
 import { InputField } from '@/components/inputs/InputField';
 import { Slider } from '@/components/ui/slider';
@@ -78,10 +79,6 @@ export default function MapartGenerator() {
 
     const [areas, setAreas] = useState<MapArea[]>([]);
     const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
-    const rawGlobalResultRef = useRef<RawGlobalResult | null>(null);
-    const [globalResultVersion, setGlobalResultVersion] = useState(0);
-    const areaRequestIdRef = useRef(0);
-    const areaWorkerRef = useRef<Worker | null>(null);
 
     const workerRef = useRef<Worker | null>(null);
     const requestIdRef = useRef(0);
@@ -108,16 +105,6 @@ export default function MapartGenerator() {
                 }
             }
 
-            rawGlobalResultRef.current = {
-                pixelBuffer: new Uint8ClampedArray(buffer),
-                width,
-                height,
-                brightnessMap,
-                groupIdMap,
-                yMap,
-                colorBytes: colorBytesBuffer ? new Uint8Array(colorBytesBuffer) : null,
-            };
-
             setProcessingStats({ width, height, totalBlocks, uniqueBlocks: uniqueGroups.size });
             setProcessedImageData(new ImageData(new Uint8ClampedArray(buffer), width, height));
             setBrightnessMap(brightnessMap);
@@ -125,7 +112,6 @@ export default function MapartGenerator() {
             setYMap(yMap);
             setColorBytes(colorBytesBuffer ? new Uint8Array(colorBytesBuffer) : null);
             setIsProcessing(false);
-            setGlobalResultVersion(v => v + 1);
         };
 
         worker.onerror = err => { console.error('Worker threw:', err); setIsProcessing(false); };
@@ -133,19 +119,50 @@ export default function MapartGenerator() {
         return () => { worker.terminate(); workerRef.current = null; };
     }, []);
 
-    useEffect(() => {
-        const worker = new Worker(new URL('./mapart.worker.ts', import.meta.url));
-        worker.onerror = err => console.error('Area worker threw:', err);
-        areaWorkerRef.current = worker;
-        return () => { worker.terminate(); areaWorkerRef.current = null; };
-    }, []);
-
     const enabledGroupsKey = Object.entries(blockSelection)
         .filter(([, v]) => v !== null).map(([k]) => k).sort().join(',');
     const debouncedEnabledGroupsKey = useDebounce(enabledGroupsKey, 400);
 
-    const postToWorker = useCallback((canvas: HTMLCanvasElement, enabledGroups: number[]) => {
+    const buildUnifiedCanvas = useCallback((globalCanvas: HTMLCanvasElement, currentAreas: MapArea[]): HTMLCanvasElement => {
+        if (currentAreas.length === 0 || !cropOnlyCanvasRef.current) return globalCanvas;
+        const { width, height } = globalCanvas;
+        const unified = document.createElement('canvas');
+        unified.width = width;
+        unified.height = height;
+        const ctx = unified.getContext('2d', { willReadFrequently: true })!;
+        ctx.drawImage(globalCanvas, 0, 0);
+        for (const area of currentAreas) {
+            const areaCanvas = buildAreaCanvas(cropOnlyCanvasRef.current!, cropOnlyPixelCanvasRef.current, area, settings);
+            const areaX = area.chunkX * 16;
+            const areaY = area.chunkY * 16;
+            ctx.drawImage(areaCanvas, 0, 0, areaCanvas.width, areaCanvas.height, areaX, areaY, areaCanvas.width, areaCanvas.height);
+        }
+        return unified;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [settings.brightness, settings.contrast, settings.saturation, settings.fillColor, settings.pixelArt]);
+
+    const buildAreaDefs = useCallback((currentAreas: MapArea[], enabledGroups: number[]): AreaSettingsDef[] => {
+        return currentAreas.map(area => {
+            const areaGroups = area.overrides.blockSelection
+                ? Object.entries(area.overrides.blockSelection).filter(([, v]) => v !== null).map(([k]) => +k)
+                : enabledGroups;
+            return {
+                px: area.chunkX * 16,
+                py: area.chunkY * 16,
+                pw: area.chunkWidth * 16,
+                ph: area.chunkHeight * 16,
+                enabledGroups: areaGroups,
+                staircasingMode: area.overrides.staircasingMode ?? settings.staircasingMode,
+                colorMethod: area.overrides.colorDistanceMethod ?? settings.colorDistanceMethod,
+                maxHeight: area.overrides.maxHeight ?? settings.maxHeight,
+            };
+        });
+    }, [settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight]);
+
+    const postToWorker = useCallback((globalCanvas: HTMLCanvasElement, enabledGroups: number[]) => {
         if (!workerRef.current) return;
+
+        const canvas = buildUnifiedCanvas(globalCanvas, areas);
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
@@ -153,6 +170,8 @@ export default function MapartGenerator() {
         const imageData = ctx.getImageData(0, 0, width, height);
         const requestId = ++requestIdRef.current;
         setIsProcessing(true);
+
+        const areaDefs = areas.length > 0 ? buildAreaDefs(areas, enabledGroups) : undefined;
 
         const buffer: ArrayBuffer = imageData.data.buffer.slice(0);
         const message: WorkerRequest = {
@@ -162,9 +181,10 @@ export default function MapartGenerator() {
             colorMethod: settings.colorDistanceMethod,
             maxHeight: settings.maxHeight,
             datMode: outputMode === 'dat',
+            areas: areaDefs,
         };
         workerRef.current.postMessage(message, [buffer]);
-    }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, outputMode]);
+    }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, outputMode, areas, buildUnifiedCanvas, buildAreaDefs]);
 
     const handlePreprocessed = useCallback((canvas: HTMLCanvasElement) => {
         preprocessedCanvasRef.current = canvas;
@@ -192,87 +212,6 @@ export default function MapartGenerator() {
         postToWorker(preprocessedCanvasRef.current, enabledGroups);
     }, [debouncedEnabledGroupsKey, postToWorker]);
 
-    useEffect(() => {
-        if (!rawGlobalResultRef.current || !cropOnlyCanvasRef.current) return;
-        if (areas.length === 0) return;
-        if (!areaWorkerRef.current) return;
-
-        const global = rawGlobalResultRef.current;
-        const mergedPixels = new Uint8ClampedArray(global.pixelBuffer);
-        const mergedBrightness = global.brightnessMap.map(r => [...r]);
-        const mergedGroupId = global.groupIdMap.map(r => [...r]);
-        const mergedY = global.yMap.map(r => [...r]);
-        const mergedColorBytes = global.colorBytes ? new Uint8Array(global.colorBytes) : null;
-
-        let cancelled = false;
-        setIsProcessing(true);
-
-        (async () => {
-            for (const area of areas) {
-                if (cancelled) return;
-                const areaCanvas = buildAreaCanvas(cropOnlyCanvasRef.current!, cropOnlyPixelCanvasRef.current, area, settings);
-                const aW = area.chunkWidth * 16;
-                const aH = area.chunkHeight * 16;
-                const ctx = areaCanvas.getContext('2d')!;
-                const imgData = ctx.getImageData(0, 0, aW, aH);
-                const areaBuffer = imgData.data.buffer.slice(0) as ArrayBuffer;
-
-                const areaGroups = area.overrides.blockSelection
-                    ? Object.entries(area.overrides.blockSelection).filter(([, v]) => v !== null).map(([k]) => +k)
-                    : Object.entries(blockSelection).filter(([, v]) => v !== null).map(([k]) => +k);
-
-                const req: WorkerRequest = {
-                    requestId: ++areaRequestIdRef.current,
-                    buffer: areaBuffer,
-                    width: aW,
-                    height: aH,
-                    enabledGroups: areaGroups,
-                    ditheringMethod: area.overrides.ditheringMethod ?? settings.ditheringMethod,
-                    staircasingMode: area.overrides.staircasingMode ?? settings.staircasingMode,
-                    colorMethod: area.overrides.colorDistanceMethod ?? settings.colorDistanceMethod,
-                    maxHeight: area.overrides.maxHeight ?? settings.maxHeight,
-                    datMode: outputMode === 'dat',
-                };
-
-                try {
-                    const result = await processWithAreaWorker(areaWorkerRef.current!, req);
-                    if (cancelled) return;
-                    mergeAreaResult(mergedPixels, mergedBrightness, mergedGroupId, mergedY, mergedColorBytes, {
-                        pixelBuffer: new Uint8ClampedArray(result.buffer),
-                        brightnessMap: result.brightnessMap,
-                        groupIdMap: result.groupIdMap,
-                        yMap: result.yMap,
-                        colorBytes: result.colorBytesBuffer ? new Uint8Array(result.colorBytesBuffer) : null,
-                    }, area, global.width);
-                } catch (err) {
-                    console.error('Area processing failed for', area.name, err);
-                }
-            }
-
-            if (cancelled) return;
-
-            recomputeGlobalBrightness(mergedPixels, mergedBrightness, mergedGroupId, mergedY, global.width, global.height);
-
-            const uniqueGroups = new Set<number>();
-            let totalBlocks = 0;
-            for (const row of mergedGroupId) {
-                for (const id of row) {
-                    if (id !== TRANSPARENT_GROUP_ID) { uniqueGroups.add(id); totalBlocks++; }
-                }
-            }
-            setProcessingStats({ width: global.width, height: global.height, totalBlocks, uniqueBlocks: uniqueGroups.size });
-            setProcessedImageData(new ImageData(mergedPixels, global.width, global.height));
-            setBrightnessMap(mergedBrightness);
-            setGroupIdMap(mergedGroupId);
-            setYMap(mergedY);
-            setColorBytes(mergedColorBytes);
-            setIsProcessing(false);
-        })();
-
-        return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [globalResultVersion, areas]);
-
     const handleFileUpload = (file: File | null) => {
         if (!file?.type.startsWith('image/')) return;
         setIsUploading(true);
@@ -297,7 +236,6 @@ export default function MapartGenerator() {
         setProcessingStats(null); setProcessedImageData(null);
         setBrightnessMap(null); setGroupIdMap(null); setYMap(null); setColorBytes(null);
         setIsProcessing(false); requestIdRef.current++;
-        rawGlobalResultRef.current = null;
         setAreas([]);
         setSelectedAreaId(null);
     };
