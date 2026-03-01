@@ -49,7 +49,6 @@ export function computeColumnY(
     brightnesses: Brightness[],
     groupIds: number[],
     mode: StaircasingMode,
-    maxHeight?: number,
 ): number[] {
     const n = brightnesses.length;
     if (n === 0) return [];
@@ -87,13 +86,12 @@ export function finalizeColumn(
     groupIdMap: number[][],
     yMap: number[][],
     colYDirect?: number[],
-    maxHeight?: number,
 ): void {
     const isValley = staircasingMode === StaircasingMode.VALLEY;
 
     const colY = isValley
-        ? computeColumnY(colBrightness, colGroupId, staircasingMode, maxHeight)
-        : (colYDirect ?? computeColumnY(colBrightness, colGroupId, staircasingMode, maxHeight));
+        ? computeColumnY(colBrightness, colGroupId, staircasingMode)
+        : (colYDirect ?? computeColumnY(colBrightness, colGroupId, staircasingMode));
 
     let minY: number;
     if (staircasingMode === StaircasingMode.SOUTHLINE) {
@@ -119,70 +117,3 @@ export function finalizeColumn(
     }
 }
 
-export function finalizeColumnMixed(
-    x: number,
-    height: number,
-    colBrightness: Brightness[],
-    colGroupId: number[],
-    colMode: StaircasingMode[],
-    colMaxHeight: number[],
-    brightnessMap: Brightness[][],
-    groupIdMap: number[][],
-    yMap: number[][],
-): void {
-    const usesValleySolver = (m: StaircasingMode) =>
-        m === StaircasingMode.VALLEY || m === StaircasingMode.STANDARD_CUSTOM;
-
-    const colY: number[] = new Array(height).fill(0);
-    let startY = 0;
-    let z = 0;
-
-    while (z < height) {
-        const mode = colMode[z];
-        const isValleySeg = usesValleySolver(mode);
-        const isFlatSeg = mode === StaircasingMode.NONE;
-
-        let endZ = z + 1;
-        while (endZ < height) {
-            const m = colMode[endZ];
-            if (usesValleySolver(m) !== isValleySeg || (m === StaircasingMode.NONE) !== isFlatSeg) break;
-            endZ++;
-        }
-
-        if (isValleySeg) {
-            const relHeights = computeColumnY(
-                colBrightness.slice(z, endZ),
-                colGroupId.slice(z, endZ),
-                mode,
-                colMaxHeight[z],
-            );
-            const minRel = Math.min(...relHeights);
-            for (let i = 0; i < endZ - z; i++) {
-                colY[z + i] = relHeights[i] - minRel + startY;
-            }
-        } else if (isFlatSeg) {
-            for (let i = z; i < endZ; i++) colY[i] = startY;
-        } else {
-            let y = startY;
-            for (let i = 0; i < endZ - z; i++) {
-                const gid = colGroupId[z + i];
-                colY[z + i] = y;
-                if (gid !== TRANSPARENT_GROUP_ID && gid !== 11) {
-                    const b = colBrightness[z + i];
-                    if (b === Brightness.HIGH) y++;
-                    else if (b === Brightness.LOW) y--;
-                }
-            }
-        }
-
-        startY = colY[endZ - 1];
-        z = endZ;
-    }
-
-    const minY = Math.min(...colY);
-    for (let z = 0; z < height; z++) {
-        brightnessMap[z][x] = colBrightness[z];
-        groupIdMap[z][x] = colGroupId[z];
-        yMap[z][x] = colY[z] - minY;
-    }
-}

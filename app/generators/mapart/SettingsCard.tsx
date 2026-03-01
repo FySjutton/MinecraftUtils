@@ -128,8 +128,6 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
             <CardContent>
 
                 {outputMode === 'buildable' && (
-                    // TODO: Fix errors
-                    // TODO: Clean up all files
                     <>
                         <OverridableRow overrideKey="staircasingMode">
                             <Label className="mt-4 mb-2">Staircasing Method</Label>

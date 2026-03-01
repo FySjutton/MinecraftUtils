@@ -4,19 +4,10 @@ import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants
 import { numberToRGB, findBestColorInSet, ColorCandidate } from '../color/matching';
 import { calculateDistance } from '../color/distance';
 import type { ProcessedImageResult } from '../utils/types';
+import {mulberry32} from "@/app/generators/mapart/dithering/shared";
 
 const MAX_DEPTH = 950;
 const MAX_CACHE = 200_000;
-
-function mulberry32(seed: number): () => number {
-    let s = seed >>> 0;
-    return () => {
-        s = (s + 0x6D2B79F5) >>> 0;
-        let t = Math.imul(s ^ (s >>> 15), 1 | s);
-        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-}
 
 interface ColorOpt {
     groupId: number;
@@ -98,28 +89,27 @@ function solveSection(
     startH: number,
     maxHeight: number,
 ): Int16Array | null {
-    const H = maxHeight + 1;
-    const INF = Infinity;
-    const len = end - start;
+    const heightStates = maxHeight + 1;
+    const sectionLen = end - start;
 
-    let dp = new Float64Array(H).fill(INF);
+    let dp = new Float64Array(heightStates).fill(Infinity);
     dp[startH] = 0;
 
-    const back: Int16Array[] = new Array(len);
+    const back: Int16Array[] = new Array(sectionLen);
     let cacheSize = 0;
 
-    for (let i = 0; i < len; i++) {
+    for (let i = 0; i < sectionLen; i++) {
         const row = rows[start + i];
-        const nextDp = new Float64Array(H).fill(INF);
-        const backRow = new Int16Array(H).fill(-1);
+        const nextDp = new Float64Array(heightStates).fill(Infinity);
+        const backRow = new Int16Array(heightStates).fill(-1);
 
         if (row.transparent) {
-            for (let h = 0; h < H; h++) {
+            for (let h = 0; h < heightStates; h++) {
                 if (dp[h] < nextDp[h]) { nextDp[h] = dp[h]; backRow[h] = h; }
             }
         } else {
-            for (let h = 0; h < H; h++) {
-                if (dp[h] === INF) continue;
+            for (let h = 0; h < heightStates; h++) {
+                if (dp[h] === Infinity) continue;
                 cacheSize++;
                 if (cacheSize > MAX_CACHE) return null;
                 const base = dp[h];
@@ -128,7 +118,7 @@ function solveSection(
                     const cost = base + row.same.error;
                     if (cost < nextDp[h]) { nextDp[h] = cost; backRow[h] = h; }
                 }
-                if (h + 1 < H && row.high !== null) {
+                if (h + 1 < heightStates && row.high !== null) {
                     const cost = base + row.high.error;
                     if (cost < nextDp[h + 1]) { nextDp[h + 1] = cost; backRow[h + 1] = h; }
                 }
@@ -144,13 +134,13 @@ function solveSection(
     }
 
     let hFinal = 0;
-    for (let h = 1; h < H; h++) {
+    for (let h = 1; h < heightStates; h++) {
         if (dp[h] < dp[hFinal]) hFinal = h;
     }
 
-    const chosenH = new Int16Array(len);
+    const chosenH = new Int16Array(sectionLen);
     let h = hFinal;
-    for (let i = len - 1; i >= 0; i--) {
+    for (let i = sectionLen - 1; i >= 0; i--) {
         chosenH[i] = h;
         h = back[i][h];
     }
@@ -159,7 +149,6 @@ function solveSection(
 
 function solveColumnWithSubdivision(
     x: number,
-    sourceData: Uint8ClampedArray,
     outputData: Uint8ClampedArray,
     width: number,
     height: number,
@@ -229,7 +218,6 @@ export function applyMemoizedDithering(
     width: number,
     height: number,
     enabledGroups: Set<number>,
-    staircasingMode: StaircasingMode,
     colorMethod: ColorDistanceMethod,
     maxHeight: number,
     seed?: number,
@@ -254,7 +242,7 @@ export function applyMemoizedDithering(
     }
 
     for (let x = 0; x < width; x++) {
-        solveColumnWithSubdivision(x, sourceData, outputData, width, height, rowsPerX[x], maxHeight, brightnessMap, groupIdMap, yMap, rng);
+        solveColumnWithSubdivision(x, outputData, width, height, rowsPerX[x], maxHeight, brightnessMap, groupIdMap, yMap, rng);
     }
 
     return { imageData: new ImageData(outputData, width, height), brightnessMap, groupIdMap, yMap };

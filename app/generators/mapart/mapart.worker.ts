@@ -1,19 +1,7 @@
-import { AreaSettingsResolved, ColorDistanceMethod, StaircasingMode, Brightness } from './utils/types';
+import { ColorDistanceMethod, StaircasingMode, Brightness } from './utils/types';
 import { DitheringMethodName } from './dithering/types';
-import {applyDitheringDat} from "@/app/generators/mapart/dithering/dat";
-import {processImageData} from "@/app/generators/mapart/utils/buildable";
-import { getYRange } from './staircasing/heights';
-
-export interface AreaSettingsDef {
-    px: number;
-    py: number;
-    pw: number;
-    ph: number;
-    enabledGroups: number[];
-    staircasingMode: StaircasingMode;
-    colorMethod: ColorDistanceMethod;
-    maxHeight: number;
-}
+import { applyDitheringDat } from './dithering/dat';
+import { processImageData } from './utils/buildable';
 
 export interface WorkerRequest {
     requestId: number;
@@ -26,7 +14,6 @@ export interface WorkerRequest {
     colorMethod: ColorDistanceMethod;
     maxHeight: number;
     datMode?: boolean;
-    areas?: AreaSettingsDef[];
     useMemoSearch?: boolean;
 }
 
@@ -49,24 +36,15 @@ export type WorkerResponse =
 };
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-    const { requestId, buffer, width, height, enabledGroups, ditheringMethod, staircasingMode, colorMethod, maxHeight, datMode, areas, useMemoSearch } = event.data;
+    const { requestId, buffer, width, height, enabledGroups, ditheringMethod, staircasingMode, colorMethod, maxHeight, datMode, useMemoSearch } = event.data;
 
     try {
         const pixels = new Uint8ClampedArray(buffer);
         const imageData = new ImageData(pixels, width, height);
         const groups = new Set(enabledGroups);
 
-        const resolvedAreas: AreaSettingsResolved[] = (areas ?? []).map(a => ({
-            px: a.px, py: a.py, pw: a.pw, ph: a.ph,
-            enabledGroups: new Set(a.enabledGroups),
-            staircasingMode: a.staircasingMode,
-            colorMethod: a.colorMethod,
-            maxHeight: a.maxHeight,
-            yRange: getYRange(a.staircasingMode, a.maxHeight),
-        }));
-
         if (datMode) {
-            const result = applyDitheringDat(imageData, width, height, groups, ditheringMethod, colorMethod)
+            const result = applyDitheringDat(imageData, width, height, groups, ditheringMethod, colorMethod);
             const outBuffer = result.imageData.data.buffer as ArrayBuffer;
             const colorBytesBuffer = result.colorBytes.buffer.slice(0) as ArrayBuffer;
 
@@ -77,7 +55,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
             };
             (self as unknown as Worker).postMessage(response, [outBuffer, colorBytesBuffer]);
         } else {
-            const result = processImageData(imageData, width, height, groups, ditheringMethod, staircasingMode, colorMethod, maxHeight, resolvedAreas, useMemoSearch);
+            const result = processImageData(imageData, width, height, groups, ditheringMethod, staircasingMode, colorMethod, maxHeight, useMemoSearch);
             const outBuffer = result.imageData.data.buffer;
 
             const response: WorkerResponse = {

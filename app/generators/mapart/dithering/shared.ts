@@ -2,7 +2,7 @@ import {
     DitheringMethod,
     DitheringMethodErrorDiffusion
 } from './types';
-import { Brightness, ColorDistanceMethod } from '../utils/types';
+import { Brightness } from '../utils/types';
 import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
 import { getColorWithBrightness, numberToRGB } from '../color/matching';
 
@@ -87,15 +87,11 @@ export function computeGamut(enabledGroups: Set<number>, brightness: Brightness)
     return { minR, maxR, minG, maxG, minB, maxB };
 }
 
-export function buildAllGamuts(
-    enabledGroups: Set<number>,
-    colorMethod: ColorDistanceMethod,
-): { high: PaletteGamut; normal: PaletteGamut; low: PaletteGamut } {
-    void colorMethod;
+export function buildAllGamuts(enabledGroups: Set<number>,): { high: PaletteGamut; normal: PaletteGamut; low: PaletteGamut } {
     return {
-        high:   computeGamut(enabledGroups, Brightness.HIGH),
+        high: computeGamut(enabledGroups, Brightness.HIGH),
         normal: computeGamut(enabledGroups, Brightness.NORMAL),
-        low:    computeGamut(enabledGroups, Brightness.LOW),
+        low: computeGamut(enabledGroups, Brightness.LOW),
     };
 }
 

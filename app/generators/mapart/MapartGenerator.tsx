@@ -26,8 +26,7 @@ import { useImagePreprocessing, CropMode } from './useImagePreprocessing';
 import SettingsCard from './SettingsCard';
 import presetsData from './inputs/presets.json';
 import { MapArea, AREA_COLORS, areasOverlap } from './utils/areaTypes';
-import { buildAreaCanvas } from './utils/areaProcessing';
-import type { AreaSettingsDef } from './mapart.worker';
+import { buildAreaCanvas, mergeAreaResult, recomputeGlobalBrightness, processWithAreaWorker } from './utils/areaProcessing';
 import { PaletteGroup, InlineGroupSwitch } from './PaletteComponents';
 import { InputField } from '@/components/inputs/InputField';
 import { Slider } from '@/components/ui/slider';
@@ -81,18 +80,41 @@ export default function MapartGenerator() {
     const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
     const workerRef = useRef<Worker | null>(null);
+    const areaWorkerRef = useRef<Worker | null>(null);
     const requestIdRef = useRef(0);
+    const areaRequestIdRef = useRef(0);
+
+    const rawGlobalResultRef = useRef<{
+        pixels: Uint8ClampedArray;
+        width: number;
+        height: number;
+        brightnessMap: Brightness[][];
+        groupIdMap: number[][];
+        yMap: number[][];
+        colorBytes: Uint8Array | null;
+    } | null>(null);
+    const [globalResultVersion, setGlobalResultVersion] = useState(0);
 
     const selectedArea = areas.find(a => a.id === selectedAreaId) ?? null;
 
     useEffect(() => {
         const worker = new Worker(new URL('./mapart.worker.ts', import.meta.url));
+        const areaWorker = new Worker(new URL('./mapart.worker.ts', import.meta.url));
+
         worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
             const data = event.data;
             if (data.requestId !== requestIdRef.current) return;
             if (data.type === 'error') { console.error('Worker error:', data.message); setIsProcessing(false); return; }
 
             const { buffer, width, height, brightnessMap, groupIdMap, yMap, colorBytesBuffer } = data;
+            const pixels = new Uint8ClampedArray(buffer);
+            const cb = colorBytesBuffer ? new Uint8Array(colorBytesBuffer) : null;
+
+            // Store raw global result for area re-processing
+            rawGlobalResultRef.current = {
+                pixels: new Uint8ClampedArray(pixels),
+                width, height, brightnessMap, groupIdMap, yMap, colorBytes: cb,
+            };
 
             const uniqueGroups = new Set<number>();
             let totalBlocks = 0;
@@ -106,24 +128,28 @@ export default function MapartGenerator() {
             }
 
             setProcessingStats({ width, height, totalBlocks, uniqueBlocks: uniqueGroups.size });
-            setProcessedImageData(new ImageData(new Uint8ClampedArray(buffer), width, height));
+            setProcessedImageData(new ImageData(pixels, width, height));
             setBrightnessMap(brightnessMap);
             setGroupIdMap(groupIdMap);
             setYMap(yMap);
-            setColorBytes(colorBytesBuffer ? new Uint8Array(colorBytesBuffer) : null);
+            setColorBytes(cb);
+            setGlobalResultVersion(v => v + 1);
             setIsProcessing(false);
         };
 
         worker.onerror = err => { console.error('Worker threw:', err); setIsProcessing(false); };
         workerRef.current = worker;
-        return () => { worker.terminate(); workerRef.current = null; };
+        areaWorkerRef.current = areaWorker;
+        return () => {
+            worker.terminate(); workerRef.current = null;
+            areaWorker.terminate(); areaWorkerRef.current = null;
+        };
     }, []);
 
     const enabledGroupsKey = Object.entries(blockSelection)
         .filter(([, v]) => v !== null).map(([k]) => k).sort().join(',');
     const debouncedEnabledGroupsKey = useDebounce(enabledGroupsKey, 400);
-
-    const buildUnifiedCanvas = useCallback((globalCanvas: HTMLCanvasElement, currentAreas: MapArea[]): HTMLCanvasElement => {
+    useCallback((globalCanvas: HTMLCanvasElement, currentAreas: MapArea[]): HTMLCanvasElement => {
         if (currentAreas.length === 0 || !cropOnlyCanvasRef.current) return globalCanvas;
         const { width, height } = globalCanvas;
         const unified = document.createElement('canvas');
@@ -138,40 +164,18 @@ export default function MapartGenerator() {
             ctx.drawImage(areaCanvas, 0, 0, areaCanvas.width, areaCanvas.height, areaX, areaY, areaCanvas.width, areaCanvas.height);
         }
         return unified;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [settings.brightness, settings.contrast, settings.saturation, settings.fillColor, settings.pixelArt]);
-
-    const buildAreaDefs = useCallback((currentAreas: MapArea[], enabledGroups: number[]): AreaSettingsDef[] => {
-        return currentAreas.map(area => {
-            const areaGroups = area.overrides.blockSelection
-                ? Object.entries(area.overrides.blockSelection).filter(([, v]) => v !== null).map(([k]) => +k)
-                : enabledGroups;
-            return {
-                px: area.chunkX * 16,
-                py: area.chunkY * 16,
-                pw: area.chunkWidth * 16,
-                ph: area.chunkHeight * 16,
-                enabledGroups: areaGroups,
-                staircasingMode: area.overrides.staircasingMode ?? settings.staircasingMode,
-                colorMethod: area.overrides.colorDistanceMethod ?? settings.colorDistanceMethod,
-                maxHeight: area.overrides.maxHeight ?? settings.maxHeight,
-            };
-        });
-    }, [settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight]);
-
     const postToWorker = useCallback((globalCanvas: HTMLCanvasElement, enabledGroups: number[]) => {
         if (!workerRef.current) return;
 
-        const canvas = buildUnifiedCanvas(globalCanvas, areas);
-        const ctx = canvas.getContext('2d');
+        const ctx = globalCanvas.getContext('2d');
         if (!ctx) return;
 
-        const { width, height } = canvas;
+        const { width, height } = globalCanvas;
         const imageData = ctx.getImageData(0, 0, width, height);
         const requestId = ++requestIdRef.current;
         setIsProcessing(true);
-
-        const areaDefs = areas.length > 0 ? buildAreaDefs(areas, enabledGroups) : undefined;
 
         const buffer: ArrayBuffer = imageData.data.buffer.slice(0);
         const message: WorkerRequest = {
@@ -181,11 +185,10 @@ export default function MapartGenerator() {
             colorMethod: settings.colorDistanceMethod,
             maxHeight: settings.maxHeight,
             datMode: outputMode === 'dat',
-            areas: areaDefs,
             useMemoSearch: settings.useMemoSearch,
         };
         workerRef.current.postMessage(message, [buffer]);
-    }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, settings.useMemoSearch, outputMode, areas, buildUnifiedCanvas, buildAreaDefs]);
+    }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, settings.useMemoSearch, outputMode]);
 
     const handlePreprocessed = useCallback((canvas: HTMLCanvasElement) => {
         preprocessedCanvasRef.current = canvas;
@@ -213,6 +216,87 @@ export default function MapartGenerator() {
         postToWorker(preprocessedCanvasRef.current, enabledGroups);
     }, [debouncedEnabledGroupsKey, postToWorker]);
 
+    // here we process each area differently, in order to apply the settings
+    useEffect(() => {
+        const raw = rawGlobalResultRef.current;
+        if (!raw || areas.length === 0 || !areaWorkerRef.current || !cropOnlyCanvasRef.current) return;
+        if (outputMode === 'dat') return; // areas don't apply in dat mode
+
+        let cancelled = false;
+        const runId = ++areaRequestIdRef.current;
+
+        (async () => {
+            setIsProcessing(true);
+
+            // Start from a copy of the raw global result
+            const mergedPixels = new Uint8ClampedArray(raw.pixels);
+            const mergedBrightness = raw.brightnessMap.map(row => [...row]);
+            const mergedGroupId = raw.groupIdMap.map(row => [...row]);
+            const mergedY = raw.yMap.map(row => [...row]);
+
+            for (const area of areas) {
+                if (cancelled || runId !== areaRequestIdRef.current) return;
+
+                // build area-specific canvas with preprocessing overrides
+                const areaCanvas = buildAreaCanvas(cropOnlyCanvasRef.current!, cropOnlyPixelCanvasRef.current, area, settings);
+                const areaCtx = areaCanvas.getContext('2d', { willReadFrequently: true })!;
+                const areaImageData = areaCtx.getImageData(0, 0, areaCanvas.width, areaCanvas.height);
+
+                // Resolve area settings (fallback to global)
+                const areaGroups = area.overrides.blockSelection
+                    ? Object.entries(area.overrides.blockSelection).filter(([, v]) => v !== null).map(([k]) => +k)
+                    : Object.entries(blockSelection).filter(([, v]) => v !== null).map(([k]) => +k);
+
+                const areaBuffer = areaImageData.data.buffer.slice(0) as ArrayBuffer;
+                const areaRequest: WorkerRequest = {
+                    requestId: runId * 1000 + areas.indexOf(area),
+                    buffer: areaBuffer,
+                    width: areaCanvas.width,
+                    height: areaCanvas.height,
+                    enabledGroups: areaGroups,
+                    ditheringMethod: area.overrides.ditheringMethod ?? settings.ditheringMethod,
+                    staircasingMode: area.overrides.staircasingMode ?? settings.staircasingMode,
+                    colorMethod: area.overrides.colorDistanceMethod ?? settings.colorDistanceMethod,
+                    maxHeight: area.overrides.maxHeight ?? settings.maxHeight,
+                    useMemoSearch: settings.useMemoSearch,
+                };
+
+                try {
+                    const areaResult = await processWithAreaWorker(areaWorkerRef.current!, areaRequest);
+                    if (cancelled || runId !== areaRequestIdRef.current) return;
+
+                    mergeAreaResult(
+                        mergedPixels, mergedBrightness, mergedGroupId, mergedY, null,
+                        {
+                            pixelBuffer: new Uint8ClampedArray(areaResult.buffer),
+                            brightnessMap: areaResult.brightnessMap,
+                            groupIdMap: areaResult.groupIdMap,
+                            yMap: areaResult.yMap,
+                            colorBytes: null,
+                        },
+                        area, raw.width,
+                    );
+                } catch (err) {
+                    console.error(`Area "${area.name}" processing failed:`, err);
+                }
+            }
+
+            if (cancelled || runId !== areaRequestIdRef.current) return;
+
+            // Recompute brightness at area boundaries
+            recomputeGlobalBrightness(mergedPixels, mergedBrightness, mergedGroupId, mergedY, raw.width, raw.height);
+
+            // Update displayed result
+            setProcessedImageData(new ImageData(mergedPixels, raw.width, raw.height));
+            setBrightnessMap(mergedBrightness);
+            setGroupIdMap(mergedGroupId);
+            setYMap(mergedY);
+            setIsProcessing(false);
+        })();
+
+        return () => { cancelled = true; };
+    }, [globalResultVersion, areas, outputMode, blockSelection, settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, settings.useMemoSearch]);
+
     const handleFileUpload = (file: File | null) => {
         if (!file?.type.startsWith('image/')) return;
         setIsUploading(true);
@@ -232,11 +316,19 @@ export default function MapartGenerator() {
     };
 
     const handleReset = () => {
-        setImage(null); setSourceImageElement(null); preprocessedCanvasRef.current = null;
-        setPreprocessedImageUrl(null); setCropOnlyImageUrl(null);
-        setProcessingStats(null); setProcessedImageData(null);
-        setBrightnessMap(null); setGroupIdMap(null); setYMap(null); setColorBytes(null);
-        setIsProcessing(false); requestIdRef.current++;
+        setImage(null);
+        setSourceImageElement(null);
+        preprocessedCanvasRef.current = null;
+        setPreprocessedImageUrl(null);
+        setCropOnlyImageUrl(null);
+        setProcessingStats(null);
+        setProcessedImageData(null);
+        setBrightnessMap(null);
+        setGroupIdMap(null);
+        setYMap(null);
+        setColorBytes(null);
+        setIsProcessing(false);
+        requestIdRef.current++;
         setAreas([]);
         setSelectedAreaId(null);
     };
@@ -304,9 +396,7 @@ export default function MapartGenerator() {
             const next = { ...currentSel };
             if (blockName === null || next[groupId] === blockName) delete next[groupId];
             else next[groupId] = blockName;
-            setAreas(prev => prev.map(a => a.id === selectedArea.id
-                ? { ...a, overrides: { ...a.overrides, blockSelection: next } }
-                : a
+            setAreas(prev => prev.map(a => a.id === selectedArea.id ? { ...a, overrides: { ...a.overrides, blockSelection: next } } : a
             ));
         } else {
             setCurrentPreset('Custom');

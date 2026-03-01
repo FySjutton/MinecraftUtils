@@ -17,20 +17,20 @@
     .grid-full {
         grid-template-areas:
             "upload-image upload-image"
-            "map-setup    preview"
-            "areas        preview"
-            "settings     preview"
-            "palette      materials-list"
-            "exporting    exporting";
+            "map-setup preview"
+            "areas preview"
+            "settings preview"
+            "palette materials-list"
+            "exporting exporting";
     }
 
     .grid-dat {
         grid-template-areas:
             "upload-image upload-image"
-            "map-setup    preview"
-            "areas        preview"
-            "settings     preview"
-            "palette      exporting";
+            "map-setup preview"
+            "areas preview"
+            "settings preview"
+            "palette exporting";
     }
 
     @container (max-width: 800px) {

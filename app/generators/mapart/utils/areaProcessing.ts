@@ -4,16 +4,6 @@ import { Settings } from '../useSettings';
 import type { WorkerRequest, WorkerResponse } from '../mapart.worker';
 import { TRANSPARENT_GROUP_ID } from './constants';
 
-export interface RawGlobalResult {
-    pixelBuffer: Uint8ClampedArray;
-    width: number;
-    height: number;
-    brightnessMap: Brightness[][];
-    groupIdMap: number[][];
-    yMap: number[][];
-    colorBytes: Uint8Array | null;
-}
-
 export interface AreaWorkerResult {
     pixelBuffer: Uint8ClampedArray;
     brightnessMap: Brightness[][];
@@ -53,13 +43,13 @@ export function buildAreaCanvas(
     const contrast = area.overrides.contrast ?? globalSettings.contrast;
     const saturation = area.overrides.saturation ?? globalSettings.saturation;
     if (brightness !== 100 || contrast !== 100 || saturation !== 100) {
-        applyAreaFilters(ctx, areaW, areaH, brightness, contrast, saturation);
+        applyBCSFilters(ctx, areaW, areaH, brightness, contrast, saturation);
     }
 
     return areaCanvas;
 }
 
-function applyAreaFilters(
+export function applyBCSFilters(
     ctx: CanvasRenderingContext2D,
     width: number,
     height: number,
@@ -69,22 +59,22 @@ function applyAreaFilters(
 ): void {
     const imageData = ctx.getImageData(0, 0, width, height);
     const data = imageData.data;
-    const bMul = brightness / 100;
-    const cFac = contrast / 100;
-    const sFac = saturation / 100;
+    const brightnessMul = brightness / 100;
+    const contrastFactor = contrast / 100;
+    const saturationFactor = saturation / 100;
 
     for (let i = 0; i < data.length; i += 4) {
         if (data[i + 3] === 0) continue;
-        let r = data[i] * bMul;
-        let g = data[i + 1] * bMul;
-        let b = data[i + 2] * bMul;
-        r = ((r / 255 - 0.5) * cFac + 0.5) * 255;
-        g = ((g / 255 - 0.5) * cFac + 0.5) * 255;
-        b = ((b / 255 - 0.5) * cFac + 0.5) * 255;
+        let r = data[i] * brightnessMul;
+        let g = data[i + 1] * brightnessMul;
+        let b = data[i + 2] * brightnessMul;
+        r = ((r / 255 - 0.5) * contrastFactor + 0.5) * 255;
+        g = ((g / 255 - 0.5) * contrastFactor + 0.5) * 255;
+        b = ((b / 255 - 0.5) * contrastFactor + 0.5) * 255;
         const gray = 0.2989 * r + 0.5870 * g + 0.1140 * b;
-        r = gray + (r - gray) * sFac;
-        g = gray + (g - gray) * sFac;
-        b = gray + (b - gray) * sFac;
+        r = gray + (r - gray) * saturationFactor;
+        g = gray + (g - gray) * saturationFactor;
+        b = gray + (b - gray) * saturationFactor;
         data[i] = Math.max(0, Math.min(255, r));
         data[i + 1] = Math.max(0, Math.min(255, g));
         data[i + 2] = Math.max(0, Math.min(255, b));
@@ -130,7 +120,6 @@ export function mergeAreaResult(
     }
 }
 
-
 export function recomputeGlobalBrightness(
     mergedPixels: Uint8ClampedArray,
     mergedBrightness: Brightness[][],
@@ -163,7 +152,7 @@ export function recomputeGlobalBrightness(
             mergedBrightness[z][x] = actualBrightness;
             const idx = (z * fullWidth + x) * 4;
             const ratio = actualBrightness / oldBrightness;
-            mergedPixels[idx]     = Math.max(0, Math.min(255, Math.round(mergedPixels[idx]     * ratio)));
+            mergedPixels[idx] = Math.max(0, Math.min(255, Math.round(mergedPixels[idx] * ratio)));
             mergedPixels[idx + 1] = Math.max(0, Math.min(255, Math.round(mergedPixels[idx + 1] * ratio)));
             mergedPixels[idx + 2] = Math.max(0, Math.min(255, Math.round(mergedPixels[idx + 2] * ratio)));
         }

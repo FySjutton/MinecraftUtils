@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { Settings } from './useSettings';
+import { applyBCSFilters } from './utils/areaProcessing';
 
 export enum CropMode {
     STRETCH = 'stretch',
@@ -34,8 +35,8 @@ export function useImagePreprocessing({ sourceImage, settings, onProcessed, onCr
 
     const onProcessedRef = useRef(onProcessed);
     const onCropOnlyRef = useRef(onCropOnly);
-    const cropOnlyCanvasRef = useRef<HTMLCanvasElement | null>(null);       // smooth (high quality)
-    const cropOnlyPixelCanvasRef = useRef<HTMLCanvasElement | null>(null);  // pixelated (nearest-neighbor)
+    const cropOnlyCanvasRef = useRef<HTMLCanvasElement | null>(null); // smooth (high quality)
+    const cropOnlyPixelCanvasRef = useRef<HTMLCanvasElement | null>(null); // pixelated (nearest-neighbor)
 
     useEffect(() => { onProcessedRef.current = onProcessed; }, [onProcessed]);
     useEffect(() => { onCropOnlyRef.current = onCropOnly; }, [onCropOnly]);
@@ -63,7 +64,7 @@ export function useImagePreprocessing({ sourceImage, settings, onProcessed, onCr
 
         const filtersAreDefault = brightness === 100 && contrast === 100 && saturation === 100;
         if (!filtersAreDefault) {
-            applyFilters(ctx, targetWidth, targetHeight, brightness, contrast, saturation);
+            applyBCSFilters(ctx, targetWidth, targetHeight, brightness, contrast, saturation);
         }
 
         onProcessedRef.current(canvas);
@@ -134,40 +135,3 @@ function drawCropped(
     }
 }
 
-function applyFilters(
-    ctx: CanvasRenderingContext2D,
-    width: number,
-    height: number,
-    brightness: number,
-    contrast: number,
-    saturation: number,
-): void {
-    const imageData = ctx.getImageData(0, 0, width, height);
-    const data = imageData.data;
-    const bMul = brightness / 100;
-    const cFac = contrast / 100;
-    const sFac = saturation / 100;
-
-    for (let i = 0; i < data.length; i += 4) {
-        if (data[i + 3] === 0) continue;
-
-        let r = data[i] * bMul;
-        let g = data[i + 1] * bMul;
-        let b = data[i + 2] * bMul;
-
-        r = ((r / 255 - 0.5) * cFac + 0.5) * 255;
-        g = ((g / 255 - 0.5) * cFac + 0.5) * 255;
-        b = ((b / 255 - 0.5) * cFac + 0.5) * 255;
-
-        const gray = 0.2989 * r + 0.5870 * g + 0.1140 * b;
-        r = gray + (r - gray) * sFac;
-        g = gray + (g - gray) * sFac;
-        b = gray + (b - gray) * sFac;
-
-        data[i] = Math.max(0, Math.min(255, r));
-        data[i + 1] = Math.max(0, Math.min(255, g));
-        data[i + 2] = Math.max(0, Math.min(255, b));
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-}

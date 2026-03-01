@@ -1,11 +1,11 @@
-import { Brightness, ColorDistanceMethod, StaircasingMode, AreaSettingsResolved } from '../utils/types';
+import { Brightness, ColorDistanceMethod, StaircasingMode } from '../utils/types';
 import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
 import { numberToRGB, findBestColorInSet, ColorCandidate, BestColorResult } from '../color/matching';
 import { createBiasFunction, distributeError, clamp, clampToGamut, buildAllGamuts, BiasFunction, PaletteGamut } from './shared';
 import { DitheringMethodName, DitheringMethodErrorDiffusion, ditheringMethods } from './types';
-import { getYRange, finalizeColumn, finalizeColumnMixed } from '../staircasing/heights';
+import { getYRange, finalizeColumn } from '../staircasing/heights';
+import { applyRiemersmaDithering } from './riemersma';
 import type { ProcessedImageResult } from '../utils/types';
-import {resolveEffective} from "@/app/generators/mapart/utils/buildable";
 
 function isStandardMode(mode: StaircasingMode): boolean {
     return (
@@ -79,33 +79,20 @@ function applyBiasDithering(
     colorMethod: ColorDistanceMethod,
     yRange: { min: number; max: number },
     getBias: BiasFunction,
-    maxHeight: number,
-    areas: AreaSettingsResolved[] = [],
 ): ProcessedImageResult {
     const data = new Uint8ClampedArray(imageData.data);
     const brightnessMap: Brightness[][] = Array.from({ length: height }, () => new Array(width));
     const groupIdMap: number[][] = Array.from({ length: height }, () => new Array(width));
     const yMap: number[][] = Array.from({ length: height }, () => new Array(width));
-    const hasAreas = areas.length > 0;
 
     for (let x = 0; x < width; x++) {
         const colBrightness: Brightness[] = [];
         const colGroupId: number[] = [];
         const colYDirect: number[] = [];
-        const colMode: StaircasingMode[] = [];
-        const colMaxHeight: number[] = [];
         let currentY = 0;
 
         for (let z = 0; z < height; z++) {
             const idx = (z * width + x) * 4;
-            const eff = hasAreas
-                ? resolveEffective(x, z, areas, enabledGroups, staircasingMode, colorMethod, maxHeight, yRange)
-                : { enabledGroups, mode: staircasingMode, colorMethod, maxHeight, yRange };
-
-            if (hasAreas) {
-                colMode.push(eff.mode);
-                colMaxHeight.push(eff.maxHeight);
-            }
 
             if (data[idx + 3] < 128) {
                 data[idx] = 0; data[idx + 1] = 0; data[idx + 2] = 0; data[idx + 3] = 0;
@@ -120,21 +107,17 @@ function applyBiasDithering(
             const g = clamp(data[idx + 1] + bias);
             const b = clamp(data[idx + 2] + bias);
 
-            const best = findBestForPixel(r, g, b, eff.enabledGroups, eff.colorMethod, eff.mode, currentY, eff.yRange);
+            const best = findBestForPixel(r, g, b, enabledGroups, colorMethod, staircasingMode, currentY, yRange);
             const rgb = numberToRGB(best.color);
             data[idx] = rgb.r; data[idx + 1] = rgb.g; data[idx + 2] = rgb.b; data[idx + 3] = 255;
 
             colBrightness.push(best.brightness);
             colGroupId.push(best.groupId);
-            currentY = advanceY(currentY, best.brightness, best.groupId, eff.mode);
+            currentY = advanceY(currentY, best.brightness, best.groupId, staircasingMode);
             colYDirect.push(currentY);
         }
 
-        if (hasAreas) {
-            finalizeColumnMixed(x, height, colBrightness, colGroupId, colMode, colMaxHeight, brightnessMap, groupIdMap, yMap);
-        } else {
-            finalizeColumn(x, height, colBrightness, colGroupId, staircasingMode, brightnessMap, groupIdMap, yMap, colYDirect, maxHeight);
-        }
+        finalizeColumn(x, height, colBrightness, colGroupId, staircasingMode, brightnessMap, groupIdMap, yMap, colYDirect);
     }
 
     return { imageData: new ImageData(data, width, height), brightnessMap, groupIdMap, yMap };
@@ -148,18 +131,15 @@ function applyErrorDiffusion(
     staircasingMode: StaircasingMode,
     colorMethod: ColorDistanceMethod,
     yRange: { min: number; max: number },
-    method: DitheringMethodErrorDiffusion,
-    maxHeight: number,
-    areas: AreaSettingsResolved[] = [],
+    method: DitheringMethodErrorDiffusion
 ): ProcessedImageResult {
     const workingData = new Float32Array(imageData.data);
     const outputData = new Uint8ClampedArray(imageData.data.length);
     const brightnessMap: Brightness[][] = Array.from({ length: height }, () => new Array(width));
     const groupIdMap: number[][] = Array.from({ length: height }, () => new Array(width));
     const yMap: number[][] = Array.from({ length: height }, () => new Array(width));
-    const hasAreas = areas.length > 0;
 
-    const gamuts = buildAllGamuts(enabledGroups, colorMethod);
+    const gamuts = buildAllGamuts(enabledGroups);
     const gamutByBrightness: Record<number, PaletteGamut> = {
         [Brightness.HIGH]: gamuts.high,
         [Brightness.NORMAL]: gamuts.normal,
@@ -170,21 +150,11 @@ function applyErrorDiffusion(
     const colBrightnessAll: Brightness[][] = Array.from({ length: width }, () => []);
     const colGroupIdAll: number[][] = Array.from({ length: width }, () => []);
     const colYDirectAll: number[][] = Array.from({ length: width }, () => []);
-    const colModeAll: StaircasingMode[][] = hasAreas ? Array.from({ length: width }, () => []) : [];
-    const colMaxHeightAll: number[][] = hasAreas ? Array.from({ length: width }, () => []) : [];
 
     for (let z = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
             const idx = (z * width + x) * 4;
             const currentY = currentYPerColumn[x];
-            const eff = hasAreas
-                ? resolveEffective(x, z, areas, enabledGroups, staircasingMode, colorMethod, maxHeight, yRange)
-                : { enabledGroups, mode: staircasingMode, colorMethod, maxHeight, yRange };
-
-            if (hasAreas) {
-                colModeAll[x].push(eff.mode);
-                colMaxHeightAll[x].push(eff.maxHeight);
-            }
 
             if (imageData.data[idx + 3] < 128) {
                 colBrightnessAll[x].push(Brightness.NORMAL);
@@ -199,8 +169,8 @@ function applyErrorDiffusion(
             const oldG = Math.round(clampToGamut(workingData[idx + 1], 'g', gamut));
             const oldB = Math.round(clampToGamut(workingData[idx + 2], 'b', gamut));
 
-            const best = findBestForPixel(oldR, oldG, oldB, eff.enabledGroups, eff.colorMethod, eff.mode, currentY, eff.yRange);
-            const rgb = numberToRGB(best.color);
+            const best = findBestForPixel(oldR, oldG, oldB, enabledGroups, colorMethod, staircasingMode, currentY, yRange);
+            const rgb = numberToRGB(best.color); // ignore warning
 
             outputData[idx] = rgb.r; outputData[idx + 1] = rgb.g;
             outputData[idx + 2] = rgb.b; outputData[idx + 3] = 255;
@@ -209,7 +179,7 @@ function applyErrorDiffusion(
                 distributeError(workingData, width, height, x, z, oldR - rgb.r, oldG - rgb.g, oldB - rgb.b, method);
             }
 
-            currentYPerColumn[x] = advanceY(currentY, best.brightness, best.groupId, eff.mode);
+            currentYPerColumn[x] = advanceY(currentY, best.brightness, best.groupId, staircasingMode);
             colBrightnessAll[x].push(best.brightness);
             colGroupIdAll[x].push(best.groupId);
             colYDirectAll[x].push(currentYPerColumn[x]);
@@ -217,11 +187,7 @@ function applyErrorDiffusion(
     }
 
     for (let x = 0; x < width; x++) {
-        if (hasAreas) {
-            finalizeColumnMixed(x, height, colBrightnessAll[x], colGroupIdAll[x], colModeAll[x], colMaxHeightAll[x], brightnessMap, groupIdMap, yMap);
-        } else {
-            finalizeColumn(x, height, colBrightnessAll[x], colGroupIdAll[x], staircasingMode, brightnessMap, groupIdMap, yMap, colYDirectAll[x], maxHeight);
-        }
+        finalizeColumn(x, height, colBrightnessAll[x], colGroupIdAll[x], staircasingMode, brightnessMap, groupIdMap, yMap, colYDirectAll[x]);
     }
 
     return { imageData: new ImageData(outputData, width, height), brightnessMap, groupIdMap, yMap };
@@ -236,23 +202,21 @@ export function applyDithering(
     colorMethod: ColorDistanceMethod,
     ditheringMethod: DitheringMethodName,
     maxHeight: number,
-    areas: AreaSettingsResolved[] = [],
 ): ProcessedImageResult {
     const method = ditheringMethods[ditheringMethod];
     const yRange = getYRange(staircasingMode, maxHeight);
 
     if (method.type === 'riemersma') {
-        const { applyRiemersmaDithering } = require('./riemersma') as typeof import('./riemersma');
-        return applyRiemersmaDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, yRange, maxHeight, method, areas);
+        return applyRiemersmaDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, yRange, method);
     }
 
     const getBias = createBiasFunction(method);
 
     if (getBias) {
-        return applyBiasDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, yRange, getBias, maxHeight, areas);
+        return applyBiasDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, yRange, getBias);
     }
     return applyErrorDiffusion(
         imageData, width, height, enabledGroups, staircasingMode, colorMethod,
-        yRange, method as DitheringMethodErrorDiffusion, maxHeight, areas,
+        yRange, method as DitheringMethodErrorDiffusion
     );
 }

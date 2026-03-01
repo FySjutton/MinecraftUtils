@@ -24,7 +24,6 @@ export function calculate3DStructure(
     const supportBlockName = fmtBlock(supportBlock);
 
     const isSouth = staircasingMode === StaircasingMode.SOUTHLINE;
-    const effectiveNoobLine = noobLine;
 
     let minY = Infinity;
     for (let z = 0; z < height; z++)
@@ -33,12 +32,12 @@ export function calculate3DStructure(
             if (yMap[z][x] < minY) minY = yMap[z][x];
         }
 
-    if (effectiveNoobLine) {
+    if (noobLine) {
         const noobZ = isSouth ? height - 1 : 0;
         for (let x = 0; x < width; x++) {
             if (groupIdMap[noobZ][x] === TRANSPARENT_GROUP_ID) continue;
-            const nly = nooblineY(brightnessMap[noobZ][x], yMap[noobZ][x]);
-            if (nly < minY) minY = nly;
+            const fillerY = nooblineY(brightnessMap[noobZ][x], yMap[noobZ][x]);
+            if (fillerY < minY) minY = fillerY;
         }
     }
 
@@ -53,7 +52,7 @@ export function calculate3DStructure(
             if (groupId === TRANSPARENT_GROUP_ID) continue;
 
             const y = yMap[z][x] + yOffset;
-            const zPos = effectiveNoobLine && !isSouth ? z + 1 : z;
+            const zPos = noobLine && !isSouth ? z + 1 : z;
 
             const selectedName = blockSelection[groupId] || BLOCK_GROUPS[groupId]?.[0] || 'stone';
             const fullName = fmtBlock(selectedName);
@@ -71,20 +70,20 @@ export function calculate3DStructure(
         }
     }
 
-    if (effectiveNoobLine) {
+    if (noobLine) {
         const noobZ = isSouth ? height - 1 : 0;
         const noobZPos = isSouth ? height : 0;
 
         for (let x = 0; x < width; x++) {
             if (groupIdMap[noobZ][x] === TRANSPARENT_GROUP_ID) continue;
 
-            const nly = nooblineY(brightnessMap[noobZ][x], yMap[noobZ][x]) + yOffset;
+            const fillerY = nooblineY(brightnessMap[noobZ][x], yMap[noobZ][x]) + yOffset;
 
             if (supportMode === SupportBlockMode.HEAVY) {
-                for (let sy = Math.max(0, nly - 1); sy <= nly; sy++)
+                for (let sy = Math.max(0, fillerY - 1); sy <= fillerY; sy++)
                     blocks.push({ x, y: sy, z: noobZPos, blockName: supportBlockName });
             } else {
-                blocks.push({ x, y: nly, z: noobZPos, blockName: supportBlockName });
+                blocks.push({ x, y: fillerY, z: noobZPos, blockName: supportBlockName });
             }
         }
     }
@@ -94,7 +93,7 @@ export function calculate3DStructure(
 
     return {
         width,
-        height: effectiveNoobLine ? height + 1 : height,
+        height: noobLine ? height + 1 : height,
         depth: isFinite(finalMaxY) ? finalMaxY - (isFinite(finalMinY) ? finalMinY : 0) + 1 : 0,
         blocks,
     };
