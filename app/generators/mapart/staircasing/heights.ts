@@ -95,7 +95,23 @@ export function finalizeColumn(
         ? computeColumnY(colBrightness, colGroupId, staircasingMode, maxHeight)
         : (colYDirect ?? computeColumnY(colBrightness, colGroupId, staircasingMode, maxHeight));
 
-    const minY = Math.min(...colY);
+    let minY: number;
+    if (staircasingMode === StaircasingMode.SOUTHLINE) {
+        let southY = colY[height - 1];
+        for (let z = height - 1; z >= 0; z--) {
+            if (colGroupId[z] !== TRANSPARENT_GROUP_ID) { southY = colY[z]; break; }
+        }
+        const shifted = colY.map(y => y - southY);
+        minY = Math.min(0, ...shifted);
+        for (let z = 0; z < height; z++) {
+            brightnessMap[z][x] = colBrightness[z];
+            groupIdMap[z][x] = colGroupId[z];
+            yMap[z][x] = shifted[z] - minY;
+        }
+        return;
+    }
+
+    minY = Math.min(...colY);
     for (let z = 0; z < height; z++) {
         brightnessMap[z][x] = colBrightness[z];
         groupIdMap[z][x] = colGroupId[z];

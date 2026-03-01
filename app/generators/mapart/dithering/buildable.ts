@@ -1,7 +1,7 @@
 import { Brightness, ColorDistanceMethod, StaircasingMode, AreaSettingsResolved } from '../utils/types';
 import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
 import { numberToRGB, findBestColorInSet, ColorCandidate, BestColorResult } from '../color/matching';
-import { createBiasFunction, distributeError, clamp, BiasFunction } from './shared';
+import { createBiasFunction, distributeError, clamp, clampToGamut, buildAllGamuts, BiasFunction, PaletteGamut } from './shared';
 import { DitheringMethodName, DitheringMethodErrorDiffusion, ditheringMethods } from './types';
 import { getYRange, finalizeColumn, finalizeColumnMixed } from '../staircasing/heights';
 import type { ProcessedImageResult } from '../utils/types';
@@ -10,6 +10,7 @@ import {resolveEffective} from "@/app/generators/mapart/utils/buildable";
 function isStandardMode(mode: StaircasingMode): boolean {
     return (
         mode === StaircasingMode.STANDARD ||
+        mode === StaircasingMode.SOUTHLINE ||
         mode === StaircasingMode.STANDARD_CUSTOM ||
         mode === StaircasingMode.VALLEY_CUSTOM
     );
@@ -158,6 +159,13 @@ function applyErrorDiffusion(
     const yMap: number[][] = Array.from({ length: height }, () => new Array(width));
     const hasAreas = areas.length > 0;
 
+    const gamuts = buildAllGamuts(enabledGroups, colorMethod);
+    const gamutByBrightness: Record<number, PaletteGamut> = {
+        [Brightness.HIGH]: gamuts.high,
+        [Brightness.NORMAL]: gamuts.normal,
+        [Brightness.LOW]: gamuts.low,
+    };
+
     const currentYPerColumn = new Array(width).fill(0);
     const colBrightnessAll: Brightness[][] = Array.from({ length: width }, () => []);
     const colGroupIdAll: number[][] = Array.from({ length: width }, () => []);
@@ -185,9 +193,11 @@ function applyErrorDiffusion(
                 continue;
             }
 
-            const oldR = clamp(Math.round(workingData[idx]));
-            const oldG = clamp(Math.round(workingData[idx + 1]));
-            const oldB = clamp(Math.round(workingData[idx + 2]));
+            // Clamp working data to palette gamut (use NORMAL gamut as default estimate)
+            const gamut = gamutByBrightness[Brightness.NORMAL] ?? null;
+            const oldR = Math.round(clampToGamut(workingData[idx], 'r', gamut));
+            const oldG = Math.round(clampToGamut(workingData[idx + 1], 'g', gamut));
+            const oldB = Math.round(clampToGamut(workingData[idx + 2], 'b', gamut));
 
             const best = findBestForPixel(oldR, oldG, oldB, eff.enabledGroups, eff.colorMethod, eff.mode, currentY, eff.yRange);
             const rgb = numberToRGB(best.color);
@@ -230,6 +240,12 @@ export function applyDithering(
 ): ProcessedImageResult {
     const method = ditheringMethods[ditheringMethod];
     const yRange = getYRange(staircasingMode, maxHeight);
+
+    if (method.type === 'riemersma') {
+        const { applyRiemersmaDithering } = require('./riemersma') as typeof import('./riemersma');
+        return applyRiemersmaDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, yRange, maxHeight, method, areas);
+    }
+
     const getBias = createBiasFunction(method);
 
     if (getBias) {

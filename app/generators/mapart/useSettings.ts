@@ -23,6 +23,7 @@ export interface Settings {
     fillColor: string;
     noobLine: boolean;
     pixelArt: boolean;
+    useMemoSearch: boolean;
 }
 
 export interface SettingsSetters {
@@ -43,6 +44,7 @@ export interface SettingsSetters {
     setFillColor: (v: string) => void;
     setNoobLine: (v: boolean) => void;
     setPixelArt: (v: boolean) => void;
+    setUseMemoSearch: (v: boolean) => void;
 }
 
 export function useSettings(): { settings: Settings; setters: SettingsSetters } {
@@ -63,6 +65,7 @@ export function useSettings(): { settings: Settings; setters: SettingsSetters } 
     const [fillColor, setFillColor] = useState<string>('none');
     const [noobLine, setNoobLine] = useState(true);
     const [pixelArt, setPixelArt] = useState(false);
+    const [useMemoSearch, setUseMemoSearch] = useState(false);
 
     return {
         settings: {
@@ -83,6 +86,7 @@ export function useSettings(): { settings: Settings; setters: SettingsSetters } 
             fillColor,
             noobLine,
             pixelArt,
+            useMemoSearch,
         },
         setters: {
             setMapWidth,
@@ -102,6 +106,7 @@ export function useSettings(): { settings: Settings; setters: SettingsSetters } 
             setFillColor,
             setNoobLine,
             setPixelArt,
+            setUseMemoSearch,
         },
     };
 }

@@ -111,7 +111,6 @@ export const EnchantmentPlanner: React.FC = () => {
 
             const beamWidth = currentPreset?.beamWidth ?? null;
 
-            // Progress callback for live stats
             const onProgress = (explored: number, progress: string) => {
                 setLiveStats({ statesExplored: explored, currentProgress: progress });
             };
@@ -121,7 +120,6 @@ export const EnchantmentPlanner: React.FC = () => {
             const endTime = performance.now();
             const duration = Math.round(endTime - startTime);
 
-            // Check if the result indicates an error (Infinity values)
             if (searchResult.totalLevels === Infinity || searchResult.error) {
                 setError(searchResult.error || "No valid solution found. The enchantments may be impossible to combine within the 39 level limit. Try removing some enchantments or using a different combination.");
                 setResult(null);
@@ -211,7 +209,6 @@ export const EnchantmentPlanner: React.FC = () => {
             setSelectedEnchants(prev => [...prev, { namespace, level }]);
         }
 
-        // Clear results when enchantments change
         setResult(null);
         setError(null);
         setCalculationStats(null);
@@ -269,7 +266,7 @@ export const EnchantmentPlanner: React.FC = () => {
             </Card>
 
             {/* Enchantment Selection */}
-            { selectedItem && (
+            {selectedItem && (
                 <Card>
                     <CardHeader>
                         <CardTitle>2. Select Enchantments</CardTitle>
@@ -309,15 +306,12 @@ export const EnchantmentPlanner: React.FC = () => {
                                                 <span className="min-w-[200px] w-fit font-medium">
                                                     {formatEnchantName(namespace)}
                                                 </span>
-
                                                 <div className="flex gap-2 flex-wrap w-fit bg-card p-2 rounded-xl pr-auto">
-                                                    {Array.from({ length: maxLevel }, (_, i) => i + 1).map(
-                                                        level => (
-                                                            <Button key={level} size="sm" variant={isSelected(namespace, level) ? "default" : "outline"} onClick={() => toggleEnchant(namespace, level, incompatible)} disabled={isDisabled} className="min-w-[40px]">
-                                                                {level}
-                                                            </Button>
-                                                        )
-                                                    )}
+                                                    {Array.from({ length: maxLevel }, (_, i) => i + 1).map(level => (
+                                                        <Button key={level} size="sm" variant={isSelected(namespace, level) ? "default" : "outline"} onClick={() => toggleEnchant(namespace, level, incompatible)} disabled={isDisabled} className="min-w-[40px]">
+                                                            {level}
+                                                        </Button>
+                                                    ))}
                                                 </div>
                                             </Card>
                                         );
@@ -480,7 +474,6 @@ export const EnchantmentPlanner: React.FC = () => {
                                                         enchants={step.targetItemEnchants}
                                                         result={result}
                                                     />
-
                                                     <div className="flex items-center">
                                                         <Plus className="w-6 mx-2 max-[400]:ml-0" />
                                                         <EnchantingEntry
@@ -490,7 +483,6 @@ export const EnchantmentPlanner: React.FC = () => {
                                                             result={result}
                                                         />
                                                     </div>
-
                                                     <div className="flex items-center">
                                                         <ArrowBigRight className="w-6 mx-2 max-[400]:ml-0" />
                                                         <EnchantingEntry
@@ -519,19 +511,23 @@ export const EnchantmentPlanner: React.FC = () => {
                     </Card>
                 </div>
             )}
-            <Card>
+
+            <Card collapsible>
                 <CardHeader>
                     <CardTitle>Information</CardTitle>
-                    <CardDescription className="mt-2 text-sm text-gray-300 space-y-2">
+                    <CardAction />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-sm text-gray-300 space-y-2">
                         <p>
                             This tool calculates the optimal order for combining enchantments on any item in Minecraft.
                             It provides detailed step-by-step instructions to minimize experience, levels, or prior work penalties,
-                            helping you avoid “Too Expensive!” anvil operations.
+                            helping you avoid "Too Expensive!" anvil operations.
                         </p>
                         <p>Modes available:</p>
                         <ul className="list-disc list-inside space-y-1">
                             <li>
-                                <strong>Least Experience (XP):</strong> Minimizes the total experience cost needed across all steps. Useful if you want to spend the least XP, but may not prevent “Too Expensive!” steps.
+                                <strong>Least Experience (XP):</strong> Minimizes the total experience cost needed across all steps. Useful if you want to spend the least XP, but may not prevent "Too Expensive!" steps.
                             </li>
                             <li>
                                 <strong>Least Levels:</strong> Minimizes the total level cost per step. Helps reduce the number of levels you need to spend, this is mostly the same as experience, although less accurate if you receive levels regularly, but prior work penalties can still push steps above 39 levels.
@@ -540,19 +536,19 @@ export const EnchantmentPlanner: React.FC = () => {
                                 <strong>Least Prior Work Penalty:</strong> Minimizes the exponential growth of the prior work penalty. This is the safest mode to reduce the chance of hitting the 39-level limit on any step.
                             </li>
                         </ul>
-                        <br/><p>The utility has multiple different presents for different ways of accuracy vs speed.</p>
+                        <br /><p>The utility has multiple different presets for different ways of accuracy vs speed.</p>
                         <ul className="list-disc list-inside space-y-1">
                             <li>
-                                <strong>Exhaustive:</strong> This checks every single combination possible, and gives you the best solution. This is the recommended present for any simple inputs (up to about 9 different enchantments on the same tool).
+                                <strong>Exhaustive:</strong> This checks every single combination possible, and gives you the best solution. This is the recommended preset for any simple inputs (up to about 9 different enchantments on the same tool).
                             </li>
                             <li>
-                                <strong>Beam Presents:</strong> This uses a much faster methods than the exhaustive mode, but often will not find the best solution. This is recommended for really large inputs where the exhaustive would take far too long.
+                                <strong>Beam Presets:</strong> This uses a much faster method than the exhaustive mode, but often will not find the best solution. This is recommended for really large inputs where the exhaustive would take far too long.
                             </li>
                         </ul>
-                        <br/><p><strong>Why use this tool?</strong></p>
+                        <br /><p><strong>Why use this tool?</strong></p>
                         <p>This utility focuses mostly on advanced accuracy, often giving more accurate results than other similar tools. We also focus more on making the tool easily usable, with simple menus and helpful responses.</p>
-                    </CardDescription>
-                </CardHeader>
+                    </div>
+                </CardContent>
             </Card>
         </div>
     );

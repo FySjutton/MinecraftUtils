@@ -20,6 +20,7 @@ export enum ColorDistanceMethod {
 export enum StaircasingMode {
     NONE = 'none',
     STANDARD = 'standard',
+    SOUTHLINE = 'southline',
     STANDARD_CUSTOM = 'standard_custom',
     VALLEY = 'valley',
     VALLEY_CUSTOM = 'valley_custom',
@@ -85,8 +86,12 @@ export const StaircasingModes: Record<StaircasingMode, { title: string; descript
         description: 'Completely flat map, less accurate',
     },
     [StaircasingMode.STANDARD]: {
-        title: 'Classic',
-        description: 'Full 3d map, fully accurate',
+        title: 'Classic (North Line)',
+        description: 'Full 3d staircase map. The north edge needs a filler row.',
+    },
+    [StaircasingMode.SOUTHLINE]: {
+        title: 'Classic (South Line)',
+        description: 'Full 3d staircase map. Same as Classic but the south edge has the filler row instead.',
     },
     [StaircasingMode.STANDARD_CUSTOM]: {
         title: 'Classic Limited Height (%s)',

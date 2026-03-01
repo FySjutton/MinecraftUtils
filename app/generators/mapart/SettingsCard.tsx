@@ -31,15 +31,17 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
         ditheringMethod, staircasingMode, colorDistanceMethod, maxHeight,
         supportMode, supportBlockName,
         brightness, contrast, saturation,
-        fillColor, pixelArt,
+        fillColor, pixelArt, useMemoSearch,
     } = settings;
 
     const {
         setDitheringMethod, setStaircasingMode, setColorDistanceMethod, setMaxHeight,
         setSupportMode, setSupportBlockName,
         setBrightness, setContrast, setSaturation,
-        setFillColor, setPixelArt,
+        setFillColor, setPixelArt, setUseMemoSearch,
     } = setters;
+
+    const isHeightLimited = staircasingMode === StaircasingMode.STANDARD_CUSTOM || staircasingMode === StaircasingMode.VALLEY_CUSTOM;
 
     const isAreaMode = !!selectedArea;
 
@@ -126,6 +128,8 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
             <CardContent>
 
                 {outputMode === 'buildable' && (
+                    // TODO: Fix errors
+                    // TODO: Clean up all files
                     <>
                         <OverridableRow overrideKey="staircasingMode">
                             <Label className="mt-4 mb-2">Staircasing Method</Label>
@@ -196,6 +200,16 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
                         getTooltip={v => ditheringMethods[v as DitheringMethodName].description}
                     />
                 </OverridableRow>
+
+                {!isAreaMode && outputMode === 'buildable' && isHeightLimited && (
+                    <div className="flex items-center justify-between mt-3">
+                        <div>
+                            <Label>Memoized Search</Label>
+                            <p className="text-xs text-gray-400 mt-0.5">Joint DP optimisation across all heights per column. Slower but globally optimal for height-limited modes.</p>
+                        </div>
+                        <Switch checked={useMemoSearch} onCheckedChange={setUseMemoSearch} className="ml-4 shrink-0" />
+                    </div>
+                )}
 
                 <Separator className="my-4" />
 

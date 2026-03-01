@@ -40,7 +40,7 @@ const presets = [
     { name: 'Very High', beamWidth: 10000 },
     { name: 'Absolute', beamWidth: null },
 ]
-const presentTypes = presets.map(i => i.name)
+const presetTypes = presets.map(i => i.name)
 
 export interface Candidate {
     stack: RGB[]
@@ -58,7 +58,7 @@ export function findColorName(rgb: RGB): string {
 
 const ALL_GLASS_COLORS = Object.keys(GLASS_COLORS).sort();
 
-const presentParser = enumParser(presentTypes).withDefault(presets[2].name)
+const presetParser = enumParser(presetTypes).withDefault(presets[2].name)
 const resultsParser = arrayObjectParser<Candidate>({
     stack: rgbArrayParser,
     mergedStackColors: rgbArrayParser,
@@ -73,7 +73,7 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
 
     const [hex, setHex] = useQueryState("hex", {defaultValue: initialValue})
 
-    const [preset, setPreset] = useQueryState("preset", presentParser)
+    const [preset, setPreset] = useQueryState("preset", presetParser)
     const [results, setResults] = useQueryState("results", resultsParser)
 
     const [resultTarget, setResultTarget] = useState("");
@@ -260,11 +260,11 @@ export default function BeaconToGlassTool({ setTabAction }: { setTabAction: (tab
                             A measurement of speed compared to accuracy.
                         </p>
                         <ComboBox
-                            items={presentTypes}
+                            items={presetTypes}
                             value={preset}
                             onChange={setPreset}
-                            placeholder="Select present"
-                            placeholderSearch="Search present..."
+                            placeholder="Select preset"
+                            placeholderSearch="Search preset..."
                             className="w-[300px] max-[390px]:w-[235px]"
                             renderItem={item => (
                                 <p className={`text-xs ${item === "Absolute" ? "text-red-400" : "text-gray-400"}`}>

@@ -182,9 +182,10 @@ export default function MapartGenerator() {
             maxHeight: settings.maxHeight,
             datMode: outputMode === 'dat',
             areas: areaDefs,
+            useMemoSearch: settings.useMemoSearch,
         };
         workerRef.current.postMessage(message, [buffer]);
-    }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, outputMode, areas, buildUnifiedCanvas, buildAreaDefs]);
+    }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, settings.useMemoSearch, outputMode, areas, buildUnifiedCanvas, buildAreaDefs]);
 
     const handlePreprocessed = useCallback((canvas: HTMLCanvasElement) => {
         preprocessedCanvasRef.current = canvas;
@@ -519,12 +520,12 @@ export default function MapartGenerator() {
                                     <>
                                         <div className="flex gap-2 w-full">
                                             <Button className="flex-1" disabled={!processingStats || isProcessing}
-                                                    onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, false, settings.noobLine)}>
+                                                    onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, false, settings.noobLine, settings.staircasingMode)}>
                                                 <Download className="mr-2" size={16} />Export NBT
                                             </Button>
                                             {(settings.mapHeight > 1 || settings.mapWidth > 1) && (
                                                 <Button className="flex-1" disabled={!processingStats || isProcessing}
-                                                        onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, true, settings.noobLine)}>
+                                                        onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, true, settings.noobLine, settings.staircasingMode)}>
                                                     <Download className="mr-2" size={16} />Export NBT (Split 1x1 .zip)
                                                 </Button>
                                             )}

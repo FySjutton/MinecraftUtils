@@ -3,8 +3,13 @@ import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from './constants';
 import { getColorWithBrightness, numberToRGB, findBestColorInSet, buildCandidates } from '../color/matching';
 import { calculateDistance } from '../color/distance';
 import { applyDithering } from '../dithering/buildable';
+import { applyMemoizedDithering } from '../dithering/memo';
 import { DitheringMethodName } from '../dithering/types';
 import { getYRange, computeColumnY, finalizeColumnMixed } from '../staircasing/heights';
+
+function isHeightLimitedMode(mode: StaircasingMode): boolean {
+    return mode === StaircasingMode.STANDARD_CUSTOM || mode === StaircasingMode.VALLEY_CUSTOM;
+}
 
 export function resolveEffective(
     x: number, z: number,
@@ -64,7 +69,12 @@ export function processImageData(
     colorMethod: ColorDistanceMethod,
     maxHeight: number,
     areas: AreaSettingsResolved[] = [],
+    useMemoSearch = false,
 ): ProcessedImageResult {
+    if (useMemoSearch && isHeightLimitedMode(staircasingMode) && areas.length === 0) {
+        return applyMemoizedDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, maxHeight);
+    }
+
     const result = ditheringMethod != null && ditheringMethod !== 'none'
         ? applyDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, ditheringMethod, maxHeight, areas)
         : processWithoutDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, maxHeight, areas);
@@ -190,9 +200,26 @@ function processWithoutDithering(
             finalizeColumnMixed(x, height, colBrightness, colGroupId, colMode, colMaxHeight, brightnessMap, groupIdMap, yMap);
         } else {
             const isValley = staircasingMode === StaircasingMode.VALLEY;
-            const colY = isValley
-                ? computeColumnY(colBrightness, colGroupId, staircasingMode, maxHeight)
-                : colYDirect;
+            let colY: number[];
+            if (isValley) {
+                colY = computeColumnY(colBrightness, colGroupId, staircasingMode, maxHeight);
+            } else if (staircasingMode === StaircasingMode.SOUTHLINE) {
+                colY = colYDirect;
+                let southY = colY[height - 1];
+                for (let z = height - 1; z >= 0; z--) {
+                    if (colGroupId[z] !== TRANSPARENT_GROUP_ID) { southY = colY[z]; break; }
+                }
+                const shifted = colY.map(y => y - southY);
+                const minShifted = Math.min(0, ...shifted);
+                for (let z = 0; z < height; z++) {
+                    brightnessMap[z][x] = colBrightness[z];
+                    groupIdMap[z][x] = colGroupId[z];
+                    yMap[z][x] = shifted[z] - minShifted;
+                }
+                continue;
+            } else {
+                colY = colYDirect;
+            }
 
             const minY = Math.min(...colY);
             for (let z = 0; z < height; z++) {

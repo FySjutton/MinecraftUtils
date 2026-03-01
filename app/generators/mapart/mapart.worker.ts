@@ -27,6 +27,7 @@ export interface WorkerRequest {
     maxHeight: number;
     datMode?: boolean;
     areas?: AreaSettingsDef[];
+    useMemoSearch?: boolean;
 }
 
 export type WorkerResponse =
@@ -48,7 +49,7 @@ export type WorkerResponse =
 };
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-    const { requestId, buffer, width, height, enabledGroups, ditheringMethod, staircasingMode, colorMethod, maxHeight, datMode, areas } = event.data;
+    const { requestId, buffer, width, height, enabledGroups, ditheringMethod, staircasingMode, colorMethod, maxHeight, datMode, areas, useMemoSearch } = event.data;
 
     try {
         const pixels = new Uint8ClampedArray(buffer);
@@ -76,7 +77,7 @@ self.onmessage = (event: MessageEvent<WorkerRequest>) => {
             };
             (self as unknown as Worker).postMessage(response, [outBuffer, colorBytesBuffer]);
         } else {
-            const result = processImageData(imageData, width, height, groups, ditheringMethod, staircasingMode, colorMethod, maxHeight, resolvedAreas);
+            const result = processImageData(imageData, width, height, groups, ditheringMethod, staircasingMode, colorMethod, maxHeight, resolvedAreas, useMemoSearch);
             const outBuffer = result.imageData.data.buffer;
 
             const response: WorkerResponse = {

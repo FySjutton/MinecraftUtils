@@ -43,12 +43,22 @@ export interface DitheringMethodStochastic {
     noiseRange: number;
 }
 
+export interface DitheringMethodRiemersma {
+    uniqueId?: number;
+    name: string;
+    description: string;
+    type: 'riemersma';
+    historyLength: number;
+    errorDecay: number;
+}
+
 export type DitheringMethod =
     | DitheringMethodNone
     | DitheringMethodErrorDiffusion
     | DitheringMethodOrdered
     | DitheringMethodThreshold
-    | DitheringMethodStochastic;
+    | DitheringMethodStochastic
+    | DitheringMethodRiemersma;
 
 export const ditheringMethods = ditheringMethodsJson as Record<string, DitheringMethod>;
 
