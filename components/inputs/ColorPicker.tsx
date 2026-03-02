@@ -1,5 +1,5 @@
 import * as React from "react";
-import {useState} from "react";
+import {useState, useEffect, useRef} from "react";
 import {HexColorPicker} from "react-colorful";
 
 import {Button} from "@/components/ui/button";
@@ -17,6 +17,7 @@ interface ColorPickerProps {
     initialValue?: string;
     hex: string;
     setHex: React.Dispatch<React.SetStateAction<string>>;
+    useDebounce?: boolean;
 }
 
 function isValidHex(hex: string): boolean {
@@ -50,30 +51,70 @@ function rgbToHex(rgb: RGB): string {
     return "#" + r + g + b;
 }
 
-export function ColorPicker({initialValue, hex, setHex}: ColorPickerProps) {
-    const initial = initialValue && isValidHex(normalizeToHashHex(initialValue)) ? normalizeToHashHex(initialValue) : "#6366f1";
+const DEBOUNCE_MS = 300;
 
-    const [hexDraft, setHexDraft] = useState(initial);
+export function ColorPicker({initialValue, hex, setHex, useDebounce = false}: ColorPickerProps) {
+    const initial = initialValue && isValidHex(normalizeToHashHex(initialValue))
+        ? normalizeToHashHex(initialValue)
+        : "#6366f1";
+
+    const [previewHex, setPreviewHex] = useState(hex || initial);
+    const [hexDraft, setHexDraft] = useState(hex || initial);
     const [mode, setMode] = useState<Mode>("hex");
 
-    const { copyToClipboard, isCopied } = useCopyToClipboard()
+    const {copyToClipboard, isCopied} = useCopyToClipboard();
+    const debounceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const isDragging = useRef(false);
+    const previewHexRef = useRef(previewHex);
 
-    const rgb = hexToRgb(hex);
+    const rgb = hexToRgb(previewHex);
 
-    React.useEffect(() => {
+    useEffect(() => {
+        setPreviewHex(hex);
         setHexDraft(hex);
+        previewHexRef.current = hex;
     }, [hex]);
 
-    function onHexChangeFromPicker(newHex: string) {
-        setHex(newHex);
+    function scheduleCommit(value: string): void {
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => {
+            setHex(value);
+        }, DEBOUNCE_MS);
+    }
+
+    function commitToParent(value: string): void {
+        if (useDebounce) {
+            if (!isDragging.current) {
+                scheduleCommit(value);
+            }
+        } else {
+            setHex(value);
+        }
+    }
+
+    function setColor(newHex: string): void {
+        setPreviewHex(newHex);
         setHexDraft(newHex);
+        previewHexRef.current = newHex;
+        commitToParent(newHex);
     }
 
     function commitHex(): void {
         const trimmed = hexDraft.trim();
         const normalized = normalizeToHashHex(trimmed);
         if (isValidHex(normalized)) {
+            if (debounceTimer.current) clearTimeout(debounceTimer.current);
+            setPreviewHex(normalized);
+            previewHexRef.current = normalized;
             setHex(normalized);
+        }
+    }
+
+    function flushDebounce(): void {
+        if (useDebounce && debounceTimer.current) {
+            clearTimeout(debounceTimer.current);
+            debounceTimer.current = null;
+            setHex(previewHexRef.current);
         }
     }
 
@@ -83,31 +124,30 @@ export function ColorPicker({initialValue, hex, setHex}: ColorPickerProps) {
         let normalized = raw;
         if (raw.length > 1) {
             normalized = raw.replace(/^0+/, "");
-            if (normalized === "") normalized = "0";
+            if (normalized === "") {
+                normalized = "0";
+            }
         }
 
         const value = clamp(Number(normalized));
-        const next = {
-            r: rgb.r,
-            g: rgb.g,
-            b: rgb.b,
-        };
-
+        const next = {r: rgb.r, g: rgb.g, b: rgb.b};
         next[channel] = value;
-        setHex(rgbToHex(next));
+        setColor(rgbToHex(next));
     }
 
     function renderHexInput() {
         return (
             <InputField
                 value={hexDraft.toUpperCase()}
-                onChange={function (e: React.SetStateAction<string>) {
-                    setHexDraft(e);
-                }}
+                onChange={(e: React.SetStateAction<string>) => setHexDraft(e)}
                 onBlur={commitHex}
-                onKeyDown={function (e: { key: string; }) {
-                    if (e.key === "Enter") commitHex();
-                    if (e.key === "Escape") setHexDraft(hex);
+                onKeyDown={(e: { key: string }) => {
+                    if (e.key === "Enter") {
+                        commitHex();
+                    }
+                    if (e.key === "Escape") {
+                        setHexDraft(previewHex);
+                    }
                 }}
                 className="font-mono"
                 showCopy={true}
@@ -116,97 +156,85 @@ export function ColorPicker({initialValue, hex, setHex}: ColorPickerProps) {
     }
 
     function renderRgbInputs() {
-        function getRgbString() {
-            return `${rgb.r}, ${rgb.g}, ${rgb.b}`
-        }
-
         return (
             <div className="flex items-center gap-2 w-full">
                 <Input
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    placeholder="R"
+                    inputMode="numeric" pattern="[0-9]*" placeholder="R"
                     value={String(rgb.r)}
-                    onChange={function (e) {
-                        updateRgb("r", e.target.value);
-                    }}
+                    onChange={(e) => updateRgb("r", e.target.value)}
+                    onBlur={flushDebounce}
                     className="w-1/3 text-center font-mono"
                 />
                 <Input
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    placeholder="G"
+                    inputMode="numeric" pattern="[0-9]*" placeholder="G"
                     value={String(rgb.g)}
-                    onChange={function (e) {
-                        updateRgb("g", e.target.value);
-                    }}
+                    onChange={(e) => updateRgb("g", e.target.value)}
+                    onBlur={flushDebounce}
                     className="w-1/3 text-center font-mono"
                 />
                 <Input
-                    inputMode="numeric"
-                    pattern="[0-9]*"
-                    placeholder="B"
+                    inputMode="numeric" pattern="[0-9]*" placeholder="B"
                     value={String(rgb.b)}
-                    onChange={function (e) {
-                        updateRgb("b", e.target.value);
-                    }}
+                    onChange={(e) => updateRgb("b", e.target.value)}
+                    onBlur={flushDebounce}
                     className="w-1/3 text-center font-mono"
                 />
                 <Button
                     variant="outline"
-                    onClick={() => copyToClipboard(String(getRgbString()))}
-                    className="flex-shrink-0"
+                    onClick={() => copyToClipboard(`${rgb.r}, ${rgb.g}, ${rgb.b}`)}
+                    className="shrink-0"
                     aria-label="Copy RGB"
                 >
-                    {isCopied ? <IconCheck className="text-green-500" /> : <IconCopy />}
+                    {isCopied ? <IconCheck className="text-green-500"/> : <IconCopy/>}
                 </Button>
             </div>
         );
+    }
+
+    function onPickerMouseDown() {
+        isDragging.current = true;
+    }
+
+    function onPickerMouseUp() {
+        isDragging.current = false;
+        if (useDebounce) {
+            scheduleCommit(previewHexRef.current);
+        }
     }
 
     return (
         <Popover>
             <PopoverTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2 px-3">
-                    <span className="h-4 w-4 rounded-sm border" style={{ backgroundColor: hex }}/>
-                    <span className="font-mono text-sm">{hex.toUpperCase()}</span>
+                    <span className="h-4 w-4 rounded-sm border" style={{backgroundColor: previewHex}}/>
+                    <span className="font-mono text-sm">{previewHex.toUpperCase()}</span>
                 </Button>
             </PopoverTrigger>
 
             <PopoverContent className="w-80 space-y-4 p-4">
-                <div className="h-8 w-full rounded-md border" style={{ backgroundColor: hex }}/>
+                <div className="h-8 w-full rounded-md border" style={{backgroundColor: previewHex}}/>
 
-                <div className="w-full">
+                <div
+                    className="w-full"
+                    onMouseDown={onPickerMouseDown}
+                    onMouseUp={onPickerMouseUp}
+                >
                     <HexColorPicker
-                        color={hex}
-                        onChange={onHexChangeFromPicker}
+                        color={previewHex}
+                        onChange={setColor}
                         className="w-full"
-                        style={{ width: "100%", height: 160 }}
+                        style={{width: "100%", height: 160}}
                     />
                 </div>
 
                 <div className="flex items-center gap-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="outline">
-                                {mode.toUpperCase()}
-                            </Button>
+                            <Button variant="outline">{mode.toUpperCase()}</Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent>
-                            <DropdownMenuItem
-                                onClick={function () {
-                                    setMode("hex");
-                                }}
-                            >
-                                HEX
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                                onClick={function () {
-                                    setMode("rgb");
-                                }}
-                            >
-                                RGB
-                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setMode("hex")}>HEX</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setMode("rgb")}>RGB</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
 

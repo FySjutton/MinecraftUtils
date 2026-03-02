@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import { Info } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import { ColorDistanceMethod, ColorDistanceMethods, StaircasingMode, Staircasing
 import { DitheringMethodName, ditheringMethods } from '@/app/generators/mapart/dithering/types';
 import { Settings, SettingsSetters } from './useSettings';
 import { AreaOverrides, MapArea } from './utils/areaTypes';
+import {ColorPicker} from "@/components/inputs/ColorPicker";
 
 interface SettingsCardProps {
     outputMode: string;
@@ -67,6 +68,7 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
         else setAOv(key, defaultVal);
     };
 
+
     const eff = {
         ditheringMethod: (aOv('ditheringMethod') ?? ditheringMethod) as DitheringMethodName,
         staircasingMode: (aOv('staircasingMode') ?? staircasingMode) as StaircasingMode,
@@ -80,6 +82,9 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
         fillColor: (aOv('fillColor') ?? fillColor) as string,
         pixelArt: (aOv('pixelArt') ?? pixelArt) as boolean,
     };
+
+    const isTransparentFill = eff.fillColor === 'none';
+    const [localColor, setLocalColor] = useState(isTransparentFill ? '#ffffff' : eff.fillColor);
 
     const setEff = {
         ditheringMethod: (v: DitheringMethodName) => isAreaMode ? setAOv('ditheringMethod', v) : setDitheringMethod(v),
@@ -95,8 +100,9 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
         pixelArt: (v: boolean) => isAreaMode ? setAOv('pixelArt', v) : setPixelArt(v),
     };
 
-    const isTransparentFill = eff.fillColor === 'none';
-    const [localColor, setLocalColor] = useState(isTransparentFill ? '#ffffff' : eff.fillColor);
+    useEffect(() => {
+        setEff.fillColor(localColor)
+    }, [localColor]);
 
     const renderOverridableRow = (overrideKey: keyof AreaOverrides, title: string, children: React.ReactNode) => {
         if (!isAreaMode) {
@@ -279,16 +285,7 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
                                         <TabsTrigger value="none">Transparent</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
-                                {!isTransparentFill && (
-                                    <input
-                                        type="color"
-                                        value={localColor}
-                                        onChange={e => setLocalColor(e.target.value)}
-                                        onBlur={e => setEff.fillColor(e.target.value)}
-                                        onMouseUp={e => setEff.fillColor((e.target as HTMLInputElement).value)}
-                                        className="h-9 w-14 cursor-pointer rounded border border-input bg-transparent p-1"
-                                    />
-                                )}
+                                {!isTransparentFill && (<ColorPicker hex={localColor} setHex={setLocalColor} useDebounce></ColorPicker>)}
                             </div>
                         </div>
                     )}
