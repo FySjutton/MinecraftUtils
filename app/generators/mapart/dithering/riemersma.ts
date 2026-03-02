@@ -5,10 +5,13 @@ import { clamp } from './shared';
 import { DitheringMethodRiemersma } from './types';
 import { finalizeColumn } from '../staircasing/heights';
 import type { ProcessedImageResult } from '../utils/types';
+import {getCandidatesForPixel} from "@/app/generators/mapart/dithering/buildable";
 
 function nextPowerOf2(n: number): number {
     let p = 1;
-    while (p < n) p *= 2;
+    while (p < n) {
+        p *= 2;
+    }
     return p;
 }
 
@@ -30,7 +33,9 @@ function generateHilbertOrder(w: number, h: number): [number, number][] {
             y += s * ry;
             t >>= 2;
         }
-        if (x < w && y < h) order.push([x, y]);
+        if (x < w && y < h) {
+            order.push([x, y]);
+        }
     }
 
     return order;
@@ -46,19 +51,7 @@ function getCandidates(
         return [...enabledGroups].map(groupId => ({ groupId, brightness: Brightness.NORMAL }));
     }
 
-    const candidates: ColorCandidate[] = [];
-
-    for (const groupId of enabledGroups) {
-        for (const brightness of getAllowedBrightnesses(groupId)) {
-            if (groupId !== 11) {
-                const delta = brightness === Brightness.HIGH ? 1 : brightness === Brightness.LOW ? -1 : 0;
-                const nextY = currentY + delta;
-                if (nextY < yRange.min || nextY > yRange.max) continue;
-            }
-            candidates.push({ groupId, brightness });
-        }
-    }
-    return candidates;
+    return getCandidatesForPixel(enabledGroups, currentY, yRange);
 }
 
 export function applyRiemersmaDithering(

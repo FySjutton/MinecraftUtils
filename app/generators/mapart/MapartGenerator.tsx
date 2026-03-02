@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Dot, Download, Layers, Loader2, Plus, RotateCcw, Trash2, Upload } from 'lucide-react';
+import {Dot, Download, Layers, Loader2, Pencil, Plus, RotateCcw, Trash2, Upload} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
@@ -19,7 +19,7 @@ import { exportMapDat } from '@/app/generators/mapart/utils/datExport';
 import { ALIASES, BLOCK_GROUPS, getEverythingBlockSelection, getMaterialList, Preset, Presets } from '@/app/generators/mapart/utils/constants';
 import { BlockSelection, Brightness, ProcessingStats } from '@/app/generators/mapart/utils/types';
 import type { WorkerRequest, WorkerResponse } from '@/app/generators/mapart/mapart.worker';
-import { PreviewCard } from '@/app/generators/mapart/PreviewCard';
+import {Mode, PreviewCard} from '@/app/generators/mapart/PreviewCard';
 import { ComboBox } from '@/components/inputs/dropdowns/ComboBox';
 import { useSettings } from './useSettings';
 import { useImagePreprocessing, CropMode } from './useImagePreprocessing';
@@ -67,7 +67,6 @@ export default function MapartGenerator() {
     const [colorBytes, setColorBytes] = useState<Uint8Array | null>(null);
 
     const preprocessedCanvasRef = useRef<HTMLCanvasElement | null>(null);
-    const [preprocessedImageUrl, setPreprocessedImageUrl] = useState<string | null>(null);
     const [cropOnlyImageUrl, setCropOnlyImageUrl] = useState<string | null>(null);
 
     const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getEverythingBlockSelection());
@@ -76,8 +75,10 @@ export default function MapartGenerator() {
     const presetInputRef = useRef<HTMLInputElement>(null);
     const expandedRef = useRef<HTMLDivElement | null>(null);
 
+    const [mode, setMode] = useState<Mode>("preview");
     const [areas, setAreas] = useState<MapArea[]>([]);
     const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+    const [drawMode, setDrawMode] = useState(false);
 
     const workerRef = useRef<Worker | null>(null);
     const areaWorkerRef = useRef<Worker | null>(null);
@@ -103,7 +104,9 @@ export default function MapartGenerator() {
 
         worker.onmessage = (event: MessageEvent<WorkerResponse>) => {
             const data = event.data;
-            if (data.requestId !== requestIdRef.current) return;
+            if (data.requestId !== requestIdRef.current) {
+                return;
+            }
             if (data.type === 'error') { console.error('Worker error:', data.message); setIsProcessing(false); return; }
 
             const { buffer, width, height, brightnessMap, groupIdMap, yMap, colorBytesBuffer } = data;
@@ -150,7 +153,9 @@ export default function MapartGenerator() {
         .filter(([, v]) => v !== null).map(([k]) => k).sort().join(',');
     const debouncedEnabledGroupsKey = useDebounce(enabledGroupsKey, 400);
     useCallback((globalCanvas: HTMLCanvasElement, currentAreas: MapArea[]): HTMLCanvasElement => {
-        if (currentAreas.length === 0 || !cropOnlyCanvasRef.current) return globalCanvas;
+        if (currentAreas.length === 0 || !cropOnlyCanvasRef.current) {
+            return globalCanvas;
+        }
         const { width, height } = globalCanvas;
         const unified = document.createElement('canvas');
         unified.width = width;
@@ -167,10 +172,14 @@ export default function MapartGenerator() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [settings.brightness, settings.contrast, settings.saturation, settings.fillColor, settings.pixelArt]);
     const postToWorker = useCallback((globalCanvas: HTMLCanvasElement, enabledGroups: number[]) => {
-        if (!workerRef.current) return;
+        if (!workerRef.current) {
+            return;
+        }
 
         const ctx = globalCanvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) {
+            return;
+        }
 
         const { width, height } = globalCanvas;
         const imageData = ctx.getImageData(0, 0, width, height);
@@ -192,7 +201,6 @@ export default function MapartGenerator() {
 
     const handlePreprocessed = useCallback((canvas: HTMLCanvasElement) => {
         preprocessedCanvasRef.current = canvas;
-        setPreprocessedImageUrl(canvas.toDataURL());
 
         const enabledGroups = Object.entries(blockSelection)
             .filter(([, v]) => v !== null)
@@ -208,19 +216,27 @@ export default function MapartGenerator() {
     });
 
     useEffect(() => {
-        if (!preprocessedCanvasRef.current) return;
+        if (!preprocessedCanvasRef.current) {
+            return;
+        }
         const enabledGroups = debouncedEnabledGroupsKey
             ? debouncedEnabledGroupsKey.split(',').map(Number)
             : Array.from({ length: BLOCK_GROUPS.length }, (_, i) => i);
-        if (Object.keys(blockSelection).length === 0) return;
+        if (Object.keys(blockSelection).length === 0) {
+            return;
+        }
         postToWorker(preprocessedCanvasRef.current, enabledGroups);
     }, [debouncedEnabledGroupsKey, postToWorker]);
 
     // here we process each area differently, in order to apply the settings
     useEffect(() => {
         const raw = rawGlobalResultRef.current;
-        if (!raw || areas.length === 0 || !areaWorkerRef.current || !cropOnlyCanvasRef.current) return;
-        if (outputMode === 'dat') return; // areas don't apply in dat mode
+        if (!raw || areas.length === 0 || !areaWorkerRef.current || !cropOnlyCanvasRef.current) {
+            return;
+        }
+        if (outputMode === 'dat') {
+            return;
+        } // areas don't apply in dat mode
 
         let cancelled = false;
         const runId = ++areaRequestIdRef.current;
@@ -235,7 +251,9 @@ export default function MapartGenerator() {
             const mergedY = raw.yMap.map(row => [...row]);
 
             for (const area of areas) {
-                if (cancelled || runId !== areaRequestIdRef.current) return;
+                if (cancelled || runId !== areaRequestIdRef.current) {
+                    return;
+                }
 
                 // build area-specific canvas with preprocessing overrides
                 const areaCanvas = buildAreaCanvas(cropOnlyCanvasRef.current!, cropOnlyPixelCanvasRef.current, area, settings);
@@ -263,7 +281,9 @@ export default function MapartGenerator() {
 
                 try {
                     const areaResult = await processWithAreaWorker(areaWorkerRef.current!, areaRequest);
-                    if (cancelled || runId !== areaRequestIdRef.current) return;
+                    if (cancelled || runId !== areaRequestIdRef.current) {
+                        return;
+                    }
 
                     mergeAreaResult(
                         mergedPixels, mergedBrightness, mergedGroupId, mergedY, null,
@@ -281,7 +301,9 @@ export default function MapartGenerator() {
                 }
             }
 
-            if (cancelled || runId !== areaRequestIdRef.current) return;
+            if (cancelled || runId !== areaRequestIdRef.current) {
+                return;
+            }
 
             // Recompute brightness at area boundaries
             recomputeGlobalBrightness(mergedPixels, mergedBrightness, mergedGroupId, mergedY, raw.width, raw.height);
@@ -298,7 +320,9 @@ export default function MapartGenerator() {
     }, [globalResultVersion, areas, outputMode, blockSelection, settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, settings.useMemoSearch]);
 
     const handleFileUpload = (file: File | null) => {
-        if (!file?.type.startsWith('image/')) return;
+        if (!file?.type.startsWith('image/')) {
+            return;
+        }
         setIsUploading(true);
         const reader = new FileReader();
         reader.onload = e => {
@@ -319,7 +343,6 @@ export default function MapartGenerator() {
         setImage(null);
         setSourceImageElement(null);
         preprocessedCanvasRef.current = null;
-        setPreprocessedImageUrl(null);
         setCropOnlyImageUrl(null);
         setProcessingStats(null);
         setProcessedImageData(null);
@@ -334,13 +357,17 @@ export default function MapartGenerator() {
     };
 
     const applyPreset = (presetName: string) => {
-        if (presetName === 'Custom') return;
+        if (presetName === 'Custom') {
+            return;
+        }
         let newSelection: BlockSelection;
         if (presetName === 'Everything') {
             newSelection = getEverythingBlockSelection();
         } else {
             const preset = presetsData[presetName as Preset];
-            if (!preset) return;
+            if (!preset) {
+                return;
+            }
             newSelection = {};
             Object.entries(preset).forEach(([groupId, blockName]) => { newSelection[parseInt(groupId) - 1] = blockName as string; });
         }
@@ -349,13 +376,17 @@ export default function MapartGenerator() {
     };
 
     const applyPresetToArea = (presetName: string, area: MapArea) => {
-        if (presetName === 'Custom') return;
+        if (presetName === 'Custom') {
+            return;
+        }
         let newSelection: BlockSelection;
         if (presetName === 'Everything') {
             newSelection = getEverythingBlockSelection();
         } else {
             const preset = presetsData[presetName as Preset];
-            if (!preset) return;
+            if (!preset) {
+                return;
+            }
             newSelection = {};
             Object.entries(preset).forEach(([groupId, blockName]) => { newSelection[parseInt(groupId) - 1] = blockName as string; });
         }
@@ -394,8 +425,12 @@ export default function MapartGenerator() {
             // Modify area's block selection override
             const currentSel = selectedArea.overrides.blockSelection ?? { ...blockSelection };
             const next = { ...currentSel };
-            if (blockName === null || next[groupId] === blockName) delete next[groupId];
-            else next[groupId] = blockName;
+            if (blockName === null || next[groupId] === blockName) {
+                delete next[groupId];
+            }
+            else {
+                next[groupId] = blockName;
+            }
             setAreas(prev => prev.map(a => a.id === selectedArea.id ? { ...a, overrides: { ...a.overrides, blockSelection: next } } : a
             ));
         } else {
@@ -408,9 +443,15 @@ export default function MapartGenerator() {
     }, [selectedArea, blockSelection]);
 
     useEffect(() => {
-        if (expandedGroup === null) return;
-        const onClickOutside = (e: MouseEvent) => { if (expandedRef.current && !expandedRef.current.contains(e.target as Node)) setExpandedGroup(null); };
-        const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') setExpandedGroup(null); };
+        if (expandedGroup === null) {
+            return;
+        }
+        const onClickOutside = (e: MouseEvent) => { if (expandedRef.current && !expandedRef.current.contains(e.target as Node)) {
+            setExpandedGroup(null);
+        } };
+        const onKeyDown = (e: KeyboardEvent) => { if (e.key === 'Escape') {
+            setExpandedGroup(null);
+        } };
         document.addEventListener('mousedown', onClickOutside);
         document.addEventListener('keydown', onKeyDown);
         return () => { document.removeEventListener('mousedown', onClickOutside); document.removeEventListener('keydown', onKeyDown); };
@@ -427,7 +468,9 @@ export default function MapartGenerator() {
 
     const handleDraw = useCallback((newArea: MapArea) => {
         setAreas(prev => {
-            if (prev.some(a => areasOverlap(a, newArea))) return prev;
+            if (prev.some(a => areasOverlap(a, newArea))) {
+                return prev;
+            }
             return [...prev, newArea];
         });
         setSelectedAreaId(newArea.id);
@@ -439,7 +482,9 @@ export default function MapartGenerator() {
 
     const handleDeleteArea = (id: string) => {
         setAreas(prev => prev.filter(a => a.id !== id));
-        if (selectedAreaId === id) setSelectedAreaId(null);
+        if (selectedAreaId === id) {
+            setSelectedAreaId(null);
+        }
     };
 
     // Active block selection: area override if set, else global
@@ -542,13 +587,22 @@ export default function MapartGenerator() {
                         </Card>
 
                         {/* Areas card */}
-                        <Card id="areas">
+                        <Card id="areas" className="gap-2">
                             <CardHeader>
                                 <CardTitle className="flex items-center gap-2">
                                     <Layers size={16} />
                                     Areas
                                 </CardTitle>
-                                <p className="text-xs text-muted-foreground">Select an area to override its settings. Use the draw tool on the preview to add areas.</p>
+                                <p className="text-xs text-muted-foreground">Select an area to override its settings. Use the draw tool below on the preview to add areas.</p>
+                                <Button variant={drawMode ? "default" : "outline"} size="sm" onClick={() => {
+                                    if (!drawMode) {
+                                        setMode("preview")
+                                    }
+                                    setDrawMode(d => !d)
+                                }} title="Toggle draw mode">
+                                    <Pencil size={15} />
+                                    Toggle drawing mode
+                                </Button>
                             </CardHeader>
                             <CardContent className="space-y-1">
                                 {/* Background (global) entry */}
@@ -633,8 +687,11 @@ export default function MapartGenerator() {
                                     </>
                                 ) : (
                                     <>
-                                        <Button className="w-full" disabled={!processingStats || isProcessing || !colorBytes}
-                                                onClick={() => { if (colorBytes && processingStats) exportMapDat(colorBytes, processingStats.width, settings.mapWidth, settings.mapHeight); }}>
+                                        <Button className="w-full" disabled={!processingStats || isProcessing || !colorBytes} onClick={() => {
+                                            if (colorBytes && processingStats) {
+                                                exportMapDat(colorBytes, processingStats.width, settings.mapWidth, settings.mapHeight);
+                                            }
+                                        }}>
                                             <Download className="mr-2" size={16} />
                                             {settings.mapWidth === 1 && settings.mapHeight === 1 ? 'Export map_0.dat' : `Export ${settings.mapWidth * settings.mapHeight} .dat files (.zip)`}
                                         </Button>
@@ -654,13 +711,13 @@ export default function MapartGenerator() {
                         <Card id="palette">
                             <CardHeader>
                                 <CardTitle>
-                                    {isAreaMode ? `Block Palette — ${selectedArea.name}` : 'Block Palette'}
+                                    {isAreaMode ? `Block Palette - ${selectedArea.name}` : 'Block Palette'}
                                 </CardTitle>
                                 <CardDescription>
                                     {isAreaMode
                                         ? selectedArea.overrides.blockSelection
                                             ? `${Object.keys(selectedArea.overrides.blockSelection).length} / 61 overridden`
-                                            : 'Inheriting global palette — toggle override to customize'
+                                            : 'Using palette, toggle override to customize'
                                         : `${Object.keys(blockSelection).length} / 61 colors enabled`
                                     }
                                 </CardDescription>
@@ -676,7 +733,9 @@ export default function MapartGenerator() {
                                         <>
                                             <Button variant="outline" onClick={handleExportPreset}><Download size={14} /></Button>
                                             <Button variant="outline" onClick={() => presetInputRef.current?.click()}><Upload size={14} /></Button>
-                                            <input ref={presetInputRef} type="file" accept=".json" onChange={e => { const f = e.target.files?.[0]; if (f) handleImportPreset(f); }} className="hidden" />
+                                            <input ref={presetInputRef} type="file" accept=".json" onChange={e => { const f = e.target.files?.[0]; if (f) {
+                                                handleImportPreset(f);
+                                            } }} className="hidden" />
                                         </>
                                     )}
                                 </div>
@@ -693,7 +752,9 @@ export default function MapartGenerator() {
                                 {isAreaMode && selectedArea.overrides.blockSelection && (
                                     <Button variant="outline" size="sm" className="mt-2" onClick={() => {
                                         setAreas(prev => prev.map(a => {
-                                            if (a.id !== selectedArea.id) return a;
+                                            if (a.id !== selectedArea.id) {
+                                                return a;
+                                            }
                                             const next = { ...a.overrides };
                                             delete next.blockSelection;
                                             return { ...a, overrides: next };
@@ -723,7 +784,6 @@ export default function MapartGenerator() {
                             processingStats={processingStats}
                             groupIdMap={groupIdMap}
                             blockSelection={blockSelection}
-                            sourceImage={preprocessedImageUrl}
                             originalImage={cropOnlyImageUrl}
                             outputMode={outputMode}
                             noobLine={settings.noobLine}
@@ -732,6 +792,9 @@ export default function MapartGenerator() {
                             onDraw={handleDraw}
                             mapWidth={settings.mapWidth}
                             mapHeight={settings.mapHeight}
+                            drawMode={drawMode}
+                            mode={mode}
+                            setMode={setMode}
                         />
 
                         {/* Material List */}
@@ -765,7 +828,9 @@ export default function MapartGenerator() {
                                                 }
 
                                                 const selectedBlock = blockSelection[material.groupId] as string;
-                                                if (!selectedBlock) return null;
+                                                if (!selectedBlock) {
+                                                    return null;
+                                                }
                                                 const imageName = "2d_" + (selectedBlock in ALIASES ? ALIASES[selectedBlock] : selectedBlock);
                                                 const isExpanded = expandedGroup === material.groupId;
 
@@ -787,7 +852,9 @@ export default function MapartGenerator() {
                                                                     selectedBlock={blockSelection[material.groupId] ?? null}
                                                                     callback={(gId, block) => {
                                                                         setExpandedGroup(null);
-                                                                        if (selectedBlock !== block) toggleBlockSelection(gId, block ? block : selectedBlock);
+                                                                        if (selectedBlock !== block) {
+                                                                            toggleBlockSelection(gId, block ? block : selectedBlock);
+                                                                        }
                                                                     }}
                                                                     groupId={material.groupId}
                                                                     open={true}

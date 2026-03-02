@@ -49,6 +49,7 @@ export function buildAreaCanvas(
     return areaCanvas;
 }
 
+// Apply the preprocessing filterering
 export function applyBCSFilters(
     ctx: CanvasRenderingContext2D,
     width: number,
@@ -128,15 +129,19 @@ export function recomputeGlobalBrightness(
     fullWidth: number,
     fullHeight: number,
 ): void {
-    if (mergedBrightness.length === 0) return; // dat mode — no brightness map
+    if (mergedBrightness.length === 0) return; // dat mode, no brightness map
 
     for (let z = 1; z < fullHeight; z++) {
         for (let x = 0; x < fullWidth; x++) {
             if (mergedGroupId[z][x] === TRANSPARENT_GROUP_ID) continue;
 
             let northZ = z - 1;
-            while (northZ >= 0 && mergedGroupId[northZ][x] === TRANSPARENT_GROUP_ID) northZ--;
-            if (northZ < 0) continue; // no solid north block in this column
+            while (northZ >= 0 && mergedGroupId[northZ][x] === TRANSPARENT_GROUP_ID) {
+                northZ--;
+            }
+            if (northZ < 0) {
+                continue;
+            } // no solid north block in this column
 
             const currentY = mergedY[z][x];
             const northY = mergedY[northZ][x];
@@ -167,8 +172,11 @@ export function processWithAreaWorker(
         const handler = (e: MessageEvent<WorkerResponse>) => {
             if (e.data.requestId !== request.requestId) return;
             worker.removeEventListener('message', handler);
-            if (e.data.type === 'error') reject(new Error(e.data.message));
-            else resolve(e.data as Extract<WorkerResponse, { type: 'result' }>);
+            if (e.data.type === 'error') {
+                reject(new Error(e.data.message));
+            } else {
+                resolve(e.data as Extract<WorkerResponse, { type: 'result' }>);
+            }
         };
         worker.addEventListener('message', handler);
         worker.postMessage(request, [request.buffer]);

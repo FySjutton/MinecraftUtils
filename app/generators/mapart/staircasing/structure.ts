@@ -1,5 +1,5 @@
-import { Block3D, BlockSelection, Brightness, Structure3D, SupportBlockMode, StaircasingMode } from '../utils/types';
-import { BLOCK_GROUPS, TRANSPARENT_GROUP_ID } from '../utils/constants';
+import {Block3D, BlockSelection, Brightness, Structure3D, SupportBlockMode, StaircasingMode} from '../utils/types';
+import {BLOCK_GROUPS, TRANSPARENT_GROUP_ID} from '../utils/constants';
 
 function nooblineY(brightness: Brightness, imageY: number): number {
     if (brightness === Brightness.HIGH) return imageY - 1;
@@ -7,6 +7,7 @@ function nooblineY(brightness: Brightness, imageY: number): number {
     return imageY;
 }
 
+// Convert the 2D brightness/groupId/Y maps into actual 3D block positions for NBT export
 export function calculate3DStructure(
     brightnessMap: Brightness[][],
     groupIdMap: number[][],
@@ -26,18 +27,27 @@ export function calculate3DStructure(
     const isSouth = staircasingMode === StaircasingMode.SOUTHLINE;
 
     let minY = Infinity;
-    for (let z = 0; z < height; z++)
+    for (let z = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
-            if (groupIdMap[z][x] === TRANSPARENT_GROUP_ID) continue;
-            if (yMap[z][x] < minY) minY = yMap[z][x];
+            if (groupIdMap[z][x] === TRANSPARENT_GROUP_ID) {
+                continue;
+            }
+            if (yMap[z][x] < minY) {
+                minY = yMap[z][x];
+            }
         }
+    }
 
     if (noobLine) {
         const noobZ = isSouth ? height - 1 : 0;
         for (let x = 0; x < width; x++) {
-            if (groupIdMap[noobZ][x] === TRANSPARENT_GROUP_ID) continue;
+            if (groupIdMap[noobZ][x] === TRANSPARENT_GROUP_ID) {
+                continue;
+            }
             const fillerY = nooblineY(brightnessMap[noobZ][x], yMap[noobZ][x]);
-            if (fillerY < minY) minY = fillerY;
+            if (fillerY < minY) {
+                minY = fillerY;
+            }
         }
     }
 
@@ -49,7 +59,9 @@ export function calculate3DStructure(
     for (let z = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
             const groupId = groupIdMap[z][x];
-            if (groupId === TRANSPARENT_GROUP_ID) continue;
+            if (groupId === TRANSPARENT_GROUP_ID) {
+                continue;
+            }
 
             const y = yMap[z][x] + yOffset;
             const zPos = noobLine && !isSouth ? z + 1 : z;
@@ -58,14 +70,17 @@ export function calculate3DStructure(
             const fullName = fmtBlock(selectedName);
 
             if (supportMode === SupportBlockMode.NONE) {
-                blocks.push({ x, y, z: zPos, blockName: fullName });
+                blocks.push({x, y, z: zPos, blockName: fullName});
             } else if (supportMode === SupportBlockMode.THIN) {
-                if (y - 1 >= 0) blocks.push({ x, y: y - 1, z: zPos, blockName: supportBlockName });
-                blocks.push({ x, y, z: zPos, blockName: fullName });
+                if (y - 1 >= 0) {
+                    blocks.push({x, y: y - 1, z: zPos, blockName: supportBlockName});
+                }
+                blocks.push({x, y, z: zPos, blockName: fullName});
             } else {
-                for (let sy = Math.max(0, y - 2); sy < y; sy++)
-                    blocks.push({ x, y: sy, z: zPos, blockName: supportBlockName });
-                blocks.push({ x, y, z: zPos, blockName: fullName });
+                for (let sy = Math.max(0, y - 2); sy < y; sy++) {
+                    blocks.push({x, y: sy, z: zPos, blockName: supportBlockName});
+                }
+                blocks.push({x, y, z: zPos, blockName: fullName});
             }
         }
     }
@@ -75,15 +90,18 @@ export function calculate3DStructure(
         const noobZPos = isSouth ? height : 0;
 
         for (let x = 0; x < width; x++) {
-            if (groupIdMap[noobZ][x] === TRANSPARENT_GROUP_ID) continue;
+            if (groupIdMap[noobZ][x] === TRANSPARENT_GROUP_ID) {
+                continue;
+            }
 
             const fillerY = nooblineY(brightnessMap[noobZ][x], yMap[noobZ][x]) + yOffset;
 
             if (supportMode === SupportBlockMode.HEAVY) {
-                for (let sy = Math.max(0, fillerY - 1); sy <= fillerY; sy++)
-                    blocks.push({ x, y: sy, z: noobZPos, blockName: supportBlockName });
+                for (let sy = Math.max(0, fillerY - 1); sy <= fillerY; sy++) {
+                    blocks.push({x, y: sy, z: noobZPos, blockName: supportBlockName});
+                }
             } else {
-                blocks.push({ x, y: fillerY, z: noobZPos, blockName: supportBlockName });
+                blocks.push({x, y: fillerY, z: noobZPos, blockName: supportBlockName});
             }
         }
     }

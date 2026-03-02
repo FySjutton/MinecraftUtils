@@ -10,19 +10,10 @@ export type BiasFunction = (x: number, z: number) => number;
 
 export function createBiasFunction(method: DitheringMethod): BiasFunction | null {
     switch (method.type) {
-        case 'ordered':
-            return (x, z) =>
-                (method.ditherMatrix[z % method.ditherMatrix.length][x % method.ditherMatrix[0].length]
-                    / method.ditherDivisor - 0.5) * 255;
-
-        case 'threshold':
-            return () => (method.threshold - 0.5) * 255;
-
-        case 'stochastic':
-            return () => (Math.random() - 0.5) * method.noiseRange * 255;
-
-        default:
-            return null;
+        case 'ordered':return (x, z) => (method.ditherMatrix[z % method.ditherMatrix.length][x % method.ditherMatrix[0].length] / method.ditherDivisor - 0.5) * 255;
+        case 'threshold':return () => (method.threshold - 0.5) * 255;
+        case 'stochastic':return () => (Math.random() - 0.5) * method.noiseRange * 255;
+        default:return null;
     }
 }
 
@@ -42,11 +33,15 @@ export function distributeError(
     for (let dy = 0; dy < matrix.length; dy++) {
         for (let dx = 0; dx < matrix[dy].length; dx++) {
             const weight = matrix[dy][dx];
-            if (weight === 0) continue;
+            if (weight === 0) {
+                continue;
+            }
 
             const nx = x + (dx - cx);
             const nz = z + (dy - cy);
-            if (nx < 0 || nx >= width || nz < 0 || nz >= height) continue;
+            if (nx < 0 || nx >= width || nz < 0 || nz >= height) {
+                continue;
+            }
 
             const ni = (nz * width + nx) * 4;
             const factor = weight / divisor;
@@ -67,17 +62,26 @@ export interface PaletteGamut {
     minB: number; maxB: number;
 }
 
+// Thanks to jkascpkmc's original algorithms for this.
+// RGB bounding box of all enabled colors at a given brightness, prevents error diffusion runaway
 export function computeGamut(enabledGroups: Set<number>, brightness: Brightness): PaletteGamut {
     let minR = 255, maxR = 0, minG = 255, maxG = 0, minB = 255, maxB = 0;
 
     for (const groupId of enabledGroups) {
-        if (groupId === TRANSPARENT_GROUP_ID) continue;
+        if (groupId === TRANSPARENT_GROUP_ID) {
+            continue;
+        }
         const allowed = getAllowedBrightnesses(groupId);
-        if (!allowed.includes(brightness)) continue;
+        if (!allowed.includes(brightness)) {
+            continue;
+        }
         const { r, g, b } = numberToRGB(getColorWithBrightness(groupId, brightness));
-        if (r < minR) minR = r; if (r > maxR) maxR = r;
-        if (g < minG) minG = g; if (g > maxG) maxG = g;
-        if (b < minB) minB = b; if (b > maxB) maxB = b;
+        if (r < minR) minR = r;
+        if (r > maxR) maxR = r;
+        if (g < minG) minG = g;
+        if (g > maxG) maxG = g;
+        if (b < minB) minB = b;
+        if (b > maxB) maxB = b;
     }
 
     if (minR > maxR) { minR = 0; maxR = 255; }
@@ -100,12 +104,15 @@ export function clampToGamut(
     channel: 'r' | 'g' | 'b',
     gamut: PaletteGamut | null,
 ): number {
-    if (!gamut) return clamp(v);
+    if (!gamut) {
+        return clamp(v);
+    }
     const lo = channel === 'r' ? gamut.minR : channel === 'g' ? gamut.minG : gamut.minB;
     const hi = channel === 'r' ? gamut.maxR : channel === 'g' ? gamut.maxG : gamut.maxB;
     return v < lo ? lo : v > hi ? hi : v;
 }
 
+// Deterministic PRNG so memoized dithering gives consistent results across runs
 export function mulberry32(seed: number): () => number {
     let s = seed >>> 0;
     return () => {

@@ -7,6 +7,7 @@ import { getYRange, finalizeColumn } from '../staircasing/heights';
 import { applyRiemersmaDithering } from './riemersma';
 import type { ProcessedImageResult } from '../utils/types';
 
+// Standard modes track Y position per column (each brightness shifts the block up or down)
 function isStandardMode(mode: StaircasingMode): boolean {
     return (
         mode === StaircasingMode.STANDARD ||
@@ -16,7 +17,8 @@ function isStandardMode(mode: StaircasingMode): boolean {
     );
 }
 
-function getCandidatesForPixel(
+// Build the list of allowed (groupId, brightness) combos given current Y constraints
+export function getCandidatesForPixel(
     enabledGroups: Set<number>,
     currentY: number,
     yRange: { min: number; max: number },
@@ -64,9 +66,15 @@ function findBestForPixel(
 }
 
 function advanceY(currentY: number, brightness: Brightness, groupId: number, mode: StaircasingMode): number {
-    if (!isStandardMode(mode) || groupId === 11 || groupId === TRANSPARENT_GROUP_ID) return currentY;
-    if (brightness === Brightness.HIGH) return currentY + 1;
-    if (brightness === Brightness.LOW) return currentY - 1;
+    if (!isStandardMode(mode) || groupId === 11 || groupId === TRANSPARENT_GROUP_ID) {
+        return currentY;
+    }
+    if (brightness === Brightness.HIGH) {
+        return currentY + 1;
+    }
+    if (brightness === Brightness.LOW) {
+        return currentY - 1;
+    }
     return currentY;
 }
 

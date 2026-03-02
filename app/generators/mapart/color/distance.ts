@@ -1,5 +1,6 @@
-import { ColorDistanceMethod } from '../utils/types';
+import {ColorDistanceMethod} from '../utils/types';
 
+// sRGB gamma -> linear conversion
 function linearize(v: number): number {
     return v <= 0.04045 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
 }
@@ -19,7 +20,6 @@ function packRGB(r: number, g: number, b: number): number {
 }
 
 // XYZ helpers
-
 function xyzToLab(fx: number, fy: number, fz: number): [number, number, number] {
     const f = (t: number) => t > 0.008856452 ? Math.cbrt(t) : (903.2962962 * t + 16) / 116;
     const lf = f(fy);
@@ -325,14 +325,23 @@ export function calculateDistance(
     method: ColorDistanceMethod,
 ): number {
     switch (method) {
-        case ColorDistanceMethod.WEIGHTED_RGB: return weightedRGBDistance(r1, g1, b1, r2, g2, b2);
-        case ColorDistanceMethod.CIE76_D65: return cie76D65Distance(r1, g1, b1, r2, g2, b2);
-        case ColorDistanceMethod.CIE76_D50: return cie76D50Distance(r1, g1, b1, r2, g2, b2);
-        case ColorDistanceMethod.CIE94_D65: return cie94D65Distance(r1, g1, b1, r2, g2, b2);
-        case ColorDistanceMethod.CIEDE2000_D65: return ciede2000D65Distance(r1, g1, b1, r2, g2, b2);
-        case ColorDistanceMethod.CIEDE2000_D50: return ciede2000D50Distance(r1, g1, b1, r2, g2, b2);
-        case ColorDistanceMethod.OKLAB: return oklabDistance(r1, g1, b1, r2, g2, b2);
-        case ColorDistanceMethod.HSLUV: return hsluvDistance(r1, g1, b1, r2, g2, b2);
-        default: return euclideanDistance(r1, g1, b1, r2, g2, b2);
+        case ColorDistanceMethod.WEIGHTED_RGB:
+            return weightedRGBDistance(r1, g1, b1, r2, g2, b2);
+        case ColorDistanceMethod.CIE76_D65:
+            return cie76D65Distance(r1, g1, b1, r2, g2, b2);
+        case ColorDistanceMethod.CIE76_D50:
+            return cie76D50Distance(r1, g1, b1, r2, g2, b2);
+        case ColorDistanceMethod.CIE94_D65:
+            return cie94D65Distance(r1, g1, b1, r2, g2, b2);
+        case ColorDistanceMethod.CIEDE2000_D65:
+            return ciede2000D65Distance(r1, g1, b1, r2, g2, b2);
+        case ColorDistanceMethod.CIEDE2000_D50:
+            return ciede2000D50Distance(r1, g1, b1, r2, g2, b2);
+        case ColorDistanceMethod.OKLAB:
+            return oklabDistance(r1, g1, b1, r2, g2, b2);
+        case ColorDistanceMethod.HSLUV:
+            return hsluvDistance(r1, g1, b1, r2, g2, b2);
+        default:
+            return euclideanDistance(r1, g1, b1, r2, g2, b2);
     }
 }

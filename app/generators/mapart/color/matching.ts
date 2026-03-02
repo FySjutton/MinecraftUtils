@@ -1,6 +1,6 @@
-import { Brightness, ColorDistanceMethod } from '../utils/types';
-import { BASE_COLORS, scaleRGB, rgbToHex } from '../utils/constants';
-import { calculateDistance } from './distance';
+import {Brightness, ColorDistanceMethod} from '../utils/types';
+import {BASE_COLORS, scaleRGB, rgbToHex} from '../utils/constants';
+import {calculateDistance} from './distance';
 
 export function numberToRGB(color: number): { r: number; g: number; b: number } {
     return {
@@ -11,7 +11,7 @@ export function numberToRGB(color: number): { r: number; g: number; b: number } 
 }
 
 export function numberToHex(color: number): string {
-    const { r, g, b } = numberToRGB(color);
+    const {r, g, b} = numberToRGB(color);
     return rgbToHex(r, g, b);
 }
 
@@ -40,7 +40,7 @@ export function findBestColorInSet(
     method: ColorDistanceMethod,
 ): BestColorResult {
     let minDist = Infinity;
-    let best: ColorCandidate = candidates[0] ?? { groupId: 0, brightness: Brightness.NORMAL };
+    let best: ColorCandidate = candidates[0] ?? {groupId: 0, brightness: Brightness.NORMAL};
 
     for (const candidate of candidates) {
         const colorNum = getColorWithBrightness(candidate.groupId, candidate.brightness);
@@ -64,8 +64,10 @@ export function buildCandidates(
     brightnessesFor: (groupId: number) => Brightness[],
 ): ColorCandidate[] {
     const candidates: ColorCandidate[] = [];
-    for (const groupId of enabledGroups)
-        for (const brightness of brightnessesFor(groupId))
-            candidates.push({ groupId, brightness });
+    for (const groupId of enabledGroups) {
+        for (const brightness of brightnessesFor(groupId)) {
+            candidates.push({groupId, brightness});
+        }
+    }
     return candidates;
 }

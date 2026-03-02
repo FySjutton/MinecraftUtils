@@ -26,6 +26,7 @@ export function scaleRGB(color: number, brightness: Brightness): number {
 }
 
 export function getAllowedBrightnesses(groupId: number): Brightness[] {
+    // Water only supports HIGH as of now
     if (groupId === 11) return [Brightness.HIGH];
     return [Brightness.LOW, Brightness.NORMAL, Brightness.HIGH];
 }
@@ -33,7 +34,9 @@ export function getAllowedBrightnesses(groupId: number): Brightness[] {
 export function getEverythingBlockSelection(): BlockSelection {
     const selection: BlockSelection = {};
     BLOCK_GROUPS.forEach((group, groupId) => {
-        if (group && group.length > 0) selection[groupId] = group[0];
+        if (group && group.length > 0) {
+            selection[groupId] = group[0];
+        }
     });
     return selection;
 }
@@ -52,12 +55,15 @@ export function getMaterialList(
     const width = brightnessMap[0].length;
 
     const counts = new Map<number, number>();
-    for (let z = 0; z < height; z++)
+    for (let z = 0; z < height; z++) {
         for (let x = 0; x < width; x++) {
             const g = groupIdMap[z][x];
-            if (g === TRANSPARENT_GROUP_ID) continue;
+            if (g === TRANSPARENT_GROUP_ID) {
+                continue;
+            }
             counts.set(g, (counts.get(g) ?? 0) + 1);
         }
+    }
 
     const sorted = Array.from(counts.entries())
         .map(([groupId, count]) => ({ groupId, brightness: Brightness.NORMAL, count }))
@@ -72,18 +78,25 @@ export function getMaterialList(
 
     let supportCount = noobLineCount;
     if (supportMode !== SupportBlockMode.NONE) {
-        for (let z = 0; z < height; z++)
+        for (let z = 0; z < height; z++) {
             for (let x = 0; x < width; x++) {
-                if (groupIdMap[z][x] === TRANSPARENT_GROUP_ID) continue;
+                if (groupIdMap[z][x] === TRANSPARENT_GROUP_ID) {
+                    continue;
+                }
                 const y = yMap[z][x];
                 if (supportMode === SupportBlockMode.THIN) {
-                    if (y - 1 >= 0) supportCount++;
+                    if (y - 1 >= 0) {
+                        supportCount++;
+                    }
                 } else {
                     supportCount += y - Math.max(0, y - 2);
                 }
             }
+        }
     }
 
-    if (supportCount === 0) return sorted;
+    if (supportCount === 0) {
+        return sorted;
+    }
     return [{ groupId: -1, brightness: Brightness.NORMAL, count: supportCount }, ...sorted];
 }

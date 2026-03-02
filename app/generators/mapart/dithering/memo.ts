@@ -6,6 +6,7 @@ import { calculateDistance } from '../color/distance';
 import type { ProcessedImageResult } from '../utils/types';
 import {mulberry32} from "@/app/generators/mapart/dithering/shared";
 
+// Big credits to jkascpkmc for the base of this algorithm
 const MAX_DEPTH = 950;
 const MAX_CACHE = 200_000;
 
@@ -46,7 +47,9 @@ function precomputeRow(
     enabledGroups: Set<number>,
     method: ColorDistanceMethod,
 ): RowPrecomp {
-    if (sourceData[idx + 3] < 128) return { transparent: true, high: null, same: null, low: null };
+    if (sourceData[idx + 3] < 128) {
+        return {transparent: true, high: null, same: null, low: null};
+    }
 
     const r = sourceData[idx], g = sourceData[idx + 1], b = sourceData[idx + 2];
 
@@ -109,9 +112,13 @@ function solveSection(
             }
         } else {
             for (let h = 0; h < heightStates; h++) {
-                if (dp[h] === Infinity) continue;
+                if (dp[h] === Infinity) {
+                    continue;
+                }
                 cacheSize++;
-                if (cacheSize > MAX_CACHE) return null;
+                if (cacheSize > MAX_CACHE) {
+                    return null;
+                }
                 const base = dp[h];
 
                 if (row.same !== null) {
@@ -168,7 +175,9 @@ function solveColumnWithSubdivision(
         const [start, end, startH] = stack.pop()!;
         const len = end - start;
 
-        if (len <= 0) continue;
+        if (len <= 0) {
+            continue;
+        }
 
         if (len > MAX_DEPTH) {
             const pivot = start + Math.max(1, Math.floor(rng() * (len - 1)));
@@ -183,7 +192,9 @@ function solveColumnWithSubdivision(
             const pivot = lo + Math.floor(rng() * Math.max(1, hi - lo));
             stack.push([pivot, end, startH], [start, pivot, startH]);
         } else {
-            for (let i = 0; i < len; i++) chosenH[start + i] = result[i];
+            for (let i = 0; i < len; i++) {
+                chosenH[start + i] = result[i];
+            }
         }
     }
 
@@ -209,7 +220,9 @@ function solveColumnWithSubdivision(
         }
 
         yMap[z][x] = curH - minH;
-        if (!row.transparent) prevH = curH;
+        if (!row.transparent) {
+            prevH = curH;
+        }
     }
 }
 

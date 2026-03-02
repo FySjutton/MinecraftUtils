@@ -14,7 +14,7 @@ import { ALIASES } from "@/app/generators/mapart/utils/constants";
 import { MapArea, AREA_COLORS } from "@/app/generators/mapart/utils/areaTypes";
 
 const TILE = 16;
-type Mode = "preview" | "textures" | "compare";
+export type Mode = "preview" | "textures" | "compare";
 
 interface Props {
     isProcessing: boolean;
@@ -22,7 +22,6 @@ interface Props {
     processingStats: ProcessingStats | null;
     groupIdMap: number[][] | null;
     blockSelection: BlockSelection;
-    sourceImage: string | null;
     originalImage: string | null;
     outputMode: string;
     noobLine: boolean;
@@ -31,12 +30,13 @@ interface Props {
     onDraw: (area: MapArea) => void;
     mapWidth: number;
     mapHeight: number;
+    drawMode: boolean;
+    mode: Mode;
+    setMode: React.Dispatch<React.SetStateAction<Mode>>
 }
 
-export function PreviewCard({ isProcessing, processedImageData, processingStats, groupIdMap, blockSelection, sourceImage, originalImage, outputMode, noobLine, totalBlocks, areas, onDraw, mapWidth, mapHeight }: Props) {
-    const [mode, setMode] = useState<Mode>("preview");
+export function PreviewCard({ isProcessing, processedImageData, processingStats, groupIdMap, blockSelection, originalImage, outputMode, noobLine, totalBlocks, areas, onDraw, mapWidth, mapHeight, drawMode, mode, setMode }: Props) {
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [drawMode, setDrawMode] = useState(false);
 
     const cardViewportRef = useRef<HTMLDivElement>(null);
     const [cardSize, setCardSize] = useState<{ w: number; h: number } | null>(null);
@@ -68,7 +68,9 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
         if (!cardViewportRef.current) return;
         const obs = new ResizeObserver(() => {
             const r = cardViewportRef.current!.getBoundingClientRect();
-            if (r.width > 0 && r.height > 0) setCardSize({ w: r.width, h: r.height });
+            if (r.width > 0 && r.height > 0) {
+                setCardSize({w: r.width, h: r.height});
+            }
         });
         obs.observe(cardViewportRef.current);
         return () => obs.disconnect();
@@ -77,13 +79,19 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
     useLayoutEffect(() => {
         if (!isFullscreen) return;
         const update = () => {
-            if (!fsViewportRef.current) return;
-            const r = fsViewportRef.current.getBoundingClientRect();
-            if (r.width > 0 && r.height > 0) setFsSize({ w: r.width, h: r.height });
+            if (!fsViewportRef.current) {
+                return;
+            }
+            const rect = fsViewportRef.current.getBoundingClientRect();
+            if (rect.width > 0 && rect.height > 0) {
+                setFsSize({w: rect.width, h: rect.height});
+            }
         };
         update();
         const obs = new ResizeObserver(update);
-        if (fsViewportRef.current) obs.observe(fsViewportRef.current);
+        if (fsViewportRef.current) {
+            obs.observe(fsViewportRef.current);
+        }
         return () => obs.disconnect();
     }, [isFullscreen]);
 
@@ -112,7 +120,7 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         const needed = new Map<number, string>();
-        for (let y = 0; y < height; y++)
+        for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const gId = groupIdMap[y][x];
                 if (needed.has(gId) || imgCacheRef.current.has(gId)) continue;
@@ -121,14 +129,18 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                 const aliased = blockName in ALIASES ? ALIASES[blockName] : blockName;
                 needed.set(gId, findImageAsset(`2d_${aliased}`, "block") as string);
             }
+        }
 
         const draw = () => {
             ctx.imageSmoothingEnabled = false;
-            for (let y = 0; y < height; y++)
+            for (let y = 0; y < height; y++) {
                 for (let x = 0; x < width; x++) {
                     const img = imgCacheRef.current.get(groupIdMap[y][x]);
-                    if (img) ctx.drawImage(img, x * TILE, y * TILE, TILE, TILE);
+                    if (img) {
+                        ctx.drawImage(img, x * TILE, y * TILE, TILE, TILE);
+                    }
                 }
+            }
         };
 
         const toFetch = [...needed.entries()];
@@ -154,7 +166,9 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
 
     const fsMountRef = (el: HTMLCanvasElement | null) => {
         (fsTextureCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
-        if (el && isTextures) drawTextures(el);
+        if (el && isTextures) {
+            drawTextures(el);
+        }
     };
 
     const drawCompareAfter = (canvas: HTMLCanvasElement) => {
@@ -174,7 +188,9 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
 
     const fsCompareMountRef = (el: HTMLCanvasElement | null) => {
         (fsCompareCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
-        if (el && isCompare) drawCompareAfter(el);
+        if (el && isCompare) {
+            drawCompareAfter(el);
+        }
     };
 
     const CHUNK_PX = 16;
@@ -250,7 +266,9 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
     const handleOverlayMouseLeave = () => {
         if (!drawStateRef.current) return;
         drawStateRef.current = null;
-        if (previewSvgRef.current) previewSvgRef.current.style.display = "none";
+        if (previewSvgRef.current) {
+            previewSvgRef.current.style.display = "none";
+        }
     };
 
     const canvasW = processingStats ? processingStats.width * TILE : 1;
@@ -330,7 +348,9 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                             style={{ imageRendering: "pixelated", display: "block" }}
                             ref={(el) => {
                                 (previewRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
-                                if (el && processedImageData) el.getContext("2d")?.putImageData(processedImageData, 0, 0);
+                                if (el && processedImageData) {
+                                    el.getContext("2d")?.putImageData(processedImageData, 0, 0);
+                                }
                             }}
                         />
                     )}
@@ -395,8 +415,8 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
         <Tabs value={mode} onValueChange={v => setMode(v as Mode)} className="h-auto">
             <TabsList className="h-auto flex-wrap">
                 <TabsTrigger value="preview">Preview</TabsTrigger>
-                <TabsTrigger value="textures">Textures</TabsTrigger>
-                {originalImage && <TabsTrigger value="compare">Compare</TabsTrigger>}
+                <TabsTrigger value="textures" disabled={drawMode}>Textures</TabsTrigger>
+                {originalImage && <TabsTrigger value="compare" disabled={drawMode}>Compare</TabsTrigger>}
             </TabsList>
         </Tabs>
     );
@@ -413,14 +433,6 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                         {processingStats && !isProcessing && (
                             <CardAction className="flex items-center gap-2">
                                 {modeToggle}
-                                <Button
-                                    variant={drawMode ? "default" : "outline"}
-                                    size="icon"
-                                    onClick={() => setDrawMode(d => !d)}
-                                    title="Toggle draw mode"
-                                >
-                                    <Pencil size={15} />
-                                </Button>
                                 <Button variant="outline" onClick={() => setIsFullscreen(true)}><Maximize2 size={15} /></Button>
                             </CardAction>
                         )}
@@ -432,21 +444,21 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
                             </div>
                         )}
                         <div ref={cardViewportRef} className="w-full h-full">
-                            {processingStats && (
-                                isCompare
-                                    ? renderCompare((el) => {
-                                        (compareCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
-                                        if (el) drawCompareAfter(el);
-                                    })
-                                    : cardScale !== null && renderZoomable(
-                                    (el) => {
-                                        (textureCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
-                                        if (el && isTextures) drawTextures(el);
-                                    },
-                                    cardScale,
-                                    previewCanvasRef,
-                                )
-                            )}
+                            {processingStats && (isCompare ? renderCompare((el) => {
+                                (compareCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
+                                if (el) {
+                                    drawCompareAfter(el);
+                                }
+                            }) : cardScale !== null && renderZoomable(
+                                (el) => {
+                                    (textureCanvasRef as React.MutableRefObject<HTMLCanvasElement | null>).current = el;
+                                    if (el && isTextures) {
+                                        drawTextures(el);
+                                    }
+                                },
+                                cardScale,
+                                previewCanvasRef,
+                            ))}
                         </div>
                     </div>
                     {processingStats ? (
@@ -462,7 +474,7 @@ export function PreviewCard({ isProcessing, processedImageData, processingStats,
             </Card>
 
             {isFullscreen && processingStats && createPortal(
-                <div className="fixed inset-0 z-[9999] flex flex-col bg-background">
+                <div className="fixed inset-0 z-9999 flex flex-col bg-background">
                     <div className="flex flex-wrap items-center justify-between px-4 py-2 gap-x-4 gap-y-1 pt-4 border-b shrink-0">
                         <span className="font-semibold text-sm">Fullscreen Mapart Preview</span>
                         <div className="flex flex-wrap justify-center gap-2">

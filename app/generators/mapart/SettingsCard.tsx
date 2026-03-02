@@ -98,19 +98,28 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
     const isTransparentFill = eff.fillColor === 'none';
     const [localColor, setLocalColor] = useState(isTransparentFill ? '#ffffff' : eff.fillColor);
 
-    const OverridableRow = ({ overrideKey, children }: { overrideKey: keyof AreaOverrides; children: React.ReactNode }) => {
-        if (!isAreaMode) return <>{children}</>;
+    const renderOverridableRow = (overrideKey: keyof AreaOverrides, title: string, children: React.ReactNode) => {
+        if (!isAreaMode) {
+            return <>
+                <Label className="mt-4 mb-2">{title}</Label>
+                {children}
+            </>;
+        }
         const on = isOverriding(overrideKey);
         return (
-            <div className="flex items-start gap-2">
+            <div className="gap-2">
+                <div className="flex items-center mt-4 mb-2">
+                    <Switch
+                        checked={on}
+                        onCheckedChange={() => toggleOverride(overrideKey, settings[overrideKey as keyof Settings] as AreaOverrides[typeof overrideKey])}
+                        className="mr-2 shrink-0"
+                    />
+                    <Label className="">{title}</Label>
+                </div>
+
                 <div className={`flex-1 min-w-0 ${!on ? 'opacity-40 pointer-events-none' : ''}`}>
                     {children}
                 </div>
-                <Switch
-                    checked={on}
-                    onCheckedChange={() => toggleOverride(overrideKey, settings[overrideKey as keyof Settings] as AreaOverrides[typeof overrideKey])}
-                    className="mt-1 shrink-0"
-                />
             </div>
         );
     };
@@ -129,75 +138,78 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
 
                 {outputMode === 'buildable' && (
                     <>
-                        <OverridableRow overrideKey="staircasingMode">
-                            <Label className="mt-4 mb-2">Staircasing Method</Label>
-                            <p className="text-sm text-gray-400 mb-2">Select which staircasing method you want to use.</p>
-                            <div className="flex gap-2 w-full relative box-border">
-                                <div className="flex-1 min-w-0">
-                                    <ComboBox
-                                        items={Object.values(StaircasingMode)}
-                                        value={eff.staircasingMode}
-                                        onChange={e => setEff.staircasingMode(e as StaircasingMode)}
-                                        getDisplayName={v => StaircasingModes[v as StaircasingMode].title.replace('%s', eff.maxHeight.toString())}
-                                        getTooltip={v => StaircasingModes[v as StaircasingMode].description}
-                                        className="w-full"
-                                        infoButton={
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="ghost" size="icon-sm" className="mr-2"><Info /></Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="max-h-80 overflow-y-auto ring-2 ring-border">
-                                                    <PopoverClose asChild>
-                                                        <div>
-                                                            <p className="font-bold">Classic Staircasing</p>
-                                                            <p className="text-sm">Goes in a single segment, each column connected.</p>
-                                                            <p className="font-bold mt-2">Valley Staircasing</p>
-                                                            <p className="text-sm">Same quality as classic but stays as close to the baseline as possible, making it easier to build in survival.</p>
-                                                            <p className="font-bold mt-2">Limited Height</p>
-                                                            <p className="text-sm">Caps the schematic height, much easier to build in survival while still far better than a flat 2D map.</p>
-                                                        </div>
-                                                    </PopoverClose>
-                                                </PopoverContent>
-                                            </Popover>
-                                        }
-                                    />
-                                </div>
-                                {(eff.staircasingMode === StaircasingMode.VALLEY_CUSTOM || eff.staircasingMode === StaircasingMode.STANDARD_CUSTOM) && (
-                                    <div className="flex-none w-15">
-                                        <InputField value={eff.maxHeight} onChange={e => setEff.maxHeight(parseInt(e))} variant="number" min={3} />
+                        {renderOverridableRow('staircasingMode', "Staircasing Method",
+                            <>
+                                <p className="text-sm text-gray-400 mb-2">Select which staircasing method you want to use.</p>
+                                <div className="flex gap-2 w-full relative box-border">
+                                    <div className="flex-1 min-w-0">
+                                        <ComboBox
+                                            items={Object.values(StaircasingMode)}
+                                            value={eff.staircasingMode}
+                                            onChange={e => setEff.staircasingMode(e as StaircasingMode)}
+                                            getDisplayName={v => StaircasingModes[v as StaircasingMode].title.replace('%s', eff.maxHeight.toString())}
+                                            getTooltip={v => StaircasingModes[v as StaircasingMode].description}
+                                            className="w-full"
+                                            infoButton={
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="ghost" size="icon-sm" className="mr-2"><Info /></Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="max-h-80 overflow-y-auto ring-2 ring-border">
+                                                        <PopoverClose asChild>
+                                                            <div>
+                                                                <p className="font-bold">Classic Staircasing</p>
+                                                                <p className="text-sm">Goes in a single segment, each column connected.</p>
+                                                                <p className="font-bold mt-2">Valley Staircasing</p>
+                                                                <p className="text-sm">Same quality as classic but stays as close to the baseline as possible, making it easier to build in survival.</p>
+                                                                <p className="font-bold mt-2">Limited Height</p>
+                                                                <p className="text-sm">Caps the schematic height, much easier to build in survival while still far better than a flat 2D map.</p>
+                                                            </div>
+                                                        </PopoverClose>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            }
+                                        />
                                     </div>
-                                )}
-                            </div>
-                        </OverridableRow>
+                                    {(eff.staircasingMode === StaircasingMode.VALLEY_CUSTOM || eff.staircasingMode === StaircasingMode.STANDARD_CUSTOM) && (
+                                        <div className="flex-none w-15">
+                                            <InputField value={eff.maxHeight} onChange={e => setEff.maxHeight(parseInt(e))} variant="number" min={3} />
+                                        </div>
+                                    )}
+                                </div>
+                            </>
+                        )}
 
                         <Separator className="my-4" />
                     </>
                 )}
 
-                <OverridableRow overrideKey="colorDistanceMethod">
-                    <Label className="mt-4 mb-2">Color Matching</Label>
-                    <p className="text-sm text-gray-400 mb-2">Select which color matching algorithm you want to use.</p>
-                    <ComboBox
-                        items={Object.values(ColorDistanceMethod)}
-                        value={eff.colorDistanceMethod}
-                        onChange={e => setEff.colorDistanceMethod(e as ColorDistanceMethod)}
-                        getDisplayName={v => ColorDistanceMethods[v as ColorDistanceMethod].title}
-                        renderItem={v => ColorDistanceMethods[v as ColorDistanceMethod].badge}
-                        getTooltip={v => ColorDistanceMethods[v as ColorDistanceMethod].description}
-                    />
-                </OverridableRow>
+                {renderOverridableRow('colorDistanceMethod', "Color Matching",
+                    <>
+                        <p className="text-sm text-gray-400 mb-2">Select which color matching algorithm you want to use.</p>
+                        <ComboBox
+                            items={Object.values(ColorDistanceMethod)}
+                            value={eff.colorDistanceMethod}
+                            onChange={e => setEff.colorDistanceMethod(e as ColorDistanceMethod)}
+                            getDisplayName={v => ColorDistanceMethods[v as ColorDistanceMethod].title}
+                            renderItem={v => ColorDistanceMethods[v as ColorDistanceMethod].badge}
+                            getTooltip={v => ColorDistanceMethods[v as ColorDistanceMethod].description}
+                        />
+                    </>
+                )}
 
-                <OverridableRow overrideKey="ditheringMethod">
-                    <Label className="mt-4 mb-2">Dithering Method</Label>
-                    <p className="text-sm text-gray-400 mb-2">Select which dithering method you want to use.</p>
-                    <ComboBox
-                        items={Object.keys(ditheringMethods)}
-                        value={eff.ditheringMethod}
-                        onChange={e => setEff.ditheringMethod(e as DitheringMethodName)}
-                        getDisplayName={v => ditheringMethods[v as DitheringMethodName].name}
-                        getTooltip={v => ditheringMethods[v as DitheringMethodName].description}
-                    />
-                </OverridableRow>
+                {renderOverridableRow('ditheringMethod', "Dithering Method",
+                    <>
+                        <p className="text-sm text-gray-400 mb-2">Select which dithering method you want to use.</p>
+                        <ComboBox
+                            items={Object.keys(ditheringMethods)}
+                            value={eff.ditheringMethod}
+                            onChange={e => setEff.ditheringMethod(e as DitheringMethodName)}
+                            getDisplayName={v => ditheringMethods[v as DitheringMethodName].name}
+                            getTooltip={v => ditheringMethods[v as DitheringMethodName].description}
+                        />
+                    </>
+                )}
 
                 {!isAreaMode && outputMode === 'buildable' && isHeightLimited && (
                     <div className="flex items-center justify-between mt-3">
@@ -213,21 +225,22 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
 
                 {outputMode === 'buildable' && (
                     <>
-                        <OverridableRow overrideKey="supportMode">
-                            <Label className="mt-4 mb-2">Support Blocks</Label>
-                            <p className="text-sm text-gray-400 mb-2">Select how you&#39;d like support blocks in the schematic output.</p>
-                            <ComboBox
-                                items={Object.values(SupportBlockMode)}
-                                value={eff.supportMode}
-                                onChange={e => setEff.supportMode(e as SupportBlockMode)}
-                                getDisplayName={v => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
-                            />
-                            {eff.supportMode !== SupportBlockMode.NONE && (
-                                <div className="mt-3">
-                                    <InputField label="Support Block" value={eff.supportBlockName} onChange={setEff.supportBlockName} variant="text" placeholder="e.g. netherrack" />
-                                </div>
-                            )}
-                        </OverridableRow>
+                        {renderOverridableRow('supportMode', "Support Blocks",
+                            <>
+                                <p className="text-sm text-gray-400 mb-2">Select how you&#39;d like support blocks in the schematic output.</p>
+                                <ComboBox
+                                    items={Object.values(SupportBlockMode)}
+                                    value={eff.supportMode}
+                                    onChange={e => setEff.supportMode(e as SupportBlockMode)}
+                                    getDisplayName={v => v === SupportBlockMode.NONE ? 'None' : v === SupportBlockMode.THIN ? 'All (Thin)' : 'All (Heavy)'}
+                                />
+                                {eff.supportMode !== SupportBlockMode.NONE && (
+                                    <div className="mt-3">
+                                        <InputField label="Support Block" value={eff.supportBlockName} onChange={setEff.supportBlockName} variant="text" placeholder="e.g. netherrack" />
+                                    </div>
+                                )}
+                            </>
+                        )}
 
                         <Separator className="my-4" />
                     </>
@@ -238,21 +251,15 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
 
                 <div className="space-y-4">
 
-                    <OverridableRow overrideKey="pixelArt">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <Label>Pixel Art Mode</Label>
-                                <p className="text-sm text-gray-400">
-                                    Disables image smoothing so pixel art stays sharp instead of being blurred when scaled.
-                                </p>
-                            </div>
+                    {renderOverridableRow('pixelArt', "Pixel Art Mode",
+                        <div className="flex gap-2">
                             <Switch checked={eff.pixelArt} onCheckedChange={setEff.pixelArt} />
+                            <p className="text-sm text-gray-400">Disables image smoothing so pixel art stays sharp instead of being blurred when scaled.</p>
                         </div>
-                    </OverridableRow>
+                    )}
 
-                    <OverridableRow overrideKey="fillColor">
+                    {renderOverridableRow('fillColor', "Background Fill",
                         <div>
-                            <Label className="mb-2 block">Background Fill</Label>
                             <p className="text-sm text-gray-400 mb-2">
                                 Fill transparent areas with a color, or leave them as empty (no block placed).
                             </p>
@@ -260,13 +267,16 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
                                 <Tabs
                                     value={isTransparentFill ? 'none' : 'color'}
                                     onValueChange={v => {
-                                        if (v === 'none') setEff.fillColor('none');
-                                        else setEff.fillColor(localColor);
+                                        if (v === 'none') {
+                                            setEff.fillColor('none');
+                                        } else {
+                                            setEff.fillColor(localColor);
+                                        }
                                     }}
                                 >
                                     <TabsList>
                                         <TabsTrigger value="color">Color</TabsTrigger>
-                                        <TabsTrigger value="none">None (transparent)</TabsTrigger>
+                                        <TabsTrigger value="none">Transparent</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
                                 {!isTransparentFill && (
@@ -281,28 +291,28 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
                                 )}
                             </div>
                         </div>
-                    </OverridableRow>
+                    )}
 
-                    <OverridableRow overrideKey="brightness">
+                    {renderOverridableRow('brightness', "Brightness:",
                         <div>
-                            <Label>Brightness: <span className="text-muted-foreground">{eff.brightness}%</span></Label>
+                            <p className="text-muted-foreground text-sm w-full">{eff.brightness}%</p>
                             <Slider value={[eff.brightness]} onValueChange={v => setEff.brightness(v[0])} min={0} max={200} step={1} className="mt-2" />
                         </div>
-                    </OverridableRow>
+                    )}
 
-                    <OverridableRow overrideKey="contrast">
+                    {renderOverridableRow('contrast', "Contrast:",
                         <div>
-                            <Label>Contrast: <span className="text-muted-foreground">{eff.contrast}%</span></Label>
+                            <p className="text-muted-foreground text-sm w-full">{eff.contrast}%</p>
                             <Slider value={[eff.contrast]} onValueChange={v => setEff.contrast(v[0])} min={0} max={200} step={1} className="mt-2" />
                         </div>
-                    </OverridableRow>
+                    )}
 
-                    <OverridableRow overrideKey="saturation">
+                    {renderOverridableRow('saturation', "Saturation:",
                         <div>
-                            <Label>Saturation: <span className="text-muted-foreground">{eff.saturation}%</span></Label>
+                            <p className="text-muted-foreground text-sm w-full">{eff.saturation}%</p>
                             <Slider value={[eff.saturation]} onValueChange={v => setEff.saturation(v[0])} min={0} max={200} step={1} className="mt-2" />
                         </div>
-                    </OverridableRow>
+                    )}
 
                 </div>
             </CardContent>

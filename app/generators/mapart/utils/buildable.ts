@@ -15,6 +15,7 @@ function isStandardMode(mode: StaircasingMode): boolean {
     return mode === StaircasingMode.STANDARD || mode === StaircasingMode.STANDARD_CUSTOM || mode === StaircasingMode.VALLEY_CUSTOM;
 }
 
+// top-level processing entry point, selects the correct algorithms
 export function processImageData(
     imageData: ImageData,
     width: number,
@@ -35,6 +36,7 @@ export function processImageData(
         : processWithoutDithering(imageData, width, height, enabledGroups, staircasingMode, colorMethod, maxHeight);
 }
 
+// direct nearest-color matching with no dithering, it basically just picks the closest palette color per pixel
 function processWithoutDithering(
     sourceImageData: ImageData,
     width: number,
