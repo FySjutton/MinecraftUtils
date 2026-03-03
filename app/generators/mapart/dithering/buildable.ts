@@ -1,5 +1,5 @@
 import { Brightness, ColorDistanceMethod, StaircasingMode } from '../utils/types';
-import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
+import { getWorkerAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
 import { numberToRGB, findBestColorInSet, ColorCandidate, BestColorResult } from '../color/matching';
 import { createBiasFunction, distributeError, clamp, clampToGamut, buildAllGamuts, BiasFunction, PaletteGamut } from './shared';
 import { DitheringMethodName, DitheringMethodErrorDiffusion, ditheringMethods } from './types';
@@ -25,7 +25,7 @@ export function getCandidatesForPixel(
 ): ColorCandidate[] {
     const candidates: ColorCandidate[] = [];
     for (const groupId of enabledGroups) {
-        for (const brightness of getAllowedBrightnesses(groupId)) {
+        for (const brightness of getWorkerAllowedBrightnesses(groupId)) {
             if (groupId !== 11) {
                 const delta = brightness === Brightness.HIGH ? 1 : brightness === Brightness.LOW ? -1 : 0;
                 const nextY = currentY + delta;
@@ -40,7 +40,7 @@ export function getCandidatesForPixel(
 function getAllCandidates(enabledGroups: Set<number>): ColorCandidate[] {
     const candidates: ColorCandidate[] = [];
     for (const groupId of enabledGroups) {
-        for (const brightness of getAllowedBrightnesses(groupId)) {
+        for (const brightness of getWorkerAllowedBrightnesses(groupId)) {
             candidates.push({ groupId, brightness });
         }
     }

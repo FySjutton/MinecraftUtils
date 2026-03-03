@@ -84,7 +84,7 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
     };
 
     const isTransparentFill = eff.fillColor === 'none';
-    const [localColor, setLocalColor] = useState(isTransparentFill ? '#ffffff' : eff.fillColor);
+    const [localColor, setLocalColor] = useState(isTransparentFill ? '#000000' : eff.fillColor);
 
     const setEff = {
         ditheringMethod: (v: DitheringMethodName) => isAreaMode ? setAOv('ditheringMethod', v) : setDitheringMethod(v),
@@ -285,7 +285,7 @@ export default function SettingsCard({ outputMode, settings, setters, selectedAr
                                         <TabsTrigger value="none">Transparent</TabsTrigger>
                                     </TabsList>
                                 </Tabs>
-                                {!isTransparentFill && (<ColorPicker hex={localColor} setHex={setLocalColor} useDebounce></ColorPicker>)}
+                                {!isTransparentFill && (<ColorPicker hex={localColor} setHex={setLocalColor} initialValue="#000000" useDebounce></ColorPicker>)}
                             </div>
                         </div>
                     )}

@@ -3,7 +3,7 @@ import {
     DitheringMethodErrorDiffusion
 } from './types';
 import { Brightness } from '../utils/types';
-import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
+import { getWorkerAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
 import { getColorWithBrightness, numberToRGB } from '../color/matching';
 
 export type BiasFunction = (x: number, z: number) => number;
@@ -71,7 +71,7 @@ export function computeGamut(enabledGroups: Set<number>, brightness: Brightness)
         if (groupId === TRANSPARENT_GROUP_ID) {
             continue;
         }
-        const allowed = getAllowedBrightnesses(groupId);
+        const allowed = getWorkerAllowedBrightnesses(groupId);
         if (!allowed.includes(brightness)) {
             continue;
         }

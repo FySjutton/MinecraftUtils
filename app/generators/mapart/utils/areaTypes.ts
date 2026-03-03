@@ -1,8 +1,9 @@
-import { BlockSelection, ColorDistanceMethod, StaircasingMode, SupportBlockMode } from './types';
+import { BlockSelection, ColorDistanceMethod, PaletteConfig, StaircasingMode, SupportBlockMode } from './types';
 import type { DitheringMethodName } from '../dithering/types';
 
 export interface AreaOverrides {
     blockSelection?: BlockSelection;
+    paletteConfig?: PaletteConfig;
     ditheringMethod?: DitheringMethodName;
     colorDistanceMethod?: ColorDistanceMethod;
     staircasingMode?: StaircasingMode;

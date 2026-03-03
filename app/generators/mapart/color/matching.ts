@@ -1,5 +1,5 @@
 import {Brightness, ColorDistanceMethod} from '../utils/types';
-import {BASE_COLORS, scaleRGB, rgbToHex} from '../utils/constants';
+import {scaleRGB, rgbToHex, getWorkerBaseColor} from '../utils/constants';
 import {calculateDistance} from './distance';
 
 export function numberToRGB(color: number): { r: number; g: number; b: number } {
@@ -16,11 +16,12 @@ export function numberToHex(color: number): string {
 }
 
 export function getColorWithBrightness(mapColorId: number, brightness: Brightness): number {
-    if (mapColorId < 0 || mapColorId >= BASE_COLORS.length) {
+    const baseColor = getWorkerBaseColor(mapColorId);
+    if (baseColor === undefined) {
         console.error(`Invalid mapColorId: ${mapColorId}`);
         return 0;
     }
-    return scaleRGB(BASE_COLORS[mapColorId], brightness);
+    return scaleRGB(baseColor, brightness);
 }
 
 export interface ColorCandidate {

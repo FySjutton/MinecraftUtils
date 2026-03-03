@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ImageObj from 'next/image';
 import { Brightness } from '@/app/generators/mapart/utils/types';
-import { ALIASES, BASE_COLORS, scaleRGB } from '@/app/generators/mapart/utils/constants';
+import { ALIASES, BASE_COLORS, scaleRGB, getAllowedBrightnesses } from '@/app/generators/mapart/utils/constants';
 import { numberToHex } from '@/app/generators/mapart/color/matching';
 import { findImageAsset, getImageAsset } from '@/lib/images/getImageAsset';
 import { toTitleCase } from '@/lib/StringUtils';
@@ -17,30 +17,59 @@ export interface PaletteGroupProps {
     groupId: number;
     selectedBlock: string | null;
     toggleBlockSelection: (groupId: number, blockName: string | null) => void;
+    baseColor?: number;
+    allowedBrightnesses?: Brightness[];
+    label?: string;
+    isCustom?: boolean;
+    onToggleBrightness?: (groupId: number, brightness: Brightness) => void;
 }
 
-export const PaletteGroup = memo(function PaletteGroup({ group, groupId, selectedBlock, toggleBlockSelection }: PaletteGroupProps) {
+const BRIGHTNESS_LABELS: Record<number, string> = {
+    [Brightness.LOW]: 'Low',
+    [Brightness.NORMAL]: 'Normal',
+    [Brightness.HIGH]: 'High',
+};
+
+export const PaletteGroup = memo(function PaletteGroup({
+    group, groupId, selectedBlock, toggleBlockSelection,
+    baseColor, allowedBrightnesses, label, isCustom, onToggleBrightness,
+}: PaletteGroupProps) {
     const [open, setOpen] = useState(false);
 
-    const baseColor = BASE_COLORS[groupId];
-    const normalHex = numberToHex(scaleRGB(baseColor, Brightness.NORMAL));
-    const lightHex = numberToHex(scaleRGB(baseColor, Brightness.LOW));
-    const highHex = numberToHex(scaleRGB(baseColor, Brightness.HIGH));
+    const color = baseColor ?? BASE_COLORS[groupId] ?? 0;
+    const brightnesses = allowedBrightnesses ?? getAllowedBrightnesses(groupId);
+    const allBrightnesses = groupId === 11
+        ? [Brightness.HIGH]
+        : [Brightness.LOW, Brightness.NORMAL, Brightness.HIGH];
+
     const selectedIndex = selectedBlock != null ? group.indexOf(selectedBlock) : -1;
 
     return (
         <div className="border rounded p-2">
             <div className="flex flex-wrap items-center gap-2 mb-2 text-xs text-muted-foreground">
-                <div className="flex">
-                    {groupId !== 11 && (
-                        <>
-                            <div className="w-4 h-4 rounded border" style={{ backgroundColor: lightHex }} />
-                            <div className="w-4 h-4 rounded border" style={{ backgroundColor: normalHex }} />
-                        </>
-                    )}
-                    <div className="w-4 h-4 rounded border" style={{ backgroundColor: highHex }} />
+                <div className="flex gap-0.5">
+                    {allBrightnesses.map(b => {
+                        const hex = numberToHex(scaleRGB(color, b));
+                        const isEnabled = brightnesses.includes(b);
+                        return (
+                            <TooltipProvider key={b} delayDuration={200}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <button
+                                            className={`w-4 h-4 rounded border transition-opacity ${!isEnabled ? 'opacity-25' : ''} ${onToggleBrightness ? 'cursor-pointer hover:ring-1 ring-primary' : ''}`}
+                                            style={{ backgroundColor: hex }}
+                                            onClick={onToggleBrightness ? (e) => { e.stopPropagation(); onToggleBrightness(groupId, b); } : undefined}
+                                        />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" align="center">
+                                        {BRIGHTNESS_LABELS[b] ?? 'Brightness'}{!isEnabled ? ' (disabled)' : ''}{onToggleBrightness ? ' — click to toggle' : ''}
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        );
+                    })}
                 </div>
-                <span>Group {groupId + 1}</span>
+                <span>{label ?? `Group ${groupId + 1}`}{isCustom ? ' *' : ''}</span>
                 <div className="flex gap-2 items-center">
                     <Dot />
                     <span>{group.length > 5 && `${open ? group.length : (5 + (selectedIndex > 4 ? 1 : 0))} /`} {group.length} blocks</span>

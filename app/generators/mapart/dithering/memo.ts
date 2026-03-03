@@ -1,6 +1,6 @@
 
 import { Brightness, ColorDistanceMethod, StaircasingMode } from '../utils/types';
-import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
+import { getWorkerAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
 import { numberToRGB, findBestColorInSet, ColorCandidate } from '../color/matching';
 import { calculateDistance } from '../color/distance';
 import type { ProcessedImageResult } from '../utils/types';
@@ -59,7 +59,7 @@ function precomputeRow(
     const allCandidates: ColorCandidate[] = [];
 
     for (const groupId of enabledGroups) {
-        const allowed = getAllowedBrightnesses(groupId);
+        const allowed = getWorkerAllowedBrightnesses(groupId);
         if (groupId === 11) {
             if (allowed.includes(Brightness.HIGH)) {
                 sameCandidates.push({ groupId, brightness: Brightness.HIGH });

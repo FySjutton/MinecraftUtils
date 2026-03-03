@@ -1,25 +1,34 @@
 import pako from 'pako';
 import {NBT, NBTCompound, NBTType, NBTValue, writeNBT} from "@/lib/schematics/nbtWriter";
-import {Structure3D} from "@/app/generators/mapart/utils/types";
+import {BlockNBT, Structure3D} from "@/app/generators/mapart/utils/types";
 
 function buildNBTStructure(structure: Structure3D): NBTCompound {
     // Build palette: map block names to indices
     const paletteMap = new Map<string, number>();
     const paletteBlocks: NBTValue[] = [];
 
-    const getPaletteId = (blockName: string): number => {
-        if (paletteMap.has(blockName)) {
-            return paletteMap.get(blockName)!;
+    const getPaletteId = (blockName: string, properties?: BlockNBT): number => {
+        const key = blockName + (properties ? JSON.stringify(properties) : '');
+        if (paletteMap.has(key)) {
+            return paletteMap.get(key)!;
         }
         const id = paletteBlocks.length;
-        paletteMap.set(blockName, id);
-        paletteBlocks.push({ Name: blockName });
+        paletteMap.set(key, id);
+        const entry: NBTCompound = { Name: blockName };
+        if (properties && Object.keys(properties).length > 0) {
+            const props: NBTCompound = {};
+            for (const [k, v] of Object.entries(properties)) {
+                props[k] = v;
+            }
+            entry.Properties = props;
+        }
+        paletteBlocks.push(entry);
         return id;
     };
 
     // Convert blocks to NBT format
     const nbtBlocks: NBTValue[] = structure.blocks.map(block => {
-        const paletteId = getPaletteId(block.blockName);
+        const paletteId = getPaletteId(block.blockName, block.properties);
         return {
             pos: NBT.list(NBTType.Int, [block.x, block.y, block.z]),
             state: paletteId

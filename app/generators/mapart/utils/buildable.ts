@@ -1,5 +1,5 @@
 import { Brightness, ColorDistanceMethod, ProcessedImageResult, StaircasingMode } from './types';
-import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from './constants';
+import { getWorkerAllowedBrightnesses, TRANSPARENT_GROUP_ID } from './constants';
 import { getColorWithBrightness, numberToRGB, findBestColorInSet, buildCandidates } from '../color/matching';
 import { calculateDistance } from '../color/distance';
 import { applyDithering } from '../dithering/buildable';
@@ -94,7 +94,7 @@ function processWithoutDithering(
             let bestGroupId = -1;
 
             for (const groupId of enabledGroups) {
-                for (const brightness of getAllowedBrightnesses(groupId)) {
+                for (const brightness of getWorkerAllowedBrightnesses(groupId)) {
                     if (isStd && groupId !== 11) {
                         const delta = brightness === Brightness.HIGH ? 1 : brightness === Brightness.LOW ? -1 : 0;
                         const nextY = currentY + delta;

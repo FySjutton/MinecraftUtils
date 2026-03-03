@@ -1,5 +1,5 @@
 import { Brightness, ColorDistanceMethod, StaircasingMode } from '../utils/types';
-import { getAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
+import { getWorkerAllowedBrightnesses, TRANSPARENT_GROUP_ID } from '../utils/constants';
 import { numberToRGB, findBestColorInSet, ColorCandidate } from '../color/matching';
 import { clamp } from './shared';
 import { DitheringMethodRiemersma } from './types';

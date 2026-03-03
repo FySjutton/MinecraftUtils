@@ -16,8 +16,8 @@ import { formatItemCount } from '@/lib/utils';
 
 import { export3d, exportPNG } from '@/app/generators/mapart/exporting';
 import { exportMapDat } from '@/app/generators/mapart/utils/datExport';
-import { ALIASES, BLOCK_GROUPS, getEverythingBlockSelection, getMaterialList, Preset, Presets } from '@/app/generators/mapart/utils/constants';
-import { BlockSelection, Brightness, ProcessingStats } from '@/app/generators/mapart/utils/types';
+import { ALIASES, BLOCK_GROUPS, getEverythingBlockSelection, getEverythingBlockSelectionFromPalette, buildDefaultPalette, getMaterialList, Preset, Presets } from '@/app/generators/mapart/utils/constants';
+import { BlockSelection, Brightness, PaletteConfig, ProcessingStats } from '@/app/generators/mapart/utils/types';
 import type { WorkerRequest, WorkerResponse } from '@/app/generators/mapart/mapart.worker';
 import {Mode, PreviewCard} from '@/app/generators/mapart/PreviewCard';
 import { ComboBox } from '@/components/inputs/dropdowns/ComboBox';
@@ -28,6 +28,7 @@ import presetsData from './inputs/presets.json';
 import { MapArea, AREA_COLORS, areasOverlap } from './utils/areaTypes';
 import { buildAreaCanvas, mergeAreaResult, recomputeGlobalBrightness, processWithAreaWorker } from './utils/areaProcessing';
 import { PaletteGroup, InlineGroupSwitch } from './PaletteComponents';
+import { GroupEditorModal } from './GroupEditorModal';
 import { InputField } from '@/components/inputs/InputField';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -69,8 +70,10 @@ export default function MapartGenerator() {
     const preprocessedCanvasRef = useRef<HTMLCanvasElement | null>(null);
     const [cropOnlyImageUrl, setCropOnlyImageUrl] = useState<string | null>(null);
 
+    const [paletteConfig, setPaletteConfig] = useState<PaletteConfig>(() => buildDefaultPalette());
     const [blockSelection, setBlockSelection] = useState<BlockSelection>(() => getEverythingBlockSelection());
     const [currentPreset, setCurrentPreset] = useState('Everything');
+    const [showGroupEditor, setShowGroupEditor] = useState(false);
     const [expandedGroup, setExpandedGroup] = useState<number | null>(null);
     const presetInputRef = useRef<HTMLInputElement>(null);
     const expandedRef = useRef<HTMLDivElement | null>(null);
@@ -195,9 +198,10 @@ export default function MapartGenerator() {
             maxHeight: settings.maxHeight,
             datMode: outputMode === 'dat',
             useMemoSearch: settings.useMemoSearch,
+            paletteConfig,
         };
         workerRef.current.postMessage(message, [buffer]);
-    }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, settings.useMemoSearch, outputMode]);
+    }, [settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, settings.useMemoSearch, outputMode, paletteConfig]);
 
     const handlePreprocessed = useCallback((canvas: HTMLCanvasElement) => {
         preprocessedCanvasRef.current = canvas;
@@ -277,6 +281,7 @@ export default function MapartGenerator() {
                     colorMethod: area.overrides.colorDistanceMethod ?? settings.colorDistanceMethod,
                     maxHeight: area.overrides.maxHeight ?? settings.maxHeight,
                     useMemoSearch: settings.useMemoSearch,
+                    paletteConfig: area.overrides.paletteConfig ?? paletteConfig,
                 };
 
                 try {
@@ -317,7 +322,7 @@ export default function MapartGenerator() {
         })();
 
         return () => { cancelled = true; };
-    }, [globalResultVersion, areas, outputMode, blockSelection, settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, settings.useMemoSearch]);
+    }, [globalResultVersion, areas, outputMode, blockSelection, settings.ditheringMethod, settings.staircasingMode, settings.colorDistanceMethod, settings.maxHeight, settings.useMemoSearch, paletteConfig]);
 
     const handleFileUpload = (file: File | null) => {
         if (!file?.type.startsWith('image/')) {
@@ -362,7 +367,9 @@ export default function MapartGenerator() {
         }
         let newSelection: BlockSelection;
         if (presetName === 'Everything') {
-            newSelection = getEverythingBlockSelection();
+            const defaultPalette = buildDefaultPalette();
+            setPaletteConfig(defaultPalette);
+            newSelection = getEverythingBlockSelectionFromPalette(defaultPalette);
         } else {
             const preset = presetsData[presetName as Preset];
             if (!preset) {
@@ -398,7 +405,14 @@ export default function MapartGenerator() {
 
     const handleExportPreset = () => {
         const name = currentPreset === 'Custom' ? 'My_Preset' : currentPreset;
-        const blob = new Blob([JSON.stringify({ [name]: blockSelection }, null, 2)], { type: 'application/json' });
+        const fullPreset = {
+            version: 1,
+            name,
+            settings,
+            palette: paletteConfig,
+            blockSelection,
+        };
+        const blob = new Blob([JSON.stringify(fullPreset, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url; a.download = `${name.toLowerCase()}.json`; a.click();
@@ -409,16 +423,60 @@ export default function MapartGenerator() {
         const reader = new FileReader();
         reader.onload = e => {
             try {
-                const imported = JSON.parse(e.target?.result as string);
-                const presetName = Object.keys(imported)[0];
-                const newSelection: BlockSelection = {};
-                Object.entries(imported[presetName]).forEach(([groupId, blockName]) => { newSelection[parseInt(groupId)] = blockName as string; });
-                setBlockSelection(newSelection);
-                setCurrentPreset(presetName);
+                const data = JSON.parse(e.target?.result as string);
+
+                if (data.version === 1) {
+                    // Full preset format
+                    if (data.palette) setPaletteConfig(data.palette as PaletteConfig);
+                    if (data.blockSelection) setBlockSelection(data.blockSelection as BlockSelection);
+                    setCurrentPreset(data.name || 'Imported');
+                    // Apply settings
+                    if (data.settings) {
+                        const s = data.settings;
+                        if (s.ditheringMethod !== undefined) setters.setDitheringMethod(s.ditheringMethod);
+                        if (s.staircasingMode !== undefined) setters.setStaircasingMode(s.staircasingMode);
+                        if (s.colorDistanceMethod !== undefined) setters.setColorDistanceMethod(s.colorDistanceMethod);
+                        if (s.maxHeight !== undefined) setters.setMaxHeight(s.maxHeight);
+                        if (s.supportMode !== undefined) setters.setSupportMode(s.supportMode);
+                        if (s.supportBlockName !== undefined) setters.setSupportBlockName(s.supportBlockName);
+                        if (s.brightness !== undefined) setters.setBrightness(s.brightness);
+                        if (s.contrast !== undefined) setters.setContrast(s.contrast);
+                        if (s.saturation !== undefined) setters.setSaturation(s.saturation);
+                        if (s.fillColor !== undefined) setters.setFillColor(s.fillColor);
+                        if (s.pixelArt !== undefined) setters.setPixelArt(s.pixelArt);
+                        if (s.mapWidth !== undefined) setters.setMapWidth(s.mapWidth);
+                        if (s.mapHeight !== undefined) setters.setMapHeight(s.mapHeight);
+                        if (s.cropMode !== undefined) setters.setCropMode(s.cropMode);
+                        if (s.noobLine !== undefined) setters.setNoobLine(s.noobLine);
+                        if (s.useMemoSearch !== undefined) setters.setUseMemoSearch(s.useMemoSearch);
+                    }
+                } else {
+                    // Legacy format: { presetName: blockSelection }
+                    const presetName = Object.keys(data)[0];
+                    const newSelection: BlockSelection = {};
+                    Object.entries(data[presetName]).forEach(([groupId, blockName]) => { newSelection[parseInt(groupId)] = blockName as string; });
+                    setBlockSelection(newSelection);
+                    setCurrentPreset(presetName);
+                }
             } catch { alert('Invalid preset file'); }
         };
         reader.readAsText(file);
     };
+
+    const toggleGroupBrightness = useCallback((groupId: number, brightness: Brightness) => {
+        setPaletteConfig(prev => ({
+            groups: prev.groups.map(g => {
+                if (g.groupId !== groupId) return g;
+                const current = g.brightness;
+                const next = current.includes(brightness)
+                    ? current.filter(b => b !== brightness)
+                    : [...current, brightness];
+                if (next.length === 0) return g;
+                return { ...g, brightness: next };
+            }),
+        }));
+        setCurrentPreset('Custom');
+    }, []);
 
     const toggleBlockSelection = useCallback((groupId: number, blockName: string | null) => {
         if (selectedArea) {
@@ -664,12 +722,12 @@ export default function MapartGenerator() {
                                     <>
                                         <div className="flex gap-2 w-full">
                                             <Button className="flex-1" disabled={!processingStats || isProcessing}
-                                                    onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, false, settings.noobLine, settings.staircasingMode)}>
+                                                    onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, false, settings.noobLine, settings.staircasingMode, paletteConfig)}>
                                                 <Download className="mr-2" size={16} />Export NBT
                                             </Button>
                                             {(settings.mapHeight > 1 || settings.mapWidth > 1) && (
                                                 <Button className="flex-1" disabled={!processingStats || isProcessing}
-                                                        onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, true, settings.noobLine, settings.staircasingMode)}>
+                                                        onClick={() => export3d(processedImageData, processingStats, settings.mapWidth, settings.mapHeight, brightnessMap, groupIdMap, yMap, blockSelection, settings.supportMode, settings.supportBlockName, true, settings.noobLine, settings.staircasingMode, paletteConfig)}>
                                                     <Download className="mr-2" size={16} />Export NBT (Split 1x1 .zip)
                                                 </Button>
                                             )}
@@ -731,14 +789,19 @@ export default function MapartGenerator() {
                                     </div>
                                     {!isAreaMode && (
                                         <>
-                                            <Button variant="outline" onClick={handleExportPreset}><Download size={14} /></Button>
-                                            <Button variant="outline" onClick={() => presetInputRef.current?.click()}><Upload size={14} /></Button>
+                                            <Button variant="outline" onClick={handleExportPreset} title="Export preset"><Download size={14} /></Button>
+                                            <Button variant="outline" onClick={() => presetInputRef.current?.click()} title="Import preset"><Upload size={14} /></Button>
                                             <input ref={presetInputRef} type="file" accept=".json" onChange={e => { const f = e.target.files?.[0]; if (f) {
                                                 handleImportPreset(f);
                                             } }} className="hidden" />
                                         </>
                                     )}
                                 </div>
+                                {!isAreaMode && (
+                                    <Button variant="outline" size="sm" className="mt-2" onClick={() => setShowGroupEditor(true)}>
+                                        <Pencil size={14} className="mr-1" />Customize Palette
+                                    </Button>
+                                )}
                                 {isAreaMode && !selectedArea.overrides.blockSelection && (
                                     <Button variant="outline" size="sm" className="mt-2" onClick={() => {
                                         setAreas(prev => prev.map(a => a.id === selectedArea.id
@@ -765,13 +828,18 @@ export default function MapartGenerator() {
                                 )}
                             </CardHeader>
                             <CardContent className="max-h-125 space-y-2 overflow-y-auto">
-                                {BLOCK_GROUPS.map((group, groupId) => (
+                                {paletteConfig.groups.map(group => (
                                     <PaletteGroup
-                                        key={groupId}
-                                        group={group}
-                                        groupId={groupId}
-                                        selectedBlock={activeBlockSelection[groupId] ?? null}
+                                        key={group.groupId}
+                                        group={group.blocks.map(b => b.name)}
+                                        groupId={group.groupId}
+                                        selectedBlock={activeBlockSelection[group.groupId] ?? null}
                                         toggleBlockSelection={toggleBlockSelection}
+                                        baseColor={group.color}
+                                        allowedBrightnesses={group.brightness}
+                                        label={group.label}
+                                        isCustom={group.isCustom}
+                                        onToggleBrightness={toggleGroupBrightness}
                                     />
                                 ))}
                             </CardContent>
@@ -873,6 +941,19 @@ export default function MapartGenerator() {
                     </>
                 )}
             </div>
+
+            {showGroupEditor && (
+                <GroupEditorModal
+                    paletteConfig={paletteConfig}
+                    onPaletteChange={(newPalette) => {
+                        setPaletteConfig(newPalette);
+                        setCurrentPreset('Custom');
+                    }}
+                    blockSelection={blockSelection}
+                    onBlockSelectionChange={setBlockSelection}
+                    onClose={() => setShowGroupEditor(false)}
+                />
+            )}
         </div>
     );
 }

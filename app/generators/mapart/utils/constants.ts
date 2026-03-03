@@ -3,7 +3,7 @@ import baseColorsData from '../inputs/colors.json';
 import aliasesData from '../inputs/aliases.json';
 import presetsData from '../inputs/presets.json';
 
-import { Brightness, BlockSelection } from './types';
+import { Brightness, BlockSelection, PaletteConfig, PaletteGroup } from './types';
 
 export const BLOCK_GROUPS: string[][] = blockGroupsData as string[][];
 export const BASE_COLORS: number[] = baseColorsData as number[];
@@ -39,6 +39,49 @@ export function getEverythingBlockSelection(): BlockSelection {
         }
     });
     return selection;
+}
+
+export function getEverythingBlockSelectionFromPalette(palette: PaletteConfig): BlockSelection {
+    const selection: BlockSelection = {};
+    for (const group of palette.groups) {
+        if (group.blocks.length > 0) {
+            selection[group.groupId] = group.blocks[0].name;
+        }
+    }
+    return selection;
+}
+
+export function buildDefaultPalette(): PaletteConfig {
+    return {
+        groups: BLOCK_GROUPS.map((blocks, index) => ({
+            groupId: index,
+            color: BASE_COLORS[index] ?? 0,
+            blocks: blocks.map(name => ({ name })),
+            brightness: index === 11
+                ? [Brightness.HIGH]
+                : [Brightness.LOW, Brightness.NORMAL, Brightness.HIGH],
+            isCustom: false,
+        })).filter(g => g.blocks.length > 0),
+    };
+}
+
+let _workerColorMap: Map<number, number> | null = null;
+let _workerBrightnessMap: Map<number, Brightness[]> | null = null;
+
+export function setWorkerColorMap(map: Map<number, number> | null): void {
+    _workerColorMap = map;
+}
+
+export function setWorkerBrightnessMap(map: Map<number, Brightness[]> | null): void {
+    _workerBrightnessMap = map;
+}
+
+export function getWorkerAllowedBrightnesses(groupId: number): Brightness[] {
+    return _workerBrightnessMap?.get(groupId) ?? getAllowedBrightnesses(groupId);
+}
+
+export function getWorkerBaseColor(groupId: number): number | undefined {
+    return _workerColorMap?.get(groupId) ?? BASE_COLORS[groupId];
 }
 
 import type { MaterialCount } from './types';

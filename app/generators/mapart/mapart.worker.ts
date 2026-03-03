@@ -1,7 +1,8 @@
-import { ColorDistanceMethod, StaircasingMode, Brightness } from './utils/types';
+import { ColorDistanceMethod, StaircasingMode, Brightness, PaletteConfig } from './utils/types';
 import { DitheringMethodName } from './dithering/types';
 import { applyDitheringDat } from './dithering/dat';
 import { processImageData } from './utils/buildable';
+import { setWorkerColorMap, setWorkerBrightnessMap } from './utils/constants';
 
 export interface WorkerRequest {
     requestId: number;
@@ -15,6 +16,7 @@ export interface WorkerRequest {
     maxHeight: number;
     datMode?: boolean;
     useMemoSearch?: boolean;
+    paletteConfig?: PaletteConfig;
 }
 
 export type WorkerResponse =
@@ -36,7 +38,21 @@ export type WorkerResponse =
 };
 
 self.onmessage = (event: MessageEvent<WorkerRequest>) => {
-    const { requestId, buffer, width, height, enabledGroups, ditheringMethod, staircasingMode, colorMethod, maxHeight, datMode, useMemoSearch } = event.data;
+    const { requestId, buffer, width, height, enabledGroups, ditheringMethod, staircasingMode, colorMethod, maxHeight, datMode, useMemoSearch, paletteConfig } = event.data;
+
+    if (paletteConfig) {
+        const colorMap = new Map<number, number>();
+        const brightnessMap = new Map<number, Brightness[]>();
+        for (const group of paletteConfig.groups) {
+            colorMap.set(group.groupId, group.color);
+            brightnessMap.set(group.groupId, group.brightness);
+        }
+        setWorkerColorMap(colorMap);
+        setWorkerBrightnessMap(brightnessMap);
+    } else {
+        setWorkerColorMap(null);
+        setWorkerBrightnessMap(null);
+    }
 
     try {
         const pixels = new Uint8ClampedArray(buffer);

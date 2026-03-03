@@ -43,6 +43,28 @@ export interface BlockSelection {
     [groupId: number]: string | null;
 }
 
+export interface BlockNBT {
+    [key: string]: string;
+}
+
+export interface PaletteBlock {
+    name: string;
+    nbt?: BlockNBT;
+}
+
+export interface PaletteGroup {
+    groupId: number;
+    color: number;
+    blocks: PaletteBlock[];
+    brightness: Brightness[];
+    isCustom: boolean;
+    label?: string;
+}
+
+export interface PaletteConfig {
+    groups: PaletteGroup[];
+}
+
 export interface MaterialCount {
     groupId: number;
     brightness: Brightness;
@@ -61,6 +83,7 @@ export interface Block3D {
     y: number;
     z: number;
     blockName: string;
+    properties?: BlockNBT;
 }
 
 export interface ProcessedImageResult {
