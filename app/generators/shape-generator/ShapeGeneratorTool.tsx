@@ -154,18 +154,6 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                         />
                     </div>
 
-                    <ExportCard shapeMap={shapeMap} width={options.width} height={options.height} circleOnly={circleOnly} svgRef={svgRef} />
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Copy current shape and progress</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <CopyShareLinkInput label="" />
-                </CardContent>
-            </Card>
 
             <Card className="gap-0 pb-0">
                 <CardHeader>
@@ -193,6 +181,19 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                     <ZoomViewport cellWidth={generators[shape].getSize(options).width} cellHeight={generators[shape].getSize(options).height} isFullscreen={isFullscreen} setIsFullscreen={setIsFullscreen}>
                         <InteractiveShapeGroups ref={svgRef} options={options} theme={theme} checks={checks} setChecks={setChecks} shape={shape} />
                     </ZoomViewport>
+                </CardContent>
+            </Card>
+
+            <ExportCard shapeMap={shapeMap} width={options.width} height={options.height} circleOnly={circleOnly} svgRef={svgRef} />
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Copy current shape and progress</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <CopyShareLinkInput label="" />
                 </CardContent>
             </Card>
         </div>
