@@ -21,6 +21,8 @@ import {
     IconFolder,
     IconFolders,
     IconDeviceAudioTape,
+    IconZoomCode,
+    IconBook2,
 } from "@tabler/icons-react";
 import {SlidersVertical} from "lucide-react";
 import {getPage, PageItem, ToolCategory} from "@/app/_structure/StructureUtils";
@@ -76,6 +78,8 @@ export const tools: ToolCategory[] = [
             url: "#",
             external: true,
             pages: [
+                { name: "Minecraft Wiki", url: "https://minecraft.wiki/", icon: <IconBook2 />, description: "Minecraft Wiki. Not Fandom." },
+                { name: "ChunkBase", url: "https://www.chunkbase.com/apps/seed-map", icon: <IconZoomCode />, description: "Seed visualiser that previews most features." },
                 { name: "Enchantment Ordering", url: "https://iamcal.github.io/enchant-order/", icon: <IconWand />, description: "Determine optimal enchantment order." },
                 { name: "Sound Explorer", url: "https://mcutils.com/sound-explorer", icon: <IconBellRingingFilled />, description: "Browse Minecraft sounds and audio cues." },
                 { name: "Skin Stealer", url: "https://minecraft.tools/en/skin.php", icon: <IconUser />, description: "Download and view player skins." },
