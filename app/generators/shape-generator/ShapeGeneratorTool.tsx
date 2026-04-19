@@ -106,7 +106,7 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
 
     return (
         <div className="space-y-6">
-            <Card>
+            <Card className="mb-4">
                 <CardHeader>
                     <CardTitle>{circleOnly ? "Circle / Ellipse" : "Shape"} Generator</CardTitle>
                     <CardAction><Button variant="outline" onClick={reset}>Reset</Button></CardAction>
@@ -153,9 +153,11 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                             className="mt-2"
                         />
                     </div>
+                    <ExportCard shapeMap={shapeMap} width={options.width} height={options.height} circleOnly={circleOnly} svgRef={svgRef} />
+                </CardContent>
+            </Card>
 
-
-            <Card className="gap-0 pb-0">
+            <Card className="gap-0 pb-0 mb-4">
                 <CardHeader>
                     <CardTitle>{circleOnly ? "Circle" : "Shape"} Output</CardTitle>
                     <CardAction>
@@ -184,13 +186,9 @@ export default function ShapeGeneratorPage({ circleOnly }: { circleOnly: boolean
                 </CardContent>
             </Card>
 
-            <ExportCard shapeMap={shapeMap} width={options.width} height={options.height} circleOnly={circleOnly} svgRef={svgRef} />
-                </CardContent>
-            </Card>
-
             <Card>
                 <CardHeader>
-                    <CardTitle>Copy current shape and progress</CardTitle>
+                    <CardTitle>Permanent Shape Share Link</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <CopyShareLinkInput label="" />
