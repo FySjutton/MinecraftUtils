@@ -16,7 +16,13 @@ import {
     IconSettings,
     IconSettingsUp, IconShield,
     IconTerminal2,
-    IconUser, IconWand
+    IconUser, IconWand,
+    IconEye,
+    IconFolder,
+    IconFolders,
+    IconDeviceAudioTape,
+    IconZoomCode,
+    IconBook2,
 } from "@tabler/icons-react";
 import {SlidersVertical} from "lucide-react";
 import {getPage, PageItem, ToolCategory} from "@/app/_structure/StructureUtils";
@@ -65,38 +71,44 @@ export const tools: ToolCategory[] = [
     },
 ]
 
-export const externals: ToolCategory[] = [
-    {
-        name: "Utilities",
-        icon: <IconCalculator />,
-        url: "#",
-        external: true,
-        pages: [
-            { name: "Enchantment Ordering", url: "https://iamcal.github.io/enchant-order/", icon: <IconWand />, description: "Determine optimal enchantment order." },
-            { name: "Sound Explorer", url: "https://mcutils.com/sound-explorer", icon: <IconBellRingingFilled />, description: "Browse Minecraft sounds and audio cues." },
-            { name: "Skin Stealer", url: "https://minecraft.tools/en/skin.php", icon: <IconUser />, description: "Download and view player skins." },
-            { name: "Armor Color Crafting", url: "https://minecraft.tools/en/armor.php", icon: <IconHanger2 />, description: "Mix and match armor colors." },
-            { name: "Custom Potions", url: "https://minecraft.tools/en/potion.php", icon: <IconBubbleTea2 />, description: "Create potion recipes." },
-        ],
-    },
-    {
-        name: "Generators",
-        icon: <IconSettings />,
-        url: "#",
-        external: true,
-        pages: [
-            { name: "Mapart Generator", url: "https://rebane2001.com/mapartcraft/", icon: <IconMap />, description: "Generate maparts from images." },
-            { name: "Selector Generator", url: "https://minecraft.tools/en/selector.php", icon: <IconBraces />, description: "Generate entity selectors." },
-            { name: "Json Text Generator", url: "https://minecraft.tools/en/json_text.php", icon: <IconCode />, description: "Create custom chat messages." },
-            { name: "Title Generator", url: "https://minecraft.tools/en/title.php", icon: <IconH1 />, description: "Generate title and subtitle commands." },
-            { name: "Book Generator", url: "https://minecraft.tools/en/book.php", icon: <IconBook />, description: "Create writable books." },
-            { name: "/give Generator", url: "https://www.digminecraft.com/generators/give_tool.php", icon: <IconTerminal2 />, description: "Generate /give commands easily." },
-            { name: "Summon Mob Generator", url: "https://www.digminecraft.com/generators/summon_mob.php", icon: <IconPaw />, description: "Generate summon commands for mobs." },
-            { name: "Advanced Command Generator", url: "https://mcstacker.net/", icon: <IconSettingsUp />, description: "Complex command generation tool." },
-            { name: "Datapack Generators", url: "https://misode.github.io/generators/", icon: <IconBackpack />, description: "Create custom datapacks." },
-            { name: "Firework Creator", url: "https://mcutils.com/firework-creator", icon: <IconRocket />, description: "Generate fireworks commands." },
-            { name: "Shield Editor", url: "https://minecraft.tools/en/shield.php", icon: <IconShield />, description: "Design custom shield patterns." },
-        ],
+    export const externals: ToolCategory[] = [
+        {
+            name: "Utilities",
+            icon: <IconCalculator />,
+            url: "#",
+            external: true,
+            pages: [
+                { name: "Minecraft Wiki", url: "https://minecraft.wiki/", icon: <IconBook2 />, description: "Minecraft Wiki. Not Fandom." },
+                { name: "ChunkBase", url: "https://www.chunkbase.com/apps/seed-map", icon: <IconZoomCode />, description: "Seed visualiser that previews most features." },
+                { name: "Enchantment Ordering", url: "https://iamcal.github.io/enchant-order/", icon: <IconWand />, description: "Determine optimal enchantment order." },
+                { name: "Sound Explorer", url: "https://mcutils.com/sound-explorer", icon: <IconBellRingingFilled />, description: "Browse Minecraft sounds and audio cues." },
+                { name: "Skin Stealer", url: "https://minecraft.tools/en/skin.php", icon: <IconUser />, description: "Download and view player skins." },
+                { name: "Armor Color Crafting", url: "https://minecraft.tools/en/armor.php", icon: <IconHanger2 />, description: "Mix and match armor colors." },
+                { name: "Custom Potions", url: "https://minecraft.tools/en/potion.php", icon: <IconBubbleTea2 />, description: "Create potion recipes." },
+                { name: "Online Schematic Viewer", url: "https://www.shulkr.com/", icon: <IconEye />, description: "View any schematic type in 3D, or load them from links directly" },
+                { name: "Schematic Library (Bloxelizer)", url: "https://bloxelizer.com/schematics", icon: <IconFolder />, description: "A big library of schematics" },
+                { name: "Schematic Library (Abfielder)", url: "https://abfielder.com/Products/BrowseProducts.php", icon: <IconFolders />, description: "Another library for schematics." },
+            ],
+        },
+        {
+            name: "Generators",
+            icon: <IconSettings />,
+            url: "#",
+            external: true,
+            pages: [
+                { name: "Mapart Generator", url: "https://rebane2001.com/mapartcraft/", icon: <IconMap />, description: "Generate maparts from images." },
+                { name: "Selector Generator", url: "https://minecraft.tools/en/selector.php", icon: <IconBraces />, description: "Generate entity selectors." },
+                { name: "Json Text Generator", url: "https://minecraft.tools/en/json_text.php", icon: <IconCode />, description: "Create custom chat messages." },
+                { name: "Title Generator", url: "https://minecraft.tools/en/title.php", icon: <IconH1 />, description: "Generate title and subtitle commands." },
+                { name: "Book Generator", url: "https://minecraft.tools/en/book.php", icon: <IconBook />, description: "Create writable books." },
+                { name: "/give Generator", url: "https://www.digminecraft.com/generators/give_tool.php", icon: <IconTerminal2 />, description: "Generate /give commands easily." },
+                { name: "Summon Mob Generator", url: "https://www.digminecraft.com/generators/summon_mob.php", icon: <IconPaw />, description: "Generate summon commands for mobs." },
+                { name: "Advanced Command Generator", url: "https://mcstacker.net/", icon: <IconSettingsUp />, description: "Complex command generation tool." },
+                { name: "Datapack Generators", url: "https://misode.github.io/generators/", icon: <IconBackpack />, description: "Create custom datapacks." },
+                { name: "Firework Creator", url: "https://mcutils.com/firework-creator", icon: <IconRocket />, description: "Generate fireworks commands." },
+                { name: "Shield Editor", url: "https://minecraft.tools/en/shield.php", icon: <IconShield />, description: "Design custom shield patterns." },
+                { name: "Custom Music Disc Creator", url: "https://minecraft.miyaki.nl/musicdisc", icon: <IconDeviceAudioTape />, description: "Create music discs with your own music." },
+            ],
     },
     {
         name: "References",
